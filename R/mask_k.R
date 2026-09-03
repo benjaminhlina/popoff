@@ -39,21 +39,21 @@ mask_k <- function(k) {
 }
 
 
-#'Gaussian Kernal
+#'Gaussian Kernel
 #'
-#' Determines the Gaussian Kernal for an area
+#' Determines the Gaussian Kernel for an area
 #'
 #' @param size a `numerical` value that is the size of the areas to calculate the
-#' kernal
+#' Kernel
 #' @param sigma a `numerical` value that is the standard deviation
 #' @param muadv a `numerical` value that adds to the mean (i.e, mu)
-#' @param norm a `logical` that checks whether to normalize the kernal estimate
+#' @param norm a `logical` that checks whether to normalize the Kernel estimate
 #'
-#' @return a `matrix` that is Gaussian Kernal over an area.
+#' @return a `matrix` that is Gaussian Kernel over an area.
 #'
 #' @export
 #'
-gaussian_kernal <- function(size, sigma, muadv = 0, norm = FALSE) {
+gaussian_kernel <- function(size, sigma, muadv = 0, norm = FALSE) {
   if (round(size) < 1) {
     size <- 1
   }
