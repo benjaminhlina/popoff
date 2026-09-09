@@ -12,7 +12,7 @@
 #'
 #' @format `data.frame` containing 3 rows and 8 variables
 #'  \describe{
-#'    \item{fish}{The id of a given tagged fish}
+#'    \item{fish_id}{The id of a given tagged fish}
 #'    \item{ptt}{The id of a psat tag}
 #'    \item{mrpat}{The id of a mrpat tag}
 #'    \item{length}{The length of the invidiual}
