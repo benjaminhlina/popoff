@@ -11,13 +11,18 @@
 #' @name load_functions
 #' @export
 
-load_bathy_raster <- function(bathy) {
+load_bathy_raster <- function(bathy, crs = NULL) {
   # general message
   msg_bathy(bathy = bathy)
 
   if (inherits(bathy, "SpatRaster")) {
     attr(bathy, "idx") <- .valid_idx(bathy)
     attr(bathy, "idx_na") <- .valid_idx(bathy, na = TRUE)
+
+    if (!is.null(crs)) {
+      error_crs(crs)
+      terra::crs(bathy) <- crs
+    }
     return(bathy)
   }
 
@@ -26,6 +31,11 @@ load_bathy_raster <- function(bathy) {
     bathy <- terra::rast(bathy)
     attr(bathy, "idx") <- .valid_idx(bathy)
     attr(bathy, "idx_na") <- .valid_idx(bathy, na = TRUE)
+
+    if (!is.null(crs)) {
+      error_crs(crs)
+      terra::crs(bathy) <- crs
+    }
     return(bathy)
   }
 

@@ -194,3 +194,41 @@ test_that("msg_bathy() emits the expected message per input type", {
   # Unmatched character (e.g. .tif) currently produces no message at all
   expect_message(msg_bathy("file.tif"))
 })
+
+
+test_that("check to make sure null works for crs", {
+  bathy_no_crs <- load_bathy_raster(bathy_matrix)
+
+  expect_equal(terra::crs(bathy_no_crs), '')
+})
+test_that("check to make sure crs values work", {
+  bathy_crs <- load_bathy_raster(bathy_matrix, crs = "EPSG:4326")
+
+  expect_true(grepl('"EPSG",4326', terra::crs(bathy_crs), fixed = TRUE))
+})
+
+test_that("check to make sure crs error", {
+  expect_error(
+    load_bathy_raster(bathy_matrix, crs = "ESPG:4326"),
+    regexp = "not a valid coordinate reference system",
+    fixed = TRUE
+  )
+})
+
+test_that("crs error message mentions the correct arg and example", {
+  err <- tryCatch(
+    suppressMessages(
+      load_bathy_raster(bathy_matrix, crs = "ESPG:4326")
+    ),
+    error = function(e) e
+  )
+
+  msg <- conditionMessage(err)
+
+  expect_true(grepl(
+    "crs is not a valid coordinate reference system",
+    err$message,
+    fixed = TRUE
+  ))
+  expect_true(grepl("EPSG:4326", err$body, fixed = TRUE))
+})

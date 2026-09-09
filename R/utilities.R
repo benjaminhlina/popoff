@@ -67,6 +67,29 @@
   return(integrated)
 }
 
+#' CRS validation
+#'
+#' Checks if a valid crs is provided
+#'
+#' @param crs a coordinate reference system
+#' @name crs_functions
+#' @keywords internal
+.valid_crs <- function(crs) {
+  if (!inherits(crs, "character") || length(crs) != 1 || is.na(crs)) {
+    return(FALSE)
+  }
+
+  result <- tryCatch(
+    terra::crs(crs),
+    error = function(e) NA_character_,
+    warning = function(w) NA_character_
+  )
+  valid <- !is.na(result) && nzchar(result)
+
+  return(valid)
+}
+
+
 #' Index functions
 #'
 #' Provides an index number.

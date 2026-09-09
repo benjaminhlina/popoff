@@ -1,10 +1,33 @@
 #' Error functions
 #'
 #' These functions produce error message displayed to the user.
+#' @param chr
 #'
-#' @param df a `data.frame`
+
+#' @param crs a character string of a crs
 #' @param arg_name The name of the argument
 #'
+#' @name error_functions
+#' @keywords internal
+
+error_crs <- function(crs, arg_name = NULL) {
+  if (is.null(arg_name)) {
+    arg_name <- rlang::as_label(rlang::enexpr(crs))
+  }
+
+  if (!.valid_crs(crs)) {
+    cli::cli_abort(
+      c(
+        "{arg_name} is not a valid coordinate reference system (crs).",
+        "x" = "Please provide {arg_name} with a proper crs, e.g. {.val EPSG:4326}"
+      )
+    )
+  }
+}
+
+
+#' @param df a `data.frame`
+
 #' @name error_functions
 #' @keywords internal
 
