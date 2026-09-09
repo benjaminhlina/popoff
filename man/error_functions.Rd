@@ -2,6 +2,7 @@
 % Please edit documentation in R/error_functions.R
 \name{error_functions}
 \alias{error_functions}
+\alias{error_crs}
 \alias{error_df}
 \alias{error_empty_file}
 \alias{error_focal_dim}
@@ -14,6 +15,8 @@
 \alias{error_spatrast}
 \title{Error functions}
 \usage{
+error_crs(crs, arg_name = NULL)
+
 error_df(df, arg_name = NULL)
 
 error_empty_file(path)
@@ -35,9 +38,11 @@ error_raster(raster)
 error_spatrast(spatrast, arg_name = NULL)
 }
 \arguments{
-\item{df}{a \code{data.frame}}
+\item{crs}{a character string of a crs}
 
 \item{arg_name}{The name of the argument}
+
+\item{df}{a \code{data.frame}}
 
 \item{path}{The file path to a file.}
 

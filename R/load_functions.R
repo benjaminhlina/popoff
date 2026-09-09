@@ -3,6 +3,8 @@
 #' These functions load different data into R
 #'
 #' @param bathy A bathymetric feature to be brought in as a `SpatRaster` object
+#' @param crs a character string that is the coordinate reference system (CRS) of the raster object e.g., `"ESPG:4326"`.
+#' Default is `NULL` resulting in not supplying a CRS. See `terra::crs()` for valid CRS format.
 #'
 #' @details returns a `SpatRaster` object to be used with an attribute of index. To access
 #' index use `attr(obj, "idx")`.
