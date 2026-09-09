@@ -93,3 +93,20 @@ msg_start <- function(chr, t0 = round(Sys.time())) {
   cli::cli_alert_info("Starting {chr} calculations at {.val {t0}}")
   invisible(t0)
 }
+
+#' @param window a numerical value
+#' @name msg_function
+#' @keywords internal
+
+msg_window <- function(window) {
+  if (window < 1) {
+    cli::cli_alert_info(
+      "Time window, which is the `bin` (e.g., 3600 sec = 1 h) divided by the PSAT tranmission time (e.g., 360) is < {.val {1}} and thus has been adjusted to {.val {1}}."
+    )
+  }
+  if (window >= 1) {
+    cli::cli_alert_info(
+      "Time window, which is the `bin` (e.g., 3600 sec = 1 h) divided by the PSAT tranmission time (e.g., 360), is {.val {window}}."
+    )
+  }
+}

@@ -8,6 +8,7 @@
 \alias{msg_load_raster}
 \alias{msg_load_rdata}
 \alias{msg_start}
+\alias{msg_window}
 \title{Message functions}
 \usage{
 msg_bathy(bathy)
@@ -21,6 +22,8 @@ msg_load_raster(path)
 msg_load_rdata(obj, obj_name)
 
 msg_start(chr, t0 = round(Sys.time()))
+
+msg_window(window)
 }
 \arguments{
 \item{bathy}{a bathymetric feature.}
@@ -40,6 +43,8 @@ msg_start(chr, t0 = round(Sys.time()))
 \item{obj}{an object}
 
 \item{obj_name}{the name of an object}
+
+\item{window}{a numerical value}
 }
 \description{
 These functions produce information to the user.
