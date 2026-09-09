@@ -8,16 +8,17 @@
 \alias{error_df}
 \alias{error_empty_file}
 \alias{error_focal_dim}
+\alias{error_input_data}
 \alias{error_load}
+\alias{error_list}
 \alias{error_logical}
 \alias{error_matrix}
-\alias{error_missing_col}
+\alias{error_missing_names}
 \alias{error_numeric}
 \alias{error_numeric_min}
 \alias{error_path}
 \alias{error_out_dir}
 \alias{error_raster}
-\alias{error_input_data}
 \alias{error_spatrast}
 \title{Error functions}
 \usage{
@@ -33,13 +34,17 @@ error_empty_file(path)
 
 error_focal_dim(obj, arg_name = NULL)
 
+error_input_data(input_data, type)
+
 error_load(path, e)
+
+error_list(list)
 
 error_logical(vec, arg_name = NULL)
 
 error_matrix(matrix, arg_name = NULL)
 
-error_missing_col(df, required_col)
+error_missing_names(obj, required_val)
 
 error_numeric(vec, arg_name = NULL)
 
@@ -50,8 +55,6 @@ error_path(path)
 error_out_dir(output_dir)
 
 error_raster(raster)
-
-error_input_data(input_data, type)
 
 error_spatrast(spatrast, arg_name = NULL)
 }
@@ -74,23 +77,25 @@ error_spatrast(spatrast, arg_name = NULL)
 
 \item{obj}{an object either \code{vector} or \code{matrix}}
 
+\item{input_data}{a \code{data.frame} to assess}
+
+\item{type}{the type of input data. A \code{character} usually \code{"raw_log"} or \code{"iniloc"}.}
+
 \item{e}{the condition object caught by \code{tryCatch()}}
+
+\item{list}{a \code{list}.}
 
 \item{vec}{a \code{vector} to check if numeric}
 
 \item{matrix}{a \code{matrix} to check if valid}
 
-\item{required_col}{a \code{vector} containing \code{characters} of the columns to check.}
+\item{required_val}{a \code{vector} containing \code{characters} of the columns to check.}
 
 \item{min_val}{a numerical mimimum value allowed}
 
 \item{output_dir}{a chracter string containing the out directory}
 
 \item{raster}{a raster object to assess}
-
-\item{input_data}{a \code{data.frame} to assess}
-
-\item{type}{the type of input data. A \code{character} usually \code{"raw_log"} or \code{"iniloc"}.}
 
 \item{spatrast}{a raster object to assess}
 }

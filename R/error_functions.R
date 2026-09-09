@@ -115,6 +115,36 @@ error_focal_dim <- function(obj, arg_name = NULL) {
   }
 }
 
+#' @param input_data a `data.frame` to assess
+#' @param type the type of input data. A `character` usually `"raw_log"` or `"iniloc"`.
+#' @name error_functions
+#' @keywords internal
+error_input_data <- function(input_data, type) {
+  error_df(input_data)
+
+  if (type == "raw_log") {
+    error_missing_names(
+      obj = input_data,
+      required_val = c("fish_id", "date", "date_time", "depth")
+    )
+    # --- Type and Value Validations ---
+
+    error_chr(input_data$fish_id, col = "fish_id")
+    error_date(input_data$date, col = "date", expected_cls = "Date")
+    error_date(input_data$date_time, col = "date_time", expected_cls = "POSIXt")
+    error_numeric_min(input_data$depth, col = "depth", min_val = 0)
+  }
+  if (type == "iniloc") {
+    error_missing_names(
+      obj = input_data,
+      required_val = c("fish_id", "date", "event")
+    )
+    error_chr(input_data$fish_id, col = "fish_id")
+    error_chr(input_data$event, col = "event")
+    error_date(input_data$date, col = "date", expected_cls = "POSIXt")
+  }
+}
+
 #' @param e the condition object caught by `tryCatch()`
 #' @name error_functions
 #' @keywords internal
@@ -128,6 +158,118 @@ error_load <- function(path, e) {
     ),
     class = "bathy_rast_read_failed"
   )
+}
+
+#' @param list a `list`.
+#' @name error_functions
+error_list <- function(list) {
+  if (!is.list(list)) {
+    cli::cli_abort(
+      c(
+        "{.arg {obj_name}} must be a {.cls list}, not {.cls {class(list)}}."
+      ),
+      class = "error_list"
+    )
+  }
+}
+
+#' Validate a prepped list input
+#'
+#' Checks that `x` is a list with the structure expected from either
+#' `prep_summary_likdepth()` (`type = "log"`) or `prep_bathy_raster()`
+#' (`type = "bathy"`), and throws an informative error if not.
+#'
+#' @param x The object to check.
+#' @param type One of `"log"` or `"bathy"`, indicating which upstream
+#'   function `x` is expected to have come from.
+#' @param call The calling environment, passed to `cli::cli_abort()`.
+#'
+#' @return Invisibly returns `TRUE` if `x` passes validation; otherwise
+#'   aborts with an informative error.
+#' @keywords internal
+#'
+#'
+error_list_prep <- function(
+  list,
+  type = c("log", "bathy")
+) {
+  type <- rlang::arg_match(type)
+  obj_name <- rlang::as_label(rlang::enexpr(list))
+
+  # ---- generic "not a list at all" check --------------------------------
+  error_list(list = list)
+
+  # ---- type-specific structural checks -----------------------------------
+  if (type == "log") {
+    error_missing_names(
+      obj = list,
+      required_val = c(
+        "raw_log_filter",
+        "summary_table",
+        "depth_profile",
+        "time_res",
+        "bin"
+      )
+    )
+
+    summary_ok <- .has_valid_field(list, "summary_table", "data.frame") &&
+      all(c("date", "depth_min", "depth_max") %in% names(x$summary_table))
+
+    if (!summary_ok) {
+      cli::cli_abort(
+        c(
+          "{.arg {obj_name}} doesn't look like the output of {.fn prep_summary_likdepth}.",
+          "x" = "{.field summary_table} must be a data frame with columns {.field date}, {.field depth_min}, and {.field depth_max}.",
+          "i" = "Run {.arg {obj_name}} through {.fn prep_summary_likdepth} first."
+        ),
+        class = "error_list_log",
+        call = call
+      )
+    }
+  } else if (type == "bathy") {
+    error_missing_names(
+      obj = list,
+      required_val = c(
+        "bathy",
+        "sdi",
+        "idx",
+        "idx_na",
+        "focal_dim",
+        "weighted"
+      )
+    )
+
+    rast_ok <- all(vapply(
+      c("bathy", "sdi"),
+      function(field) .has_valid_field(x, field, "SpatRaster"),
+      logical(1)
+    ))
+
+    idx_ok <- all(vapply(
+      c("idx", "idx_na"),
+      function(field) .has_valid_field(x, field, is.numeric),
+      logical(1)
+    ))
+
+    if (!rast_ok || !idx_ok) {
+      cli::cli_abort(
+        c(
+          "{.arg {obj_name}} doesn't look like the output of {.fn prep_bathy_raster}.",
+          "x" = if (!rast_ok) {
+            "{.field bathy} and {.field sdi} must both be {.cls SpatRaster} objects."
+          },
+          "x" = if (!idx_ok) {
+            "{.field idx} and {.field idx_na} must both be numeric vectors."
+          },
+          "i" = "Run {.arg {obj_name}} through {.fn prep_bathy_raster} first."
+        ),
+        class = "error_list_bathy",
+        call = call
+      )
+    }
+  }
+
+  invisible(TRUE)
 }
 
 #' @param vec a `vector` to check if numeric
@@ -166,20 +308,26 @@ error_matrix <- function(matrix, arg_name = NULL) {
     )
   }
 }
-#' @param required_col a `vector` containing `characters` of the columns to check.
+#' @param required_val a `vector` containing `characters` of the columns to check.
 #' @name error_functions
 #' @keywords internal
 
-error_missing_col <- function(df, required_col) {
-  df_name <- rlang::as_label(rlang::enquo(df))
-  missing_cols <- setdiff(required_col, names(df))
+error_missing_names <- function(obj, required_val) {
+  obj_name <- rlang::as_label(rlang::enquo(obj))
+  missing_names <- setdiff(required_val, names(obj))
 
-  if (length(missing_cols) > 0) {
+  if (is.list(obj)) {
+    obj_type <- "list object"
+  }
+  if (is.data.frame(obj)) {
+    obj_type <- "column"
+  }
+  if (length(missing_names) > 0) {
     cli::cli_abort(
       c(
-        "{.var {df_name}} is missing required column{?s}.",
-        "x" = "Missing column{?s}: {.val {missing_cols}}",
-        "i" = "{.var {df_name}} must contain: {.val {required_col}}"
+        "{.var {obj_name}} is missing required {obj_type}{?s}.",
+        "x" = "Missing {obj_type}{?s}: {.val {missing_names}}",
+        "i" = "{.var {obj_name}} must contain: {.val {required_val}}"
       )
     )
   }
@@ -278,36 +426,6 @@ error_raster <- function(raster) {
     ),
     class = "bathy_invalid_input"
   )
-}
-
-#' @param input_data a `data.frame` to assess
-#' @param type the type of input data. A `character` usually `"raw_log"` or `"iniloc"`.
-#' @name error_functions
-#' @keywords internal
-error_input_data <- function(input_data, type) {
-  error_df(input_data)
-
-  if (type == "raw_log") {
-    error_missing_col(
-      df = input_data,
-      required_col = c("fish_id", "date", "date_time", "depth")
-    )
-    # --- Type and Value Validations ---
-
-    error_chr(input_data$fish_id, col = "fish_id")
-    error_date(input_data$date, col = "date", expected_cls = "Date")
-    error_date(input_data$date_time, col = "date_time", expected_cls = "POSIXt")
-    error_numeric_min(input_data$depth, col = "depth", min_val = 0)
-  }
-  if (type == "iniloc") {
-    error_missing_col(
-      df = input_data,
-      required_col = c("fish_id", "date", "event")
-    )
-    error_chr(input_data$fish_id, col = "fish_id")
-    error_chr(input_data$event, col = "event")
-    error_date(input_data$date, col = "date", expected_cls = "POSIXt")
-  }
 }
 
 

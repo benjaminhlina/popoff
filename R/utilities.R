@@ -19,6 +19,52 @@
   # return(as.vector(x))
 }
 
+#' Check whether a list element exists and satisfies a type check
+#'
+#' @param x A list.
+#' @param field Name of the element to check.
+#' @param check Either a class string (checked via `inherits()`) or a
+#'   predicate function (e.g. `is.numeric`) applied to the element.
+#'
+#' @return `TRUE`/`FALSE`.
+#' @keywords internal
+.has_valid_field <- function(x, field, check) {
+  if (!field %in% names(x)) {
+    return(FALSE)
+  }
+
+  val <- x[[field]]
+
+  if (is.character(check)) {
+    inherits(val, check)
+  } else if (is.function(check)) {
+    isTRUE(check(val))
+  } else {
+    rlang::abort(
+      "`check` must be a class string or a predicate function.",
+      call = rlang::caller_env()
+    )
+  }
+}
+
+#' Integrate dnorm
+#'
+#' @param mean the mean value
+#' @param sd the sd
+#' @param lower lower bounds
+#' @param upper upper bounds
+#'
+#' @name intergration_helper
+#' @keywords internal
+
+.integrate_dnorm_rows <- function(mean, sd, lower, upper) {
+  integrated <- pmax(
+    0,
+    stats::pnorm(q = upper, mean = mean, sd = sd) -
+      stats::pnorm(q = lower, mean = mean, sd = sd)
+  )
+  return(integrated)
+}
 #' Safe base functions
 #'
 #' These functions check if x is `NA` then
@@ -45,26 +91,6 @@
     return(NA_real_)
   }
   if (type == "min") min(x) else max(x)
-}
-
-
-#' Integrate dnorm
-#'
-#' @param mean the mean value
-#' @param sd the sd
-#' @param lower lower bounds
-#' @param upper upper bounds
-#'
-#' @name intergration_helper
-#' @keywords internal
-
-.integrate_dnorm_rows <- function(mean, sd, lower, upper) {
-  integrated <- pmax(
-    0,
-    stats::pnorm(q = upper, mean = mean, sd = sd) -
-      stats::pnorm(q = lower, mean = mean, sd = sd)
-  )
-  return(integrated)
 }
 
 #' CRS validation
