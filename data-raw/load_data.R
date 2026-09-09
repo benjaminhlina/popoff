@@ -14,7 +14,9 @@ iniloc <- iniloc |>
     fish_id = fish
   ) |>
   mutate(
-    fish_id = as.character(fish_id)
+    fish_id = as.character(fish_id),
+    event = as.character(event),
+    date = ymd_hms(date)
   ) |>
   as_tibble()
 usethis::use_data(iniloc, overwrite = TRUE)
