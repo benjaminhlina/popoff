@@ -39,7 +39,7 @@ mask_k <- function(k) {
 }
 
 
-#'Gaussian Kernel
+#' Gaussian Kernel
 #'
 #' Determines the Gaussian Kernel for an area
 #'
