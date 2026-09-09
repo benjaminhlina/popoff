@@ -6,7 +6,17 @@ load(
   "/Users/benhlina/Library/CloudStorage/Dropbox/Dal-Post Doc/data/Geolocation for Jena/iniloc/iniloc.now.RData"
 )
 
-iniloc_all <- iniloc.all
+iniloc <- iniloc.all
+
+
+iniloc <- iniloc |>
+  dplyr::rename(
+    fish_id = fish
+  ) |>
+  mutate(
+    fish_id = as.character(fish_id)
+  ) |>
+  as_tibble()
 usethis::use_data(iniloc, overwrite = TRUE)
 
 # ----- load psat data -----
@@ -29,6 +39,9 @@ pdt <- pdt |>
   rename(
     fish_id = deploy_id,
     date = day,
+  ) |>
+  mutate(
+    fish_id = as.character(fish_id)
   )
 
 
