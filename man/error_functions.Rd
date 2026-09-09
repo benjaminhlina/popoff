@@ -2,20 +2,30 @@
 % Please edit documentation in R/error_functions.R
 \name{error_functions}
 \alias{error_functions}
+\alias{error_chr}
 \alias{error_crs}
+\alias{error_date}
 \alias{error_df}
 \alias{error_empty_file}
 \alias{error_focal_dim}
 \alias{error_load}
 \alias{error_logical}
 \alias{error_matrix}
+\alias{error_missing_col}
 \alias{error_numeric}
+\alias{error_numeric_min}
 \alias{error_path}
+\alias{error_out_dir}
 \alias{error_raster}
+\alias{error_input_data}
 \alias{error_spatrast}
 \title{Error functions}
 \usage{
+error_chr(chr, col = NULL)
+
 error_crs(crs, arg_name = NULL)
+
+error_date(date, col, expected_cls)
 
 error_df(df, arg_name = NULL)
 
@@ -29,18 +39,34 @@ error_logical(vec, arg_name = NULL)
 
 error_matrix(matrix, arg_name = NULL)
 
+error_missing_col(df, required_col)
+
 error_numeric(vec, arg_name = NULL)
+
+error_numeric_min(vec, col, min_val = 0)
 
 error_path(path)
 
+error_out_dir(output_dir)
+
 error_raster(raster)
+
+error_input_data(input_data, type)
 
 error_spatrast(spatrast, arg_name = NULL)
 }
 \arguments{
+\item{chr}{a character to check}
+
+\item{col}{a character containing the column name}
+
 \item{crs}{a character string of a crs}
 
 \item{arg_name}{The name of the argument}
+
+\item{date}{a date to check}
+
+\item{expected_cls}{a class to be expected e.g., \code{Date} or \code{POSIXct}}
 
 \item{df}{a \code{data.frame}}
 
@@ -54,11 +80,22 @@ error_spatrast(spatrast, arg_name = NULL)
 
 \item{matrix}{a \code{matrix} to check if valid}
 
+\item{required_col}{a \code{vector} containing \code{characters} of the columns to check.}
+
+\item{min_val}{a numerical mimimum value allowed}
+
+\item{output_dir}{a chracter string containing the out directory}
+
 \item{raster}{a raster object to assess}
+
+\item{input_data}{a \code{data.frame} to assess}
+
+\item{type}{the type of input data. A \code{character} usually \code{"raw_log"} or \code{"iniloc"}.}
 
 \item{spatrast}{a raster object to assess}
 }
 \description{
 These functions produce error message displayed to the user.
 }
+\keyword{interna}
 \keyword{internal}

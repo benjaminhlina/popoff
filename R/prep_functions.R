@@ -26,6 +26,8 @@ prep_bathy_likdepth <- function(
   focal_dim = 9,
   ctd_dir = NULL # only required when weighted = TRUE
 ) {
+  rlang::check_required(bathy)
+
   error_spatrast(bathy)
   error_logical(weighted)
   error_focal_dim(focal_dim)
@@ -107,15 +109,19 @@ prep_summary_likdepth <- function(
   output_dir = NULL,
   make_plot = TRUE
 ) {
+  # ----- first check if arguments needed are supplied ----
   rlang::check_required(raw_log)
   rlang::check_required(iniloc)
   rlang::check_required(bin)
 
+  error_input_data(input_data = raw_log, type = "raw_log")
+  error_input_data(input_data = iniloc, type = "iniloc")
+  error_out_dir(output_dir)
   error_logical(make_plot)
   error_numeric(bin)
 
   iniloc_f <- iniloc |>
-    dplyr::filter(fish %in% raw_log$fish_id)
+    dplyr::filter(fish_id %in% raw_log$fish_id)
 
   tag_date <- iniloc_f$date[iniloc_f$event == "tag"]
 
