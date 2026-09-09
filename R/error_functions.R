@@ -172,14 +172,14 @@ error_matrix <- function(matrix, arg_name = NULL) {
 
 error_missing_col <- function(df, required_col) {
   df_name <- rlang::as_label(rlang::enquo(df))
-  missing_cols <- setdiff(required_cols, names(df))
+  missing_cols <- setdiff(required_col, names(df))
 
   if (length(missing_cols) > 0) {
     cli::cli_abort(
       c(
         "{.var {df_name}} is missing required column{?s}.",
         "x" = "Missing column{?s}: {.val {missing_cols}}",
-        "i" = "{.var {df_name}} must contain: {.val {required_cols}}"
+        "i" = "{.var {df_name}} must contain: {.val {required_col}}"
       )
     )
   }
