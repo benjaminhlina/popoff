@@ -1,12 +1,13 @@
-# popr
-
+# popr: Fit Hidden Markov models to electronic pop-off satellite transmitters (PSAT) data
+> [!CAUTION]
+> As of August 2026, development of `popr` is ongoing. Please direct any new issues or pull requests on this repository when finding bugs. 
 <!-- badges: start -->
 
 [![R-CMD-check](https://github.com/benjaminhlina/popr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/benjaminhlina/popr/actions/workflows/R-CMD-check.yaml)
 [![Codecov test coverage](https://codecov.io/gh/benjaminhlina/popr/graph/badge.svg)](https://app.codecov.io/gh/benjaminhlina/popr)
 <!-- badges: end -->
 
-Hidden Markov models for Pop-off satalitte transmitters. 
+Hidden Markov models for pop-off satellite transmitters (PSATs). 
 
 ## Installation
 
@@ -23,25 +24,12 @@ To view the overall progress of the package please see
 
 ## Vignettes
 
-### Introduction
-
-I highly suggest going through the vignettes as they will walk you
-through how to use.
-
-``` r
-vignette("popr")
-```
-
-Please go through [getting started with
-trps](https://benjaminhlina.github.io/trps/articles/trps.html) prior to
-walking through the other vignettes.
-
-### Supplementary Vignettes
-
-
+To follow soon
 
 ## Citations
 
-To cite this package please cite the following publications
+To cite this package please cite the following publications:
+
+To follow soon.
 
 
