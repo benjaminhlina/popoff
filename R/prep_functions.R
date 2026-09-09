@@ -69,6 +69,9 @@ prep_bathy_likdepth <- function(
     sdi[is.na(sdi)] <- fill_sd0
 
     sdi <- terra::rast(sdi)
+
+    # set crs and georeferecne
+    terra::crs(sdi) <- terra::crs(bathy)
   }
   msg_end(chr = "Bathymetric standard deviations", t0 = t0)
 
