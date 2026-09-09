@@ -83,6 +83,11 @@ make_summary_table <- function(raw_log, time_res, bin = NULL) {
   time_res_chr <- paste(time_res, "sec")
 
   window_time <- round(bin / time_res)
+  msg_window(window_time)
+
+  if (window_time < 1) {
+    window_time <- 1
+  }
 
   # ---- first we need to create time resoluation and sequence
   # for eavery day end....
