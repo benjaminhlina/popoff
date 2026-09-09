@@ -11,7 +11,7 @@ globalVariables(
     "depth_range",
     "depth_run",
     "df",
-    "fish",
+    "fish_id",
     "indNA",
     "inds",
     "median",
