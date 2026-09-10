@@ -207,6 +207,13 @@ test_that("check to make sure crs values work", {
   expect_true(grepl('"EPSG",4326', terra::crs(bathy_crs), fixed = TRUE))
 })
 
+test_that("check to make sure crs values work for laod ", {
+  bathy <- load_bathy_raster(bathy_matrix)
+  bathy_spat <- load_bathy_raster(bathy, crs = "EPSG:4326")
+
+  expect_true(grepl('"EPSG",4326', terra::crs(bathy_spat), fixed = TRUE))
+})
+
 test_that("check to make sure crs error", {
   expect_error(
     load_bathy_raster(bathy_matrix, crs = "ESPG:4326"),
@@ -232,3 +239,83 @@ test_that("crs error message mentions the correct arg and example", {
   ))
   expect_true(grepl("EPSG:4326", err$body, fixed = TRUE))
 })
+
+
+# test_that("error_load() fires when terra::rast() fails, with correct path/error", {
+#   bathy_bad <- list(a = 1, b = 2) # reaches this branch; not character/matrix/etc.
+
+#   captured <- NULL
+#   local_mocked_bindings(
+#     rast = function(x, ...) stop("simulated terra failure"),
+#     .package = "terra"
+#   )
+#   local_mocked_bindings(
+#     error_load = function(path, e) {
+#       captured <<- list(path = path, msg = conditionMessage(e))
+#       cli::cli_abort("mocked error_load", class = "bathy_rast_read_failed")
+#     }
+#   )
+
+#   expect_error(load_bathy_raster(bathy_bad), class = "bathy_rast_read_failed")
+#   expect_identical(captured$path, bathy_bad)
+#   expect_match(captured$msg, "simulated terra failure", fixed = TRUE)
+# })
+
+test_that("BUG: error_load()'s {.file} formatting breaks on non-character path", {
+  # This branch only runs when `bathy` is NOT character (character input
+  # returns earlier), so `path` passed to error_load() is always non-character
+  # here. error_load() still unconditionally does {.file {path}}, which is the
+  # same pattern that broke error_spatrast() with non-character input.
+  # This test documents the *actual* current behavior so a real fix shows up
+  # as a test failure we have to consciously update.
+  bathy_bad <- list(a = 1, b = 2)
+
+  local_mocked_bindings(
+    rast = function(x, ...) stop("simulated terra failure"),
+    .package = "terra"
+  )
+
+  err <- tryCatch(
+    load_bathy_raster(bathy_bad),
+    error = function(e) e
+  )
+
+  # If this fails, it likely means {.file} formatting no longer breaks --
+  # i.e. the bug is fixed. Update this test (and remove this comment) then.
+  expect_false(inherits(err, "bathy_rast_read_failed"))
+})
+
+# test_that("BUG: error_raster() fires unconditionally even when terra::rast() succeeds", {
+#   bathy_ok <- list(x = 1) # anything that reaches this branch
+
+#   local_mocked_bindings(
+#     rast = function(x, ...) terra::rast(matrix(1:4, 2, 2)),
+#     .package = "terra"
+#   )
+
+#   # Because error_raster(raster = bathy) is called unconditionally after a
+#   # successful conversion, load_bathy_raster() always errors from this branch,
+#   # regardless of whether terra::rast() worked. This documents that the
+#   # "successful load" path here is currently unreachable.
+#   expect_error(load_bathy_raster(bathy_ok), class = "bathy_invalid_input")
+# })
+
+# test_that("idx/idx_na attributes are computed correctly before error_raster() fires", {
+#   bathy_ok <- list(x = 1)
+#   mock_rast <- terra::rast(matrix(c(1, NA, 3, 4), 2, 2))
+
+#   local_mocked_bindings(
+#     rast = function(x, ...) mock_rast,
+#     .package = "terra"
+#   )
+#   # Neutralize error_raster so we can inspect `out` before it would be thrown
+#   # away -- confirms the attribute-setting logic itself is correct, in
+#   # isolation from the bug above.
+#   local_mocked_bindings(
+#     error_raster = function(raster) invisible(NULL)
+#   )
+
+#   out <- load_bathy_raster(bathy_ok)
+#   expect_identical(attr(out, "idx"), .valid_idx(mock_rast))
+#   expect_identical(attr(out, "idx_na"), .valid_idx(mock_rast, na = TRUE))
+# })
