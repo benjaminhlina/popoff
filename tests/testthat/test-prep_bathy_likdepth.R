@@ -80,7 +80,7 @@ test_that("KNOWN BUG: weighted = TRUE errors due to ctd.dir/ctd_dir mismatch", {
   )
 })
 
-test_that("KNOWN BUG: sdi does not inherit bathy's CRS/extent", {
+test_that("Check if sdi does not inherit bathy's CRS/extent", {
   terra::crs(bathy_spat) <- "EPSG:4326"
   # terra::ext(bathy_spat) <- terra::ext(0, 10, 0, 10)
 

@@ -9,8 +9,9 @@
 \alias{error_empty_file}
 \alias{error_focal_dim}
 \alias{error_input_data}
-\alias{error_load}
 \alias{error_list}
+\alias{error_likelihood_matrix}
+\alias{error_load}
 \alias{error_logical}
 \alias{error_matrix}
 \alias{error_missing_names}
@@ -36,13 +37,15 @@ error_focal_dim(obj, arg_name = NULL)
 
 error_input_data(input_data, type)
 
-error_load(path, e)
-
 error_list(list)
+
+error_likelihood_matrix(matrix, idx)
+
+error_load(path, e)
 
 error_logical(vec, arg_name = NULL)
 
-error_matrix(matrix, arg_name = NULL)
+error_matrix(matrix, dim_check = NULL, arg_name = NULL)
 
 error_missing_names(obj, required_val)
 
@@ -81,13 +84,15 @@ error_spatrast(spatrast, arg_name = NULL)
 
 \item{type}{the type of input data. A \code{character} usually \code{"raw_log"} or \code{"iniloc"}.}
 
-\item{e}{the condition object caught by \code{tryCatch()}}
-
 \item{list}{a \code{list}.}
 
-\item{vec}{a \code{vector} to check if numeric}
-
 \item{matrix}{a \code{matrix} to check if valid}
+
+\item{idx}{index value}
+
+\item{e}{the condition object caught by \code{tryCatch()}}
+
+\item{vec}{a \code{vector} to check if numeric}
 
 \item{required_val}{a \code{vector} containing \code{characters} of the columns to check.}
 

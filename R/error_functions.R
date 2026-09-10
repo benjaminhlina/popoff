@@ -101,7 +101,7 @@ error_focal_dim <- function(obj, arg_name = NULL) {
     if (!is.numeric(obj)) {
       error_numeric(obj)
     }
-    error_matrix(obj)
+    error_matrix(obj, dim_check = c(1, 2))
   } else {
     error_numeric(obj)
     if (any(obj %% 2 == 0)) {
@@ -145,23 +145,10 @@ error_input_data <- function(input_data, type) {
   }
 }
 
-#' @param e the condition object caught by `tryCatch()`
-#' @name error_functions
-#' @keywords internal
-error_load <- function(path, e) {
-  cli::cli_abort(
-    c(
-      "Failed to read {.arg path} as a raster.",
-      "x" = "{.file {path}} could not be loaded by {.fn terra::rast}.",
-      "i" = "{.arg path} was type {.cls {class(path)}}.",
-      "i" = "Original error: {conditionMessage(e)}"
-    ),
-    class = "bathy_rast_read_failed"
-  )
-}
-
 #' @param list a `list`.
 #' @name error_functions
+#' @keywords internal
+
 error_list <- function(list) {
   if (!is.list(list)) {
     cli::cli_abort(
@@ -172,6 +159,37 @@ error_list <- function(list) {
     )
   }
 }
+
+#' @param idx index value
+#' @name error_functions
+#' @keywords internal
+error_likelihood_matrix <- function(matrix, idx) {
+  error_matrix(matrix)
+
+  n <- nrow(matrix)
+  bad_idx <- idx < 1 | idx > n
+
+  if (any(bad_idx)) {
+    cli::cli_abort(
+      c(
+        "x" = "{.arg idx} has {sum(bad_idx)} index/indices out of bounds for a matrix with {n} row{?s}.",
+        "i" = "Valid range is {.val 1} to {.val {n}}.",
+        "i" = "First offending index: {.val {idx[which(bad_idx)[1]]}}"
+      )
+    )
+  }
+
+  bad <- matrix[, 3] > matrix[, 4]
+
+  if (any(bad, na.rm = TRUE)) {
+    cli::cli_abort(c(
+      "x" = "{sum(bad, na.rm = TRUE)} row{?s} have {.code low > high} in depth integration bounds.",
+      "i" = "Check for reversed or malformed {.field Depth_min}/{.field Depth_max} upstream.",
+      "i" = "First offending row (of {idx}): {.val {which(bad)[1]}}"
+    ))
+  }
+}
+
 
 #' Validate a prepped list input
 #'
@@ -272,6 +290,20 @@ error_list_prep <- function(
   invisible(TRUE)
 }
 
+#' @param e the condition object caught by `tryCatch()`
+#' @name error_functions
+#' @keywords internal
+error_load <- function(path, e) {
+  cli::cli_abort(
+    c(
+      "Failed to read {.arg path} as a raster.",
+      "x" = "{.file {path}} could not be loaded by {.fn terra::rast}.",
+      "i" = "{.arg path} was type {.cls {class(path)}}.",
+      "i" = "Original error: {conditionMessage(e)}"
+    ),
+    class = "bathy_rast_read_failed"
+  )
+}
 #' @param vec a `vector` to check if numeric
 #' @name error_functions
 #' @keywords internal
@@ -293,20 +325,30 @@ error_logical <- function(vec, arg_name = NULL) {
 #' @name error_functions
 #' @keywords internal
 
-error_matrix <- function(matrix, arg_name = NULL) {
+error_matrix <- function(matrix, dim_check = NULL, arg_name = NULL) {
   if (is.null(arg_name)) {
     arg_name <- rlang::as_label(rlang::enexpr(matrix))
   }
-  dims <- dim(matrix)
 
-  if (any(dims %% 2 == 0)) {
-    cli::cli_abort(
-      c(
-        "Supplied matrix in {arg_name} must have odd dimensions",
-        "x" = "You supplied a matrix with dimensions: {.val {dims[1]}} x {.val {dims[2]}}"
-      )
-    )
+  if (!is.matrix(matrix)) {
+    cli::cli_abort("{.arg {arg_name}} must be a matrix.")
   }
+
+  if (!is.null(dim_check)) {
+    dims <- dim(matrix)
+    checked_dims <- dims[dim_check]
+
+    if (any(checked_dims %% 2 == 0)) {
+      cli::cli_abort(
+        c(
+          "Supplied matrix in {arg_name} must have odd dimensions",
+          "x" = "You supplied a matrix with dimensions: {.val {checked_dims}}"
+        )
+      )
+    }
+  }
+
+  return(matrix)
 }
 #' @param required_val a `vector` containing `characters` of the columns to check.
 #' @name error_functions

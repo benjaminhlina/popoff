@@ -31,17 +31,9 @@ likint3 <- function(w, wsd, minT, maxT) {
 #' @keywords internal
 #'
 likint3_matrix <- function(w, widx) {
+  error_likelihood_matrix(matrix = w, idx = widx)
   wdf <- w[widx, , drop = FALSE]
 
-  bad <- wdf[, 3] > wdf[, 4]
-
-  if (any(bad, na.rm = TRUE)) {
-    cli::cli_abort(c(
-      "x" = "{sum(bad, na.rm = TRUE)} row{?s} have {.code low > high} in depth integration bounds.",
-      "i" = "Check for reversed or malformed {.field Depth_min}/{.field Depth_max} upstream.",
-      "i" = "First offending row (of {widx}): {.val {which(bad)[1]}}"
-    ))
-  }
   wint <- .integrate_dnorm_rows(
     mean = wdf[, 1],
     sd = wdf[, 2],

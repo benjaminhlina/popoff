@@ -307,3 +307,29 @@ test_that("calc_likdepth_transmit orders days by date regardless of input row or
   expect_equal(sum(slice3 == 1), length(fx$idx))
   expect_equal(sum(slice3 == 0), length(fx$idx_na))
 })
+
+test_that("calc_daily_likdepth attaches date/depth context to underlying likelihood errors", {
+  fx <- make_bathy_fixture()
+  sdi_dsd <- .convert_spr_to_vec(fx$sdi) + 0.57
+  bad_idx <- fx$idx + 1000L
+  log_i <- make_summary_table(as.Date("2020-06-15"), 15, 25)
+
+  err <- rlang::catch_cnd(
+    calc_daily_likdepth(
+      summary_log_i = log_i,
+      zbi = fx$zbi_vec,
+      sdi_dsd = sdi_dsd,
+      idx = bad_idx,
+      idx_na = fx$idx_na,
+      dims = fx$dims,
+      time = as.Date("2020-06-15")
+    )
+  )
+
+  expect_match(conditionMessage(err), "2020-06-15", fixed = TRUE)
+  expect_match(conditionMessage(err), "15", fixed = TRUE)
+  expect_match(conditionMessage(err), "25", fixed = TRUE)
+  # confirm it's actually chained to the underlying out-of-bounds error,
+  # not just coincidentally mentioning the date
+  expect_match(conditionMessage(err$parent), "out of bounds", fixed = TRUE)
+})
