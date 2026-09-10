@@ -24,7 +24,7 @@ To view the overall progress of the package please see [news](https://github.com
 
 ## Vignettes
 
-To follow soon
+To follow soon but for now see the [example workflow R script](https://github.com/benjaminhlina/popr/blob/main/data-raw/example_workflow.R)
 
 ## Citations
 
