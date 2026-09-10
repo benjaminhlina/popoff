@@ -47,6 +47,66 @@
   }
 }
 
+#' Compute functions
+#'
+#' Compute a value for depth and temperature
+#'
+#' @param depth a numeric that is the depth observered
+#' @param depth_run a numeric that is the range in depth
+#'
+#' @name compute_functions
+#' @keywords internal
+
+.compute_depth_range <- function(depth, depth_run) {
+  if (all(is.na(depth))) {
+    c(NA_real_, NA_real_)
+  } else {
+    range(depth_run, na.rm = TRUE)
+  }
+}
+#' @param temperature a numeric that is the temperature observered
+#' @param depth_min a numeric that is the min depth
+#' @param depth_max a numeric that is the max depth
+#'
+#' @name compute_functions
+#' @keywords internal
+.compute_temp_subset <- function(depth, temperature, depth_min, depth_max) {
+  valid_temps <- temperature[!is.na(temperature)]
+
+  if (all(is.na(depth)) || length(valid_temps) == 0) {
+    return(numeric(0))
+  }
+
+  d_lower <- min(depth_min, depth_max)
+  d_upper <- max(depth_min, depth_max)
+
+  temperature[
+    !is.na(temperature) &
+      !is.na(depth) &
+      depth >= d_lower &
+      depth <= d_upper
+  ]
+}
+
+#' @param temp_subset the column that has the temp subseted
+#' @param valid_temps a `numeric`` that is valid temperatures
+#' @param type a `character` that controls whether min and max calcualted
+#'
+#' @name compute_functions
+#' @keywords internal
+.compute_temp_bound <- function(
+  temp_subset,
+  valid_temps,
+  type = c("min", "max")
+) {
+  type <- match.arg(type)
+  if (length(temp_subset) > 0) {
+    if (type == "min") min(temp_subset) else max(temp_subset)
+  } else {
+    .safe_range_val(valid_temps, type)
+  }
+}
+
 #' Integrate dnorm
 #'
 #' @param mean the mean value

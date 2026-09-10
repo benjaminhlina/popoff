@@ -131,51 +131,22 @@ make_summary_table <- function(raw_log, time_res, bin) {
   summary_log <- raw_log_depth |>
     # ---- Summarize depth & temperature per date ------
     dplyr::summarize(
-      # Handle all-NA depth days cleanly
-      depth_range = list(
-        if (all(is.na(depth))) {
-          c(NA, NA)
-        } else {
-          range(depth_run, na.rm = TRUE)
-        }
-      ),
+      depth_range = list(.compute_depth_range(depth, depth_run)),
       depth_min = depth_range[[1]][1],
       depth_max = depth_range[[1]][2],
 
-      # Extract valid temperatures within the day's depth range
-      # Compute shared helpers ONCE per group
       valid_temps = list(temperature[!is.na(temperature)]),
-      #  Strip out padded NA values from raw daily temperatures first
-      temp_subset = list({
-        vt <- valid_temps[[1]]
-        if (all(is.na(depth)) || length(vt) == 0) {
-          numeric(0)
-        } else {
-          d_lower <- min(depth_min, depth_max)
-          d_upper <- max(depth_min, depth_max)
-          temperature[
-            !is.na(temperature) &
-              !is.na(depth) &
-              depth >= d_lower &
-              depth <= d_upper
-          ]
-        }
-      }),
-      # Extract min/max cleanly using the pre-calculated lists
-      temp_min = if (length(temp_subset[[1]]) > 0) {
-        min(temp_subset[[1]])
-      } else {
-        .safe_range_val(valid_temps[[1]], "min")
-      },
+      temp_subset = list(.compute_temp_subset(
+        depth,
+        temperature,
+        depth_min,
+        depth_max
+      )),
 
-      temp_max = if (length(temp_subset[[1]]) > 0) {
-        max(temp_subset[[1]])
-      } else {
-        .safe_range_val(valid_temps[[1]], "max")
-      },
+      temp_min = .compute_temp_bound(temp_subset[[1]], valid_temps[[1]], "min"),
+      temp_max = .compute_temp_bound(temp_subset[[1]], valid_temps[[1]], "max"),
       .groups = "drop"
     ) |>
-    # Clean up temporary list-columns
     dplyr::select(-valid_temps, -temp_subset, -depth_range)
 
   msg_end(chr = "Daily summary", t0 = t0)
