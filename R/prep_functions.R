@@ -105,7 +105,7 @@ prep_bathy_likdepth <- function(
 prep_summary_likdepth <- function(
   raw_log,
   iniloc,
-  bin,
+  bin = NULL,
   output_dir = NULL,
   make_plot = TRUE
 ) {
@@ -118,6 +118,7 @@ prep_summary_likdepth <- function(
   error_input_data(input_data = iniloc, type = "iniloc")
   error_out_dir(output_dir)
   error_logical(make_plot)
+
   error_numeric(bin)
 
   iniloc_f <- iniloc |>

@@ -73,12 +73,8 @@ make_summary_plot <- function(raw_log, output_dir = NULL) {
 #' @name make_function
 #' @export
 
-make_summary_table <- function(raw_log, time_res, bin = NULL) {
+make_summary_table <- function(raw_log, time_res, bin) {
   t0 <- msg_start("summary")
-
-  if (is.null(bin)) {
-    bin <- 3600
-  }
 
   time_res_chr <- paste(time_res, "sec")
 

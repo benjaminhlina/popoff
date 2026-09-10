@@ -7,7 +7,7 @@
 prep_summary_likdepth(
   raw_log,
   iniloc,
-  bin,
+  bin = NULL,
   output_dir = NULL,
   make_plot = TRUE
 )

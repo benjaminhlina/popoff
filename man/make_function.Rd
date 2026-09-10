@@ -8,7 +8,7 @@
 \usage{
 make_summary_plot(raw_log, output_dir = NULL)
 
-make_summary_table(raw_log, time_res, bin = NULL)
+make_summary_table(raw_log, time_res, bin)
 }
 \arguments{
 \item{raw_log}{a \code{data.frame} containing raw psat logs for an individual.}
