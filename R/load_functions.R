@@ -76,7 +76,7 @@ load_bathy_raster <- function(bathy, crs = NULL) {
   )
   attr(out, "idx") <- .valid_idx(out)
   attr(out, "idx_na") <- .valid_idx(out, na = TRUE)
-  error_raster(raster = bathy)
+  # error_raster(raster = bathy)
 
   return(out)
 }

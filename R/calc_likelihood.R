@@ -90,8 +90,8 @@ calc_likdepth_transmit <- function(
 ) {
   # ctd.dir="C:/Users/pgatti/Documents/halibut/R/Data_PGalbraith/toBeLoaded/";ncores=4;weighted=FALSE; focalDim = 3;daily.sd.depth=.57; pdt=sm$sm;depth.list=depth.mix
 
-  rlang::arg_match(preped_log)
-  rlang::arg_match(preped_bathy)
+  # rlang::arg_match(preped_log)
+  # rlang::arg_match(preped_bathy)
 
   error_list_prep(preped_log, type = "log")
   error_list_prep(preped_bathy, type = "bathy")
@@ -149,7 +149,7 @@ calc_likdepth_transmit <- function(
   for (i in seq_len(n_days)) {
     likeihood_array[,, i] <- lik_list[[i]]
   }
-  likeihood_array <- aperm(likeihood_array, c(2, 1, 3))
+  likeihood_array <- aperm(likeihood_array, c(1, 2, 3))
 
   msg_end(chr = "Depth-transmission likelihood calculation", t0 = t0)
 

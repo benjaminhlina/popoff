@@ -1,6 +1,9 @@
 library(dplyr)
 library(lubridate)
-
+library(terra)
+library(popr)
+library(ggplot2)
+library(tidyterra)
 
 load(
   "/Users/benhlina/Library/CloudStorage/Dropbox/Dal-Post Doc/data/Geolocation for Jena/iniloc/iniloc.now.RData"
@@ -87,6 +90,46 @@ bath <- load_bathy_raster(
 bathy_matrix <- readRDS(
   "/Users/benhlina/Library/CloudStorage/Dropbox/Dal-Post Doc/data/Geolocation for Jena/bathy_grid/bathy.mat.gsl.ssgb.lon72.41.lat41.52.rds"
 )
+
+
+bathy_matrix |>
+  str()
+
+plot(bathy_matrix)
+
+
+bathy_matrix_t <- t(bathy_matrix)[nrow(t(bathy_matrix)):1, ]
+
+bathy <- load_bathy_raster(bathy_matrix_t, crs = "EPSG:4326")
+
+
+# terra::ext(bathy) <- c(xmin(lon), xmax(lon), ymin(lat), ymax(lat))
+
+bathy
+
+
+terra::values(bathy) *
+  -1 |>
+    sort()
+
+terra::crs(bathy) <- "EPSG:4326"
+
+r <- terra::rast(bathy_matrix, crs = "EPSG:6500")
+# r <- terra::t(r) # swap rows/cols
+r <- terra::flip(r, direction = "vertical")
+r <- terra::flip(r, direction = "horizontal")
+r <- terra::flip(r, direction = "vertical")
+r <- terra::flip(r, direction = "horizontal")
+# r <- terra::rev(r)
+
+plot(r)
+bathy_matrix <- terra::as.matrix(r, wide = TRUE)
+
+bathy_matrix
+fields::image.plot(bathy_matrix)
+ggplot() +
+  geom_spatraster(data = r) +
+  coord_sf()
 
 
 usethis::use_data(bathy_matrix, overwrite = TRUE)
