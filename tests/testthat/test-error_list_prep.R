@@ -1,5 +1,3 @@
-# test-error_list_prep.R
-
 test_that("error_list_prep errors on a valid log list [KNOWN BUG: undefined `x`]", {
   local_mocked_bindings(
     error_list = function(list) invisible(TRUE),
