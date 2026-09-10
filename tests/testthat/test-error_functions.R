@@ -1,4 +1,4 @@
-test_that("check if error_chracter works proplery", {
+test_that("check if error_chracter works properly", {
   expect_null(error_chr("c"))
 
   expect_error(
@@ -9,7 +9,7 @@ test_that("check if error_chracter works proplery", {
 })
 
 
-test_that("check if error_date works proplery", {
+test_that("check if error_date works properly", {
   date <- as.Date("2026-09-10")
   expect_null(
     error_date(date, col = "date", expected_cls = "Date")
@@ -35,3 +35,51 @@ test_that("check if error_date works proplery", {
     fixed = TRUE
   )
 })
+
+
+test_that("check if error_df works properly", {
+  df <- data.frame(
+    time = seq(1, 10, 1)
+  )
+
+  expect_null(error_df(df))
+
+  list_df <- list(df = df)
+
+  expect_error(
+    error_df(
+      list_df
+    ),
+    "with a data.frame",
+    fixed = TRUE
+  )
+})
+
+test_that("check if error_list works properly", {
+  vec <- seq(1, 10, 1)
+  list_df <- list(df = df)
+
+  expect_null(error_list(list_df, "test"))
+
+  expect_error(
+    error_list(
+      vec,
+      "vec"
+    ),
+    "must be a",
+    fixed = TRUE
+  )
+})
+
+# test_that("check if error_raster works properly", {
+#   bath <- raster::raster(bathy_matrix)
+
+#   expect_null(
+#     error_raster(bath)
+#   )
+#   expect_error(
+#     error_raster(bathy_matrix),
+#     "You supplied ",
+#     fixed = TRUE
+#   )
+# })

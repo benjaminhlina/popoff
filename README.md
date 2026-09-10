@@ -1,4 +1,4 @@
-# popr: Fit hidden Markov models (HMM) to electronic pop-off satellite transmitters (PSAT) data
+# popr: Fit hidden Markov models (HMM) to electronic pop-off satellite transmitter (PSAT) data
 > [!CAUTION]
 > As of August 2026, development of `{popr}` is ongoing. Please direct any new issues or pull requests on this repository when finding bugs. Even though it uses unit tests, plaese test it 
 > and see what does and doesn't work.  
