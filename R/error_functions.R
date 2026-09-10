@@ -231,7 +231,7 @@ error_list_prep <- function(
     )
 
     summary_ok <- .has_valid_field(list, "summary_table", "data.frame") &&
-      all(c("date", "depth_min", "depth_max") %in% names(x$summary_table))
+      all(c("date", "depth_min", "depth_max") %in% names(list$summary_table))
 
     if (!summary_ok) {
       cli::cli_abort(
@@ -240,8 +240,7 @@ error_list_prep <- function(
           "x" = "{.field summary_table} must be a data frame with columns {.field date}, {.field depth_min}, and {.field depth_max}.",
           "i" = "Run {.arg {obj_name}} through {.fn prep_summary_likdepth} first."
         ),
-        class = "error_list_log",
-        call = call
+        class = "error_list_log"
       )
     }
   } else if (type == "bathy") {
@@ -259,13 +258,13 @@ error_list_prep <- function(
 
     rast_ok <- all(vapply(
       c("bathy", "sdi"),
-      function(field) .has_valid_field(x, field, "SpatRaster"),
+      function(field) .has_valid_field(list, field, "SpatRaster"),
       logical(1)
     ))
 
     idx_ok <- all(vapply(
       c("idx", "idx_na"),
-      function(field) .has_valid_field(x, field, is.numeric),
+      function(field) .has_valid_field(list, field, is.numeric),
       logical(1)
     ))
 
@@ -281,8 +280,7 @@ error_list_prep <- function(
           },
           "i" = "Run {.arg {obj_name}} through {.fn prep_bathy_raster} first."
         ),
-        class = "error_list_bathy",
-        call = call
+        class = "error_list_bathy"
       )
     }
   }
