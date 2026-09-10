@@ -59,12 +59,11 @@ test_that("check if error_list works properly", {
   vec <- seq(1, 10, 1)
   list_df <- list(df = df)
 
-  expect_null(error_list(list_df, "test"))
+  expect_null(error_list(list_df))
 
   expect_error(
     error_list(
-      vec,
-      "vec"
+      vec
     ),
     "must be a",
     fixed = TRUE

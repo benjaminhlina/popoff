@@ -149,7 +149,8 @@ error_input_data <- function(input_data, type) {
 #' @name error_functions
 #' @keywords internal
 
-error_list <- function(list, obj_name) {
+error_list <- function(list) {
+  obj_name <- rlang::as_label(rlang::enexpr(list))
   if (!is.list(list)) {
     cli::cli_abort(
       c(
@@ -215,7 +216,7 @@ error_list_prep <- function(
   obj_name <- rlang::as_label(rlang::enexpr(list))
 
   # ---- generic "not a list at all" check --------------------------------
-  error_list(list = list, obj_name = obj_name)
+  error_list(list = list)
 
   # ---- type-specific structural checks -----------------------------------
   if (type == "log") {
