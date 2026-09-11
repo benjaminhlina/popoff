@@ -345,7 +345,7 @@ error_matrix <- function(matrix, dim_check = NULL, arg_name = NULL) {
     if (any(checked_dims %% 2 == 0)) {
       cli::cli_abort(
         c(
-          "Supplied matrix in {arg_name} must have odd dimensions",
+          "The supplied matrix in {.field {arg_name}} must have odd dimensions",
           "x" = "You supplied a matrix with dimensions: {.val {checked_dims}}"
         )
       )

@@ -168,6 +168,34 @@ test_that("error_matrix: no dimension check performed when dim_check is NULL", {
     error_matrix(even_matrix, dim_check = NULL)
   )
 })
+
+
+test_that("error_focal_dim: non-numeric matrix triggers error_numeric and does NOT fall through to error_matrix", {
+  non_numeric_mat <- matrix(letters[1:4], nrow = 2)
+
+  expect_error(
+    error_focal_dim(non_numeric_mat),
+    "needs to be a numeric",
+    fixed = TRUE
+  )
+})
+
+test_that("error_focal_dim: numeric matrix skips error_numeric and reaches error_matrix with correct dim_check", {
+  numeric_mat <- matrix(1:4, nrow = 2)
+
+  expect_error(
+    error_focal_dim(numeric_mat),
+    "The supplied matrix in",
+    fixed = TRUE
+  )
+
+  expect_error(
+    error_focal_dim(4),
+    "has to be odd",
+    fixed = TRUE
+  )
+})
+
 # test_that("check if error_raster works properly", {
 #   bath <- raster::raster(bathy_matrix)
 
@@ -180,5 +208,3 @@ test_that("error_matrix: no dimension check performed when dim_check is NULL", {
 #     fixed = TRUE
 #   )
 # })
-
-t
