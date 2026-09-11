@@ -1,9 +1,10 @@
-Package: popr
-Title: Provides Hidden Markoven Models for psat data 
+Package: poppr
+Title: Provides hidden Markoven models pop-off satlitte transmitter (PSAT) data
 Version: 0.1.0
 Authors@R: 
     person("Benjamin L.", "Hlina", , "benjamin.hlina@gmail.com", role = c("aut", "cre"))
-Description: Provides ability to conduct Hidden Markoven Models for psat data for marine fishes and megafauna. 
+Description: Provides ability to conduct hidden Markoven models for pop-off satlitte transmitter (PSAT) 
+             data for marine fishes and megafauna. 
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

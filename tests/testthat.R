@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/articles/special-files.html
 
 library(testthat)
-library(popr)
+library(poppr)
 
-test_check("popr")
+test_check("poppr")

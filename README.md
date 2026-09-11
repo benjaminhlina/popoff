@@ -1,11 +1,11 @@
-# popr: Fit hidden Markov models (HMM) to electronic pop-off satellite transmitter (PSAT) data
+# poppr: Fit hidden Markov models (HMM) to electronic pop-off satellite transmitter (PSAT) data
 > [!CAUTION]
-> As of August 27, 2026, development of `{popr}` is ongoing. Please direct any new issues or pull requests on this repository when finding bugs. Even though it uses unit tests, please test it 
+> As of August 27, 2026, development of `{poppr}` is ongoing. Please direct any new issues or pull requests on this repository when finding bugs. Even though it uses unit tests, please test it 
 > and see what does and doesn't work.  
 <!-- badges: start -->
 
-[![R-CMD-check](https://github.com/benjaminhlina/popr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/benjaminhlina/popr/actions/workflows/R-CMD-check.yaml)
-[![Codecov test coverage](https://codecov.io/gh/benjaminhlina/popr/graph/badge.svg)](https://app.codecov.io/gh/benjaminhlina/popr)
+[![R-CMD-check](https://github.com/benjaminhlina/poppr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/benjaminhlina/poppr/actions/workflows/R-CMD-check.yaml)
+[![Codecov test coverage](https://codecov.io/gh/benjaminhlina/poppr/graph/badge.svg)](https://app.codecov.io/gh/benjaminhlina/poppr)
 <!-- badges: end -->
 
 Hidden Markov models for pop-off satellite transmitters (PSATs). 
@@ -13,18 +13,18 @@ Hidden Markov models for pop-off satellite transmitters (PSATs).
 ## Installation
 
 You can install the [development
-version](https://github.com/benjaminhlina/popr) of {popr} using the
+version](https://github.com/benjaminhlina/poppr) of {poppr} using the
 following:
 
 ``` r
-pak::pak("benjaminhlina/popr")
+pak::pak("benjaminhlina/poppr")
 ```
 
-To view the overall progress of the package please see [news](https://github.com/benjaminhlina/popr/blob/main/NEWS.md)
+To view the overall progress of the package please see [news](https://github.com/benjaminhlina/poppr/blob/main/NEWS.md)
 
 ## Vignettes
 
-To follow soon but for now see the [example workflow R script](https://github.com/benjaminhlina/popr/blob/main/data-raw/example_workflow.R)
+To follow soon but for now see the [example workflow R script](https://github.com/benjaminhlina/poppr/blob/main/data-raw/example_workflow.R)
 
 ## Citations
 

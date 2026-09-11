@@ -2,7 +2,7 @@
 
 {
   library(ggplot2)
-  library(popr)
+  library(poppr)
   library(terra)
   library(tidyterra)
   library(scales)
