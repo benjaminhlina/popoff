@@ -8,7 +8,9 @@
 [![Codecov test coverage](https://codecov.io/gh/benjaminhlina/poppr/graph/badge.svg)](https://app.codecov.io/gh/benjaminhlina/poppr)
 <!-- badges: end -->
 
-Hidden Markov models for pop-off satellite transmitters (PSATs). 
+Provides hidden Markov models for pop-off satellite transmitter (PSATs) data using 
+depth and temperature recorded by PSAT and the bathymetry of a given area. The name of 
+the package was suggested by my brother, who also works in data science. 
 
 ## Installation
 
