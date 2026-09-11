@@ -70,6 +70,23 @@ test_that("check if error_list works properly", {
   )
 })
 
+test_that("check if error_matrix works properly", {
+  expect_error(
+    error_matrix(iniloc),
+    "must be a matrix.",
+    fixed = TRUE,
+  )
+
+  expect_error(
+    error_matrix(
+      bathy_matrix,
+      dim_check = c(1, 2),
+      "must have odd dimensions",
+      fixed = TRUE
+    )
+  )
+})
+
 # test_that("check if error_raster works properly", {
 #   bath <- raster::raster(bathy_matrix)
 
@@ -82,3 +99,5 @@ test_that("check if error_list works properly", {
 #     fixed = TRUE
 #   )
 # })
+
+t
