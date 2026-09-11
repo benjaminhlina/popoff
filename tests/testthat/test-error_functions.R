@@ -80,13 +80,94 @@ test_that("check if error_matrix works properly", {
   expect_error(
     error_matrix(
       bathy_matrix,
-      dim_check = c(1, 2),
-      "must have odd dimensions",
-      fixed = TRUE
-    )
+      dim_check = c(3, 3)
+    ),
+    "contains index/indices out of range for a matrix",
+    fixed = TRUE
+  )
+
+  error_matrix(
+    bathy_matrix[],
+    dim_check = c(1, 2)
   )
 })
 
+test_that("error_matrix: errors when a checked dimension is even", {
+  even_matrix <- matrix(1:12, nrow = 4, ncol = 3)
+
+  expect_error(
+    error_matrix(even_matrix, dim_check = c(1, 2)),
+    "must have odd dimensions",
+    fixed = TRUE
+  )
+})
+
+test_that("error_matrix: error message reports the actual offending dimensions", {
+  even_matrix <- matrix(1:12, nrow = 4, ncol = 3)
+
+  expect_error(
+    error_matrix(even_matrix, dim_check = c(1, 2)),
+    "4",
+    fixed = TRUE
+  )
+})
+
+test_that("error_matrix: passes silently when all checked dimensions are odd", {
+  odd_matrix <- matrix(1:9, nrow = 3, ncol = 3)
+
+  expect_no_error(
+    error_matrix(odd_matrix, dim_check = c(1, 2))
+  )
+})
+
+test_that("error_matrix: returns the matrix unchanged when validation passes", {
+  odd_matrix <- matrix(1:9, nrow = 3, ncol = 3)
+
+  result <- error_matrix(odd_matrix, dim_check = c(1, 2))
+
+  expect_identical(result, odd_matrix)
+})
+
+test_that("error_matrix: errors if only one of several checked dimensions is even", {
+  mixed_matrix <- matrix(1:15, nrow = 3, ncol = 5)
+  # transpose-like case: check row count (3, odd) and a fabricated even one via dim_check reuse
+  even_row_matrix <- matrix(1:20, nrow = 4, ncol = 5)
+
+  # row dim (4) even, col dim (5) odd -> should still error due to `any()`
+  expect_error(
+    error_matrix(even_row_matrix, dim_check = c(1, 2)),
+    "must have odd dimensions",
+    fixed = TRUE
+  )
+
+  # both odd -> no error
+  expect_no_error(
+    error_matrix(mixed_matrix, dim_check = c(1, 2))
+  )
+})
+
+test_that("error_matrix: dim_check on a single dimension only evaluates that dimension", {
+  # 4 rows (even), 3 cols (odd); only check the odd one
+  partial_matrix <- matrix(1:12, nrow = 4, ncol = 3)
+
+  expect_no_error(
+    error_matrix(partial_matrix, dim_check = 2)
+  )
+
+  expect_error(
+    error_matrix(partial_matrix, dim_check = 1),
+    "must have odd dimensions",
+    fixed = TRUE
+  )
+})
+
+test_that("error_matrix: no dimension check performed when dim_check is NULL", {
+  even_matrix <- matrix(1:12, nrow = 4, ncol = 3)
+
+  expect_no_error(
+    error_matrix(even_matrix, dim_check = NULL)
+  )
+})
 # test_that("check if error_raster works properly", {
 #   bath <- raster::raster(bathy_matrix)
 

@@ -335,6 +335,11 @@ error_matrix <- function(matrix, dim_check = NULL, arg_name = NULL) {
 
   if (!is.null(dim_check)) {
     dims <- dim(matrix)
+    if (any(dim_check > length(dims)) || any(dim_check < 1)) {
+      cli::cli_abort(
+        "{.arg dim_check} contains index/indices out of range for a matrix with {length(dims)} dimension(s)."
+      )
+    }
     checked_dims <- dims[dim_check]
 
     if (any(checked_dims %% 2 == 0)) {
