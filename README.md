@@ -5,7 +5,7 @@
 <!-- badges: start -->
 
 [![R-CMD-check](https://github.com/benjaminhlina/poppr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/benjaminhlina/poppr/actions/workflows/R-CMD-check.yaml)
-[![Codecov test coverage](https://codecov.io/gh/benjaminhlina/poppr/graph/badge.svg)](https://app.codecov.io/gh/benjaminhlina/poppr)
+[![Codecov test coverage](https://codecov.io/gh/benjaminhlina/poppr/graph/badge.svg?token=wkvlAePCPc)](https://codecov.io/gh/benjaminhlina/poppr)
 <!-- badges: end -->
 
 Provides hidden Markov models for pop-off satellite transmitter (PSATs) data using 
