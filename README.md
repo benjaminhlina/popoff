@@ -59,7 +59,7 @@ Important things to know when contributing are the following:
 
 4. When submitting a PR all changes to functions need to be able to captured in unit tests, pass unit tests and/or have additonal unit tests, and need to follow DRY prinicples.  
 
-5. The package has used LLM as a tool in for creating helpful error messages and unit tests.
+5. The package has used LLM as a tool for creating helpful error messages and unit tests.
 
 6. This repository will not be accepting LLM submitted PRs nor PRs that contain directly copy and pasted code from LLMs that has not be vetted and edited. 
 
