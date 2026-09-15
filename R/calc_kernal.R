@@ -2,7 +2,7 @@
 #'
 #' Determines the Gaussian Kernel for an area
 #'
-#' @param size a `numerical` value that is the size of the areas to calculate the
+#' @param kernal_size a `numerical` value that is the size of the areas to calculate the
 #' Kernel
 #' @param sigma a `numerical` value that is the standard deviation
 #' @param muadv a `numerical` value that adds to the mean (i.e, mu)
@@ -14,17 +14,23 @@
 #'
 #' @export
 
-gaussian_kernel <- function(size, sigma, muadv = 0, norm = FALSE, mask = TRUE) {
-  error_numeric(size)
+gaussian_kernel <- function(
+  kernal_size,
+  sigma,
+  muadv = 0,
+  norm = FALSE,
+  mask = TRUE
+) {
+  error_numeric(kernal_size)
   error_numeric(sigma)
   error_numeric(muadv)
   error_logical(norm)
   error_logical(mask)
 
-  if (round(size) < 1) {
-    size <- 1
+  if (round(kernal_size) < 1) {
+    kernal_size <- 1
   }
-  x <- 1:round(size)
+  x <- 1:round(kernal_size)
   mu <- c(mean(x), mean(x)) + muadv
 
   # cal elducidan distance from mu, x and sigma
@@ -44,7 +50,7 @@ gaussian_kernel <- function(size, sigma, muadv = 0, norm = FALSE, mask = TRUE) {
   if (isTRUE(mask)) {
     # get dimensions of the input kernel matrix
     n_cols <- ncol(kern)
-    n_rows <- nrow()
+    n_rows <- nrow(kern)
 
     # calculate the center index radius (e.g., for a 5x5 matrix, center offset is 2)
     center_offset <- trunc(n_cols / 2) + 1
@@ -70,10 +76,10 @@ gaussian_kernel <- function(size, sigma, muadv = 0, norm = FALSE, mask = TRUE) {
 
     # mask cells where the rounded distance exceeds the maximum allowed radius
     coord[round(coord) > trunc(n_cols / 2)] <- NA
-    mask <- which(is.na(coord))
+    mask_kern <- which(is.na(coord))
 
     # zero out the masked positions in the original kernel
-    kern[mask] <- 0
+    kern[mask_kern] <- 0
 
     # normalize kernel values so the remaining elements sum to 1
     kern <- kern / sum(kern, na.rm = TRUE)

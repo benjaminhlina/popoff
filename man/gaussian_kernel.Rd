@@ -4,10 +4,10 @@
 \alias{gaussian_kernel}
 \title{Gaussian Kernel}
 \usage{
-gaussian_kernel(size, sigma, muadv = 0, norm = FALSE, mask = TRUE)
+gaussian_kernel(kernal_size, sigma, muadv = 0, norm = FALSE, mask = TRUE)
 }
 \arguments{
-\item{size}{a \code{numerical} value that is the size of the areas to calculate the
+\item{kernal_size}{a \code{numerical} value that is the size of the areas to calculate the
 Kernel}
 
 \item{sigma}{a \code{numerical} value that is the standard deviation}
