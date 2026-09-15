@@ -174,12 +174,13 @@
 #' @keywords internal
 .transp_back <- function(par_real, par_range) {
   par <- exp(par_real) *
-    (par_real[2] - par_range[1]) /
+    (par_range[2] - par_range[1]) /
     (1 + exp(par_real)) +
     par_range[1]
 
   return(par)
 }
+
 
 #' CRS validation
 #'
