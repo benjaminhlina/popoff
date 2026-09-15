@@ -40,6 +40,7 @@ describe("prep_summary_likdepth()", {
       bin = 3600,
       make_plot = FALSE
     )
+    expect
 
     expect_type(res, "list")
     expect_named(
@@ -54,7 +55,18 @@ describe("prep_summary_likdepth()", {
     expect_equal(res$bin, 3600)
     expect_equal(res$time_res, 21600) # 6 hours = 21600 seconds
   })
-
+  it("check msg", {
+    expect_message(
+      prep_summary_likdepth(
+        raw_log = test_raw_log,
+        iniloc = test_iniloc,
+        bin = 360000,
+        make_plot = FALSE
+      ),
+      regexp = "Time window, which is the `bin` (e.g., 3600 sec = 1 h) divided by the PSAT tranmission time (e.g., 360), is",
+      fixed = TRUE
+    )
+  })
   # ---- 3. Filtering & Depth Inversion Logic ----
   it("filters date range correctly and inverts depth values", {
     res <- prep_summary_likdepth(
