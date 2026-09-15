@@ -153,6 +153,34 @@
   if (type == "min") min(x) else max(x)
 }
 
+#' Transpose fucntions
+#'
+#' These functions take a parameter and transpose it using the natural
+#' log or back tranpose using `e` the and the range of of parameter
+#'
+#' @param par a `numerical` vector
+#' @param par_range a `numerical` that contains the range
+#'
+#' @name tranpose_functions
+#' @keywords internal
+.transp_real <- function(par, par_range) {
+  par_real <- log((par - par_range[1]) / (par_range[2] - par))
+  return(par_real)
+}
+
+#' @param par_real a `numerical` vector to tranpose back
+#'
+#' @name tranpose_functions
+#' @keywords internal
+.transp_back <- function(par_real, par_range) {
+  par <- exp(par_real) *
+    (par_real[2] - par_range[1]) /
+    (1 + exp(par_real)) +
+    par_range[1]
+
+  return(par)
+}
+
 #' CRS validation
 #'
 #' Checks if a valid crs is provided
