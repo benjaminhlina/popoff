@@ -18,7 +18,7 @@ mask_k <- function(k) {
     (trunc(ncol(k) / 2) + 1)
 
   coord_ky <- matrix(
-    data = rep(1:ncol(k), nrow(k)),
+    data = rep(1:ncol(k), each = nrow(k)),
     ncol = ncol(k),
     nrow = nrow(k)
   ) -
