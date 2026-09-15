@@ -9,20 +9,29 @@
 #'
 #' @export
 mask_k <- function(k) {
-  #K=matrix(data=NA)
-  coord_kx <- matrix(
-    data = rep(1:ncol(k), each = nrow(k)),
-    ncol = ncol(k),
-    nrow = nrow(k)
-  ) -
-    (trunc(ncol(k) / 2) + 1)
+  # Get dimensions of the input kernel matrix
+  n_cols <- ncol(k)
+  n_rows <- nrow(k)
 
-  coord_ky <- matrix(
-    data = rep(1:ncol(k), times = nrow(k)),
-    ncol = ncol(k),
-    nrow = nrow(k)
+  # Calculate the center index radius (e.g., for a 5x5 matrix, center offset is 2)
+  center_offset <- trunc(n_cols / 2) + 1
+
+  # Create X-coordinate offsets relative to the center (column-wise grid)
+  coord_kx <- matrix(
+    data = rep(1:n_cols, each = n_rows),
+    ncol = n_cols,
+    nrow = n_rows
   ) -
-    (trunc(ncol(k) / 2) + 1)
+    center_offset
+
+  # Create Y-coordinate offsets relative to the center (row-wise grid)
+  # FIXED BUG: Using times instead of each to correctly build the vertical axis
+  coord_ky <- matrix(
+    data = rep(1:n_rows, times = n_cols),
+    ncol = n_cols,
+    nrow = n_rows
+  ) -
+    center_offset
 
   coord <- cbind(as.vector(coord_kx), as.vector(coord_ky))
   coord <- apply(coord, 1, function(x) {
