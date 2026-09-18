@@ -3,16 +3,21 @@
 {
   library(ggplot2)
   library(poppr)
+  library(purrr)
+  library(scales)
   library(terra)
   library(tidyterra)
-  library(scales)
 }
 
-# ----- load bathymetry for area ----
+# ----- load bathymetry for the area of interest ----
+# in this case Gulf of St. Lawrence
 
 bathy <- load_bathy_raster(bathy_matrix, crs = "EPSG:6500")
 
+# we can check that it is SpatRaster
 bathy
+
+# ----- next we can plot the spat raster using tidyterra ----
 ggplot() +
   geom_spatraster(data = bathy) +
   coord_sf() +
@@ -33,11 +38,19 @@ ggplot() +
     name = "Elevation / Depth (m)"
   )
 
-# ----- prep bathy for likelihood calcualtion -----
+# aesome the bathymetr looks great
+
+# ----- next prepare bathy for likelihood calculations -----
 preped_bathy <- prep_bathy_likdepth(bathy = bathy, focal_dim = 3)
+
+# we can view the output which is a list containing 1) bathy 2) sd of bathy
+# 3) idx locations 4) idx_na locations, 4) focal dimensions, 5) if weighted
 preped_bathy
 # ------ prep log for summary prior to likelihood calculation ------
 preped_log <- prep_summary_likdepth(raw_log = pdt, iniloc = iniloc, bin = 3600)
+
+# pepared summary is a list containging 1) raw log, 2) summary table 3) a ggplot
+# of the depth and temperature profiles, 4) time resoulation, 5) bin value
 
 preped_log
 
@@ -48,31 +61,23 @@ likedepth_transmit <- calc_likdepth_transmit(
   daily_sd_depth = 0.57
 )
 
-# ----- plot the first couple ----
-ldt_dims <- dim(likedepth_transmit)
+# likedepth_transmit is a matrix with dims of bathymetry by the number
+# of days observed in this case 203, each day is a new likelihood est.
 
-days <- seq(1, 2, by = 1)
+# ----- we can plot the first couple of days -----
 
-bathy_matrix |>
-  str()
-likedepth_transmit[,, .1] |>
-  str()
-# this just confirms that it its working how it is intended will be making tests
+days <- seq(1, 4, by = 1)
 
-test <- days |>
-  purrr::map(
+# ---- we can convert them into spatrasters using load functions
+likelihood_spr <- days |>
+  map(
     ~ load_bathy_raster(likedepth_transmit[,, .x], crs = "EPSG:6500"),
-    # t(),
     .progress = TRUE
   )
 
-# m <- likedepth_transmit[,, 1]
-
-# test <- load_bathy_raster(m, crs = "EPSG:6500")
-
-# test <- terra::t(test)
-test |>
-  purrr::map(
+# ----- then polt them using ggplot and tidyterra -----
+likelihood_spr |>
+  map(
     ~ ggplot() +
       geom_spatraster(data = .x) +
       coord_sf() +
