@@ -319,3 +319,62 @@ test_that("BUG: error_load()'s {.file} formatting breaks on non-character path",
 #   expect_identical(attr(out, "idx"), .valid_idx(mock_rast))
 #   expect_identical(attr(out, "idx_na"), .valid_idx(mock_rast, na = TRUE))
 # })
+
+# test_that("fallback branch aborts via error_load() when terra::rast() fails,
+# without reaching error_raster()", {
+#   testthat::local_mocked_bindings(
+#     msg_load_raster = function(...) invisible(NULL),
+#     .valid_idx = function(...) NA_integer_,
+#     error_raster = function(raster) {
+#       error_raster_called <<- TRUE
+#       cli::cli_abort(
+#         "error_raster should not fire on the failure path",
+#         class = "test_error_raster_called"
+#       )
+#     }
+#   )
+#   testthat::local_mocked_bindings(
+#     rast = function(...) stop("simulated terra failure"),
+#     .package = "terra"
+#   )
+
+#   bathy_in <- list(not = "a raster")
+
+#   err <- rlang::catch_cnd(load_bathy_raster(bathy_in))
+#   cm <- conditionMessage(err)
+
+#   # expect_s3_class(err, "bathy_rast_read_failed")
+
+#   expect_true(grepl("could not be loaded", cm))
+# })
+
+test_that("[KNOWN BUG] fallback branch aborts via error_raster() even when terra::rast() succeeds, making the success path unreachable", {
+  # TODO: once fixed, error_raster() should only fire when `out` is NOT a
+  # valid SpatRaster (e.g. wrapped in `if (!inherits(out, "SpatRaster"))`).
+  # On success the function should instead return `out` invisibly, with
+  # "idx" / "idx_na" attributes set via .valid_idx(). The commented
+  # assertions below capture that intended behavior.
+
+  testthat::local_mocked_bindings(
+    msg_load_raster = function(...) invisible(NULL),
+    .valid_idx = function(bathy, na = FALSE) 1L
+  )
+  testthat::local_mocked_bindings(
+    rast = function(...) structure(list(), class = "SpatRaster"),
+    .package = "terra"
+  )
+
+  bathy_in <- list(valid = "input that terra::rast() can parse")
+
+  err <- rlang::catch_cnd(suppressMessages(load_bathy_raster(bathy_in)))
+
+  # Current (buggy) behavior: a successful conversion still aborts.
+  expect_s3_class(err, "bathy_invalid_input")
+  expect_true(grepl("must be a", conditionMessage(err), fixed = TRUE))
+
+  # Intended post-fix behavior (currently unreachable):
+  # out <- suppressMessages(load_bathy_raster(bathy_in))
+  # expect_s3_class(out, "SpatRaster")
+  # expect_identical(attr(out, "idx"), 1L)
+  # expect_identical(attr(out, "idx_na"), 1L)
+})

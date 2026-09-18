@@ -2,23 +2,24 @@
 % Please edit documentation in R/utilities.R
 \name{tranpose_functions}
 \alias{tranpose_functions}
-\alias{.transp_real}
-\alias{.transp_back}
-\title{Transpose fucntions}
+\alias{.transpose_real}
+\alias{.transpose_back}
+\title{Transpose functions}
 \usage{
-.transp_real(par, par_range)
+.transpose_real(parameter, parameter_range)
 
-.transp_back(par_real, par_range)
+.transpose_back(parameter_real, parameter_range)
 }
 \arguments{
-\item{par}{a \code{numerical} vector}
+\item{parameter}{a \code{numerical} vector}
 
-\item{par_range}{a \code{numerical} that contains the range}
+\item{parameter_range}{a \code{vector} that contains the minimum and maximum of
+the parameter.}
 
-\item{par_real}{a \code{numerical} vector to tranpose back}
+\item{parameter_real}{a \code{numerical} vector to tranpose back}
 }
 \description{
 These functions take a parameter and transpose it using the natural
-log or back tranpose using \code{e} the and the range of of parameter
+log, or back-transpose using \eqn{e} and the range of the parameter.
 }
 \keyword{internal}

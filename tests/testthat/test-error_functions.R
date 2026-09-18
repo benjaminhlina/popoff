@@ -196,6 +196,17 @@ test_that("error_focal_dim: numeric matrix skips error_numeric and reaches error
   )
 })
 
+test_that("error_matrix_likelihood errors properly when min is larger 
+than max", {
+  ma <- matrix(c(0, 1, 5, 2), nrow = 1, ncol = 4)
+
+  expect_error(
+    error_likelihood_matrix(ma, idx = 1),
+    regexp = "Check for reversed or malformed",
+    fixed = TRUE
+  )
+})
+
 # test_that("check if error_raster works properly", {
 #   bath <- raster::raster(bathy_matrix)
 

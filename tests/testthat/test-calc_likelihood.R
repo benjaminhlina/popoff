@@ -166,7 +166,8 @@ test_that("calc_daily_likdepth does not divide by zero / produce NaN when all in
   expect_equal(out[fx$idx], rep(0, length(fx$idx)))
 })
 
-test_that("calc_daily_likdepth wraps likint3_matrix failures in an informative cli_abort naming the date", {
+test_that("calc_daily_likdepth wraps likint3_matrix failures in an informative 
+cli_abort naming the date", {
   fx <- make_bathy_fixture()
   sdi_dsd <- .convert_spr_to_vec(fx$sdi) + 0.57
 
@@ -190,6 +191,7 @@ test_that("calc_daily_likdepth wraps likint3_matrix failures in an informative c
     fixed = TRUE
   )
 })
+
 
 # =============================================================================
 # calc_likdepth_transmit() -- integration tests

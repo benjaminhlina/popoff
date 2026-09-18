@@ -153,32 +153,35 @@
   if (type == "min") min(x) else max(x)
 }
 
-#' Transpose fucntions
+#' Transpose functions
 #'
 #' These functions take a parameter and transpose it using the natural
-#' log or back tranpose using `e` the and the range of of parameter
+#' log, or back-transpose using \eqn{e} and the range of the parameter.
 #'
-#' @param par a `numerical` vector
-#' @param par_range a `numerical` that contains the range
-#'
+#' @param parameter a `numerical` vector
+#' @param parameter_range a `vector` that contains the minimum and maximum of
+#' the parameter.
 #' @name tranpose_functions
 #' @keywords internal
-.transp_real <- function(par, par_range) {
-  par_real <- log((par - par_range[1]) / (par_range[2] - par))
-  return(par_real)
+.transpose_real <- function(parameter, parameter_range) {
+  parameter_real <- log(
+    (parameter - parameter_range[1]) /
+      (parameter_range[2] - parameter)
+  )
+  return(parameter_real)
 }
 
-#' @param par_real a `numerical` vector to tranpose back
+#' @param parameter_real a `numerical` vector to tranpose back
 #'
 #' @name tranpose_functions
 #' @keywords internal
-.transp_back <- function(par_real, par_range) {
-  par <- exp(par_real) *
-    (par_range[2] - par_range[1]) /
-    (1 + exp(par_real)) +
-    par_range[1]
+.transpose_back <- function(parameter_real, parameter_range) {
+  parameter <- exp(parameter_real) *
+    (parameter_range[2] - parameter_range[1]) /
+    (1 + exp(parameter_real)) +
+    parameter_range[1]
 
-  return(par)
+  return(parameter)
 }
 
 
