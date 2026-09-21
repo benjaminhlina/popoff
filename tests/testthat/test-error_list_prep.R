@@ -99,3 +99,101 @@ test_that("error_list_prep's `call = call` in the log branch is an undefined-var
     fixed = TRUE
   )
 })
+
+describe("error_list_prep() - bathy branch structural failures", {
+  it("aborts with class error_list_bathy when bathy/sdi are not SpatRaster", {
+    testthat::local_mocked_bindings(
+      error_list = function(list) invisible(TRUE),
+      error_missing_names = function(obj, required_val) invisible(TRUE),
+      .has_valid_field = function(obj, field, type) {
+        # rast fields fail, idx fields pass
+        !(field %in% c("bathy", "sdi"))
+      }
+    )
+
+    dummy_list <- list(
+      bathy = "not_a_raster",
+      sdi = "not_a_raster",
+      idx = 1:5,
+      idx_na = NA_integer_,
+      focal_dim = 3,
+      weighted = TRUE
+    )
+
+    err <- rlang::catch_cnd(
+      error_list_prep(list = dummy_list, type = "bathy")
+    )
+
+    expect_s3_class(err, "error_list_bathy")
+    msg <- conditionMessage(err)
+
+    expect_true(grepl("doesn't look like the output of", msg, fixed = TRUE))
+    expect_true(grepl("bathy", msg, fixed = TRUE))
+    expect_true(grepl("sdi", msg, fixed = TRUE))
+    expect_true(grepl("must both be", msg, fixed = TRUE))
+    expect_true(grepl("SpatRaster", msg, fixed = TRUE))
+    # idx branch message should NOT appear since idx_ok is TRUE
+    expect_false(grepl("numeric vectors", msg, fixed = TRUE))
+  })
+
+  it("aborts with class error_list_bathy when idx/idx_na are not numeric", {
+    testthat::local_mocked_bindings(
+      error_list = function(list) invisible(TRUE),
+      error_missing_names = function(obj, required_val) invisible(TRUE),
+      .has_valid_field = function(obj, field, type) {
+        # idx fields fail, rast fields pass
+        !(field %in% c("idx", "idx_na"))
+      }
+    )
+
+    dummy_list <- list(
+      bathy = "raster_stub",
+      sdi = "raster_stub",
+      idx = "not_numeric",
+      idx_na = "not_numeric",
+      focal_dim = 3,
+      weighted = TRUE
+    )
+
+    err <- rlang::catch_cnd(
+      error_list_prep(list = dummy_list, type = "bathy")
+    )
+
+    expect_s3_class(err, "error_list_bathy")
+    msg <- conditionMessage(err)
+
+    expect_true(grepl("doesn't look like the output of", msg, fixed = TRUE))
+    expect_true(grepl("idx", msg, fixed = TRUE))
+    expect_true(grepl("idx_na", msg, fixed = TRUE))
+    expect_true(grepl("numeric vectors", msg, fixed = TRUE))
+    # rast branch message should NOT appear since rast_ok is TRUE
+    expect_false(grepl("SpatRaster", msg, fixed = TRUE))
+  })
+
+  it("includes both failure messages when rast and idx checks both fail", {
+    testthat::local_mocked_bindings(
+      error_list = function(list) invisible(TRUE),
+      error_missing_names = function(obj, required_val) invisible(TRUE),
+      .has_valid_field = function(obj, field, type) FALSE
+    )
+
+    dummy_list <- list(
+      bathy = "bad",
+      sdi = "bad",
+      idx = "bad",
+      idx_na = "bad",
+      focal_dim = 3,
+      weighted = TRUE
+    )
+
+    err <- rlang::catch_cnd(
+      error_list_prep(list = dummy_list, type = "bathy")
+    )
+
+    expect_s3_class(err, "error_list_bathy")
+    msg <- conditionMessage(err)
+
+    expect_true(grepl("SpatRaster", msg, fixed = TRUE))
+    expect_true(grepl("numeric vectors", msg, fixed = TRUE))
+  })
+})
