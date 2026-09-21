@@ -67,7 +67,7 @@ load(
 )
 db
 
-bathy <- load_bathy_raster(
+bathy <- load_raster(
   "/Users/benhlina/Library/CloudStorage/Dropbox/Dal-Post Doc/data/Geolocation for Jena/bathy_grid/bathy.mat.gsl.ssgb.lon72.41.lat41.52.rds"
 )
 
@@ -82,7 +82,7 @@ readr::write_rds(
 
 pdt
 
-bath <- load_bathy_raster(
+bath <- load_raster(
   "/Users/benhlina/Library/CloudStorage/Dropbox/Dal-Post Doc/data/Geolocation for Jena/bathy_grid/bathy.mat.gsl.ssgb.lon72.41.lat41.52.rds"
 )
 
@@ -100,7 +100,7 @@ plot(bathy_matrix)
 
 bathy_matrix_t <- t(bathy_matrix)[nrow(t(bathy_matrix)):1, ]
 
-bathy <- load_bathy_raster(bathy_matrix_t, crs = "EPSG:4326")
+bathy <- load_raster(bathy_matrix_t, crs = "EPSG:4326")
 
 
 # terra::ext(bathy) <- c(xmin(lon), xmax(lon), ymin(lat), ymax(lat))

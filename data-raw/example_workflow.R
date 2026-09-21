@@ -12,7 +12,7 @@
 # ----- load bathymetry for the area of interest ----
 # in this case Gulf of St. Lawrence
 
-bathy <- load_bathy_raster(bathy_matrix, crs = "EPSG:6500")
+bathy <- load_raster(bathy_matrix, crs = "EPSG:6500")
 
 # we can check that it is SpatRaster
 bathy
@@ -32,7 +32,7 @@ ggplot() +
       "#E6F38F",
       "#9AD850"
     ),
-    values = rescale(c(-4000, -600, -150, -60, 0, 50, 150, 400)),
+    values = scales::rescale(c(-4000, -600, -150, -60, 0, 50, 150, 400)),
     limits = c(-4000, 400),
     oob = squish,
     name = "Elevation / Depth (m)"
@@ -60,7 +60,7 @@ likedepth_transmit <- calc_likdepth_transmit(
   preped_bathy = preped_bathy,
   daily_sd_depth = 0.57
 )
-
+dim(likedepth_transmit)
 # likedepth_transmit is a matrix with dims of bathymetry by the number
 # of days observed in this case 203, each day is a new likelihood est.
 
@@ -71,7 +71,7 @@ days <- seq(1, 4, by = 1)
 # ---- we can convert them into spatrasters using load functions
 likelihood_spr <- days |>
   map(
-    ~ load_bathy_raster(likedepth_transmit[,, .x], crs = "EPSG:6500"),
+    ~ load_raster(likedepth_transmit[,, .x], crs = "EPSG:6500"),
     .progress = TRUE
   )
 
@@ -81,5 +81,9 @@ likelihood_spr |>
     ~ ggplot() +
       geom_spatraster(data = .x) +
       coord_sf() +
-      scale_fill_viridis_c(option = "H")
+      scale_fill_viridis_c(option = "H") +
+      ggview::canvas(11, 8.5)
   )
+
+# ---- Take idx values that equla 0.5 or greater and pull the depth of those
+#idx vlaues -----

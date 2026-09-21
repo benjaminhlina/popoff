@@ -2,10 +2,10 @@
 % Please edit documentation in R/load_functions.R
 \name{load_functions}
 \alias{load_functions}
-\alias{load_bathy_raster}
+\alias{load_raster}
 \title{Load functions}
 \usage{
-load_bathy_raster(bathy, crs = NULL)
+load_raster(bathy, crs = NULL)
 }
 \arguments{
 \item{bathy}{A bathymetric feature to be brought in as a \code{SpatRaster} object}

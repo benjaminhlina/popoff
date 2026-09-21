@@ -13,10 +13,10 @@
 #' @name load_functions
 #' @export
 
-load_bathy_raster <- function(bathy, crs = NULL) {
+load_raster <- function(bathy, crs = NULL) {
   # general message
   msg_bathy(bathy = bathy)
-
+  error_load(bathy)
   if (inherits(bathy, "SpatRaster")) {
     attr(bathy, "idx") <- .valid_idx(bathy)
     attr(bathy, "idx_na") <- .valid_idx(bathy, na = TRUE)
@@ -60,23 +60,10 @@ load_bathy_raster <- function(bathy, crs = NULL) {
       obj <- readRDS(bathy)
     }
     if (grepl("\\.tif$", bathy, ignore.case = TRUE)) {
+      msg_load_raster(bathy)
       obj <- terra::rast(bathy)
     }
 
-    return(load_bathy_raster(obj))
+    return(load_raster(obj))
   }
-
-  msg_load_raster(path = bathy)
-
-  out <- tryCatch(
-    terra::rast(bathy),
-    error = function(e) {
-      error_load(path = bathy, e = e)
-    }
-  )
-  attr(out, "idx") <- .valid_idx(out)
-  attr(out, "idx_na") <- .valid_idx(out, na = TRUE)
-  error_raster(raster = bathy)
-
-  return(out)
 }

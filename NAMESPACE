@@ -2,7 +2,7 @@
 
 export(calc_likdepth_transmit)
 export(gaussian_kernel)
-export(load_bathy_raster)
+export(load_raster)
 export(make_summary_plot)
 export(make_summary_table)
 export(prep_bathy_likdepth)
