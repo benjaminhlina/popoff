@@ -96,7 +96,7 @@ prep_bathy_likdepth <- function(
 #' aggregation (e.g., 3600 seconds is 1 hour).
 #' @param make_plot a `logical` value that controls whether the to make the
 #' summary plot. Default is `TRUE`.
-#' @param output_dir Defaults to `NULL` and will not export plot.
+#' @param out_dir Defaults to `NULL` and will not export plot.
 #' Please provide a `character` string containing the path desired
 #' to save the plot.
 #'
@@ -110,7 +110,7 @@ prep_summary_likdepth <- function(
   raw_log,
   iniloc,
   bin = NULL,
-  output_dir = NULL,
+  out_dir = NULL,
   make_plot = TRUE
 ) {
   # ----- first check if arguments needed are supplied ----
@@ -120,7 +120,7 @@ prep_summary_likdepth <- function(
 
   error_input_data(input_data = raw_log, type = "raw_log")
   error_input_data(input_data = iniloc, type = "iniloc")
-  error_out_dir(output_dir)
+  error_out_dir(out_dir)
   error_logical(make_plot)
 
   error_numeric(bin)
@@ -141,7 +141,7 @@ prep_summary_likdepth <- function(
   if (isTRUE(make_plot)) {
     depth_profile <- make_summary_plot(
       raw_log = raw_log_filter,
-      output_dir = output_dir
+      out_dir = out_dir
     )
   } else {
     depth_profile <- NULL

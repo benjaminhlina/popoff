@@ -3,12 +3,12 @@
 #' These functions make different objects that can be exported like plots and summary tables.
 #'
 #' @param raw_log a `data.frame` containing raw psat logs for an individual.
-#' @param output_dir a `character` string containing the path to save plot or table.
+#' @param out_dir a `character` string containing the path to save plot or table.
 #'
 #' @name make_function
 #' @export
 
-make_summary_plot <- function(raw_log, output_dir = NULL) {
+make_summary_plot <- function(raw_log, out_dir = NULL) {
   pdt_long <- raw_log |>
     dplyr::select(date_time, depth, temperature) |>
     tidyr::pivot_longer(
@@ -47,9 +47,9 @@ make_summary_plot <- function(raw_log, output_dir = NULL) {
     ) +
     ggplot2::labs(x = "Date (mm/yy)", title = fish_id)
 
-  if (!is.null(output_dir)) {
+  if (!is.null(out_dir)) {
     path <- file.path(
-      output_dir,
+      out_dir,
       paste0("depth_profile_", fish_id, ".png")
     )
     ggplot2::ggsave(

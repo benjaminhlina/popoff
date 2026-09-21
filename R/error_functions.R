@@ -440,29 +440,29 @@ error_path <- function(path) {
 }
 
 
-#' @param output_dir a chracter string containing the out directory
+#' @param out_dir a chracter string containing the out directory
 #' @name error_functions
 #' @keywords internal
 
-error_out_dir <- function(output_dir) {
-  if (is.null(output_dir)) {
+error_out_dir <- function(out_dir) {
+  if (is.null(out_dir)) {
     return(invisible(NULL))
   }
 
-  if (!is.character(output_dir) || length(output_dir) != 1) {
+  if (!is.character(out_dir) || length(out_dir) != 1) {
     cli::cli_abort(
       c(
-        "Invalid `output_dir` input.",
-        "x" = "`output_dir` must be a single string, not {.obj_type_friendly {output_dir}}."
+        "Invalid `out_dir` input.",
+        "x" = "`out_dir` must be a single string, not {.obj_type_friendly {out_dir}}."
       )
     )
   }
 
-  if (!dir.exists(output_dir)) {
+  if (!dir.exists(out_dir)) {
     cli::cli_abort(
       c(
         "Output directory not found.",
-        "x" = "No such directory: {.file {output_dir}}",
+        "x" = "No such directory: {.file {out_dir}}",
         "i" = "Please provide a valid, existing directory path."
       )
     )
