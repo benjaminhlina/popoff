@@ -252,8 +252,7 @@ error_list_prep <- function(
         "sdi",
         "idx",
         "idx_na",
-        "focal_dim",
-        "weighted"
+        "focal_dim"
       )
     )
 
