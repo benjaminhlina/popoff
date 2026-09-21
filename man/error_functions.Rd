@@ -52,9 +52,9 @@ error_numeric(vec, arg_name = NULL)
 
 error_numeric_min(vec, col, min_val = 0)
 
-error_path(path, weighted = FALSE)
+error_path(path)
 
-error_out_dir(output_dir)
+error_out_dir(out_dir)
 
 error_spatrast(spatrast, arg_name = NULL)
 }
@@ -93,7 +93,7 @@ error_spatrast(spatrast, arg_name = NULL)
 
 \item{min_val}{a numerical mimimum value allowed}
 
-\item{output_dir}{a chracter string containing the out directory}
+\item{out_dir}{a chracter string containing the out directory}
 
 \item{spatrast}{a raster object to assess}
 }

@@ -38,7 +38,7 @@ describe("prep_summary_likdepth()", {
       raw_log = test_raw_log,
       iniloc = test_iniloc,
       bin = 3600,
-      make_plot = FALSE
+      make_plot = FALSE,
     )
     expect
 
@@ -113,7 +113,7 @@ describe("prep_summary_likdepth()", {
       raw_log = test_raw_log,
       iniloc = test_iniloc,
       bin = 3600,
-      output_dir = temp_dir,
+      out_dir = temp_dir,
       make_plot = TRUE
     )
 

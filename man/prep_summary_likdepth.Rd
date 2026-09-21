@@ -8,21 +8,30 @@ prep_summary_likdepth(
   raw_log,
   iniloc,
   bin = NULL,
-  output_dir = NULL,
+  out_dir = NULL,
   make_plot = TRUE
 )
 }
 \arguments{
 \item{raw_log}{a \code{data.frame} containing the raw pop-off satalitte tag log}
 
-\item{iniloc}{a \code{data.frame} containing the iniloc information about when the tag was deployed, mrpat, and pop dates and location.}
+\item{iniloc}{a \code{data.frame} containing the iniloc information about when the
+tag was deployed, mrpat, and pop dates and location.}
 
-\item{bin}{a \code{numeric} containing the number of seconds within an aggregation (e.g., 3600 seconds is 1 hour).}
+\item{bin}{a \code{numeric} containing the number of seconds within an
+aggregation (e.g., 3600 seconds is 1 hour).}
 
-\item{output_dir}{Defaults to \code{NULL} and will not export plot. Please provide a \code{character} string containing the path deseired
+\item{out_dir}{Defaults to \code{NULL} and will not export plot.
+Please provide a \code{character} string containing the path desired
 to save the plot.}
 
-\item{make_plot}{a \code{logical} value that controls whether the to make the summary plot. Default is \code{TRUE}.}
+\item{make_plot}{a \code{logical} value that controls whether the to make the
+summary plot. Default is \code{TRUE}.}
+}
+\value{
+A \code{list()} containing a the \code{raw_log} as \code{data.frame}, the summarized
+log as a \code{data.frame}, a \code{ggplot2} object (\code{depth_profile}), the time
+resolution, and the time bin used as single value \code{vectors}.
 }
 \description{
 This function prepared summary data to be used in the likelihood estimates.

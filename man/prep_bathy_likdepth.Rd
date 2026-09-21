@@ -4,24 +4,34 @@
 \alias{prep_bathy_likdepth}
 \title{Prepare Bathymetic Data}
 \usage{
-prep_bathy_likdepth(bathy, focal_dim = 9, weighted = FALSE, ctd = NULL)
+prep_bathy_likdepth(bathy, focal_dim = 9, ctd = NULL)
 }
 \arguments{
-\item{bathy}{a \code{spatrater} generated using \verb{load_raster(())}}
+\item{bathy}{a \code{SpatRaster} generated using \verb{load_raster(())}}
 
 \item{focal_dim}{a \code{numerical} value that is odd. See details below.}
 
-\item{weighted}{a \code{logical} value that determines whther or not sd is weighted. Default is \code{FALSE}}
-
-\item{ctd_dir}{only required when \code{weighted = TRUE}. The path to ctd.}
+\item{ctd}{a \code{SpatRaster}that contains conductivity, temperature and depth
+(ctd) values for a given area. It will be used as informed standard deviation
+of the bathymetry instead of calculating the stadard deviation.}
+}
+\value{
+A \code{list()} containing a \code{SpatRaster} of both bathymetry and the
+standard deviation (\code{sdi}), the index values (\code{idx}) for observed depths and
+\code{NA} values (\code{idx_na}), and the focal dimensions used to calculate the
+standard deviation.
 }
 \description{
 This function prepared bahtymetic data to be used in the likelihood estimates.
+It calculates the standard deviation of each depth value by using the values
+around a given depth. To control the area used for standard deviation use
+\code{focal_dim}.
 }
 \details{
-window used (i.e., \code{focal_dim}) must have odd dimensions. If you need even sides,
-you can use a matrix and add a column or row of \code{NA}'s to mask out values.
-Window values are typically \code{1} or \code{NA} to indicate whether a value is used or ignored in computations, respectively.
+the window used (i.e., \code{focal_dim}) must have odd dimensions.
+If you need even sides, you can use a matrix and add a column or row of \code{NA}'s
+to mask out values. Window values are typically \code{1} or \code{NA} to indicate
+whether a value is used or ignored in computations, respectively.
 \verb{NA`` values in w can be useful for creating non-rectangular (e.g. circular) windows. A weights matrix of numeric values can also be supplied to }focal_dim\verb{. In the case of a weights matrix, cells with }NA\verb{ weights will be ignored, and the rest of the values in the focal window will be multiplied by the corresponding weight prior to `sd` being applied. Note, `na.rm` does not need to be TRUE if `focal_dim` contains `NA} values as these cells are ignored in computations.
 }
 \seealso{

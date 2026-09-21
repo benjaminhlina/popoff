@@ -193,3 +193,16 @@ test_that("crs error message mentions the correct arg and example", {
   ))
   expect_true(grepl("EPSG:4326", err$body, fixed = TRUE))
 })
+
+
+test_that('load_raster errors when supplied `list()`', {
+  err_list <- list(
+    "a" = 1
+  )
+
+  expect_error(
+    load_raster(bathy = err_list),
+    regexp = "matrix, or a file path to one of those.",
+    fixed = TRUE
+  )
+})

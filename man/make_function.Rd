@@ -6,14 +6,14 @@
 \alias{make_summary_table}
 \title{Make functions}
 \usage{
-make_summary_plot(raw_log, output_dir = NULL)
+make_summary_plot(raw_log, out_dir = NULL)
 
 make_summary_table(raw_log, time_res, bin)
 }
 \arguments{
 \item{raw_log}{a \code{data.frame} containing raw psat logs for an individual.}
 
-\item{output_dir}{a \code{character} string containing the path to save plot or table.}
+\item{out_dir}{a \code{character} string containing the path to save plot or table.}
 
 \item{time_res}{a \code{numeric} that is the median time delay between depth logs, in seconds}
 
