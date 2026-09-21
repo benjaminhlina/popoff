@@ -19,7 +19,6 @@
 \alias{error_numeric_min}
 \alias{error_path}
 \alias{error_out_dir}
-\alias{error_raster}
 \alias{error_spatrast}
 \title{Error functions}
 \usage{
@@ -41,7 +40,7 @@ error_list(list)
 
 error_likelihood_matrix(matrix, idx)
 
-error_load(path, e)
+error_load(obj, arg_name = NULL)
 
 error_logical(vec, arg_name = NULL)
 
@@ -53,11 +52,9 @@ error_numeric(vec, arg_name = NULL)
 
 error_numeric_min(vec, col, min_val = 0)
 
-error_path(path)
+error_path(path, weighted = FALSE)
 
 error_out_dir(output_dir)
-
-error_raster(raster)
 
 error_spatrast(spatrast, arg_name = NULL)
 }
@@ -78,7 +75,7 @@ error_spatrast(spatrast, arg_name = NULL)
 
 \item{path}{The file path to a file.}
 
-\item{obj}{an object either \code{vector} or \code{matrix}}
+\item{obj}{an object to assess}
 
 \item{input_data}{a \code{data.frame} to assess}
 
@@ -90,8 +87,6 @@ error_spatrast(spatrast, arg_name = NULL)
 
 \item{idx}{index value}
 
-\item{e}{the condition object caught by \code{tryCatch()}}
-
 \item{vec}{a \code{vector} to check if numeric}
 
 \item{required_val}{a \code{vector} containing \code{characters} of the columns to check.}
@@ -99,8 +94,6 @@ error_spatrast(spatrast, arg_name = NULL)
 \item{min_val}{a numerical mimimum value allowed}
 
 \item{output_dir}{a chracter string containing the out directory}
-
-\item{raster}{a raster object to assess}
 
 \item{spatrast}{a raster object to assess}
 }

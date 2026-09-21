@@ -4,14 +4,14 @@
 \alias{prep_bathy_likdepth}
 \title{Prepare Bathymetic Data}
 \usage{
-prep_bathy_likdepth(bathy, weighted = FALSE, focal_dim = 9, ctd_dir = NULL)
+prep_bathy_likdepth(bathy, focal_dim = 9, weighted = FALSE, ctd = NULL)
 }
 \arguments{
-\item{bathy}{a \code{spatrater} generated using \verb{load_bathy_raster(())}}
-
-\item{weighted}{a \code{logical} value that determines whther or not sd is weighted. Default is \code{FALSE}}
+\item{bathy}{a \code{spatrater} generated using \verb{load_raster(())}}
 
 \item{focal_dim}{a \code{numerical} value that is odd. See details below.}
+
+\item{weighted}{a \code{logical} value that determines whther or not sd is weighted. Default is \code{FALSE}}
 
 \item{ctd_dir}{only required when \code{weighted = TRUE}. The path to ctd.}
 }
@@ -25,5 +25,5 @@ Window values are typically \code{1} or \code{NA} to indicate whether a value is
 \verb{NA`` values in w can be useful for creating non-rectangular (e.g. circular) windows. A weights matrix of numeric values can also be supplied to }focal_dim\verb{. In the case of a weights matrix, cells with }NA\verb{ weights will be ignored, and the rest of the values in the focal window will be multiplied by the corresponding weight prior to `sd` being applied. Note, `na.rm` does not need to be TRUE if `focal_dim` contains `NA} values as these cells are ignored in computations.
 }
 \seealso{
-\code{\link[terra:focal]{terra::focal()}} \code{\link[=load_bathy_raster]{load_bathy_raster()}}
+\code{\link[terra:focal]{terra::focal()}} \code{\link[=load_raster]{load_raster()}}
 }

@@ -207,15 +207,24 @@ than max", {
   )
 })
 
-# test_that("check if error_raster works properly", {
-#   bath <- raster::raster(bathy_matrix)
 
-#   expect_null(
-#     error_raster(bath)
-#   )
-#   expect_error(
-#     error_raster(bathy_matrix),
-#     "You supplied ",
-#     fixed = TRUE
-#   )
-# })
+test_that("error_numeric_min works", {
+  vec <- seq(1, 10, 1)
+
+  expect_error(
+    error_numeric_min(vec, col = "test", min_val = 2),
+    regexp = "must contain values strictly greater than",
+    fixed = TRUE
+  )
+})
+
+
+test_that("error_logical errros properly", {
+  val <- "FALSE"
+
+  expect_error(
+    error_logical(val),
+    "needs to be a logical value",
+    fixed = TRUE
+  )
+})

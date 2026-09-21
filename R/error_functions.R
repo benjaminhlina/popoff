@@ -289,20 +289,29 @@ error_list_prep <- function(
   invisible(TRUE)
 }
 
-#' @param e the condition object caught by `tryCatch()`
+#' @param obj an object to assess
 #' @name error_functions
 #' @keywords internal
-error_load <- function(path, e) {
-  cli::cli_abort(
-    c(
-      "Failed to read {.arg path} as a raster.",
-      "x" = "{.file {path}} could not be loaded by {.fn terra::rast}.",
-      "i" = "{.arg path} was type {.cls {class(path)}}.",
-      "i" = "Original error: {conditionMessage(e)}"
-    ),
-    class = "bathy_rast_read_failed"
-  )
+
+error_load <- function(obj, arg_name = NULL) {
+  if (is.null(arg_name)) {
+    arg_name <- rlang::as_label(rlang::enexpr(obj))
+  }
+
+  valid_classes <- c("SpatRaster", "RasterLayer", "matrix", "character")
+
+  if (!inherits(obj, valid_classes)) {
+    cli::cli_abort(
+      c(
+        "{.arg obj} must be a {.cls SpatRaster}, {.cls RasterLayer}, matrix, or a file path to one of those.",
+        "x" = "You supplied an object of class {.cls {class(obj)}}.",
+        "i" = "{.arg obj} had {.field typeof}: {.val {typeof(obj)}}."
+      ),
+      class = "bathy_invalid_input"
+    )
+  }
 }
+
 #' @param vec a `vector` to check if numeric
 #' @name error_functions
 #' @keywords internal
@@ -424,11 +433,12 @@ error_path <- function(path) {
       c(
         "File not found.",
         "x" = "No such file: {.file {path}}",
-        "i" = "Please provide the correct path to file you are wanting to use "
-      ),
+        "i" = "Please provide the correct path to file you are wanting to use."
+      )
     )
   }
 }
+
 
 #' @param output_dir a chracter string containing the out directory
 #' @name error_functions
@@ -457,21 +467,6 @@ error_out_dir <- function(output_dir) {
       )
     )
   }
-}
-
-#' @param raster a raster object to assess
-#' @name error_functions
-#' @keywords internal
-
-error_raster <- function(raster) {
-  cli::cli_abort(
-    c(
-      "{.arg raster} must be a {.cls SpatRaster}, {.cls RasterLayer}, matrix, or a file path to one of those.",
-      "x" = "You supplied an object of class {.cls {class(raster)}}.",
-      "i" = "{.arg raster} had {.field typeof}: {.val {typeof(raster)}}."
-    ),
-    class = "bathy_invalid_input"
-  )
 }
 
 

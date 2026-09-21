@@ -1,35 +1,43 @@
 #' Prepare Bathymetic Data
 #'
 #' This function prepared bahtymetic data to be used in the likelihood estimates.
+#' It calculates the standard deviation of each depth value by using the values
+#' around a given depth. To control the area used for standard deviation use
+#' `focal_dim`.
 #'
-#' @param bathy a `spatrater` generated using `load_bathy_raster(())`
-#' @param weighted a `logical` value that determines whther or not sd is weighted. Default is `FALSE`
+#' @param bathy a `SpatRaster` generated using `load_raster(())`
 #' @param focal_dim a `numerical` value that is odd. See details below.
-#' @param ctd_dir only required when `weighted = TRUE`. The path to ctd.
+#' @param ctd a `SpatRaster`that contains conductivity, temperature and depth
+#' (ctd) values for a given area. It will be used as informed standard deviation
+#' of the bathymetry instead of calculating the stadard deviation.
 #'
-#' @details  window used (i.e., `focal_dim`) must have odd dimensions. If you need even sides,
-#' you can use a matrix and add a column or row of `NA`'s to mask out values.
-#' Window values are typically `1` or `NA` to indicate whether a value is used or ignored in computations, respectively.
-#' `NA`` values in w can be useful for creating non-rectangular (e.g. circular) windows.
-#' A weights matrix of numeric values can also be supplied to `focal_dim`.
-#' In the case of a weights matrix, cells with `NA`` weights will be ignored, and the rest of the values in the
-#' focal window will be multiplied by the corresponding weight prior to `sd` being applied.
-#'  Note, `na.rm` does not need to be TRUE if `focal_dim` contains `NA`` values as these cells are ignored in computations.
+#' @details the window used (i.e., `focal_dim`) must have odd dimensions.
+#' If you need even sides, you can use a matrix and add a column or row of `NA`'s
+#' to mask out values. Window values are typically `1` or `NA` to indicate
+#' whether a value is used or ignored in computations, respectively.
+#' `NA`` values in w can be useful for creating non-rectangular (e.g. circular)
+#' windows. A weights matrix of numeric values can also be supplied to `focal_dim`.
+#' In the case of a weights matrix, cells with `NA`` weights will be ignored,
+#' and the rest of the values in the focal window will be multiplied by the
+#' corresponding weight prior to `sd` being applied.
+#' Note, `na.rm` does not need to be TRUE if `focal_dim` contains `NA`` values as these cells are ignored in computations.
 #'
-#' @seealso [terra::focal()] [load_bathy_raster()]
+#' @return A `list()` containing a `SpatRaster` of both bathymetry and the
+#' standard deviation (`sdi`), the index values (`idx`) for observed depths and
+#' `NA` values (`idx_na`), and the focal dimensions used to calculate the
+#' standard deviation.
+#' @seealso [terra::focal()] [load_raster()]
 #'
 #' @export
 
 prep_bathy_likdepth <- function(
-  bathy, # SpatRaster, RasterLayer, matrix, or path to .RData/.tif
-  weighted = FALSE,
+  bathy,
   focal_dim = 9,
-  ctd_dir = NULL # only required when weighted = TRUE
+  ctd = NULL
 ) {
   rlang::check_required(bathy)
 
   error_spatrast(bathy)
-  error_logical(weighted)
   error_focal_dim(focal_dim)
   t0 <- msg_start("bathymetric standard deviation")
 
@@ -37,22 +45,10 @@ prep_bathy_likdepth <- function(
   idx_na <- attr(bathy, 'idx_na')
 
   # ---- local bathymetric roughness (sd within a moving window) ----
-  if (weighted) {
-    if (is.null(ctd.dir)) {
-      stop("ctd.dir must be supplied when weighted = TRUE")
-    }
-    if (!focal_dim %in% c(3, 5, 9)) {
-      stop("pre-computed sd matrices only exist for focal_dim = 3, 5, or 9")
-    }
-    sd_path <- file.path(
-      ctd.dir,
-      paste0("sdcell.n", focal_dim, ".weighted.RData")
-    )
-    sdi <- local({
-      e <- new.env()
-      load(sd_path, envir = e)
-      e$sdcell
-    })
+  if (!is.null(ctd)) {
+    error_spatrast(ctd)
+    sdi <- ctd
+    focal_dim <- NULL
   } else {
     sd_r <- terra::focal(
       bathy,
@@ -64,27 +60,27 @@ prep_bathy_likdepth <- function(
 
     ssd <- as.vector(sdi)
     fill_sd0 <- stats::quantile(ssd[ssd != 0], probs = 0.01, na.rm = TRUE)
+
     if (is.na(fill_sd0)) {
       fill_sd0 <- 1e-3
     }
     sdi[sdi == 0] <- fill_sd0
     sdi[is.na(sdi)] <- fill_sd0
-
     sdi <- terra::rast(sdi)
-
-    # set crs and georeferecne
-    terra::crs(sdi) <- terra::crs(bathy)
   }
+
+  # set crs and georeferecne
+  terra::crs(sdi) <- terra::crs(bathy)
   msg_end(chr = "Bathymetric standard deviations", t0 = t0)
 
-  list(
+  out <- list(
     bathy = bathy,
-    sdi = sdi, # local bathymetric sd matrix
+    sdi = sdi,
     idx = idx,
     idx_na = idx_na,
-    focal_dim = focal_dim,
-    weighted = weighted
+    focal_dim = focal_dim
   )
+  return(out)
 }
 
 # ----- prep_summmary_likdepth -----
@@ -94,11 +90,19 @@ prep_bathy_likdepth <- function(
 #' This function prepared summary data to be used in the likelihood estimates.
 #'
 #' @param raw_log a `data.frame` containing the raw pop-off satalitte tag log
-#' @param iniloc a `data.frame` containing the iniloc information about when the tag was deployed, mrpat, and pop dates and location.
-#' @param bin a `numeric` containing the number of seconds within an aggregation (e.g., 3600 seconds is 1 hour).
-#' @param make_plot a `logical` value that controls whether the to make the summary plot. Default is `TRUE`.
-#' @param output_dir Defaults to `NULL` and will not export plot. Please provide a `character` string containing the path deseired
+#' @param iniloc a `data.frame` containing the iniloc information about when the
+#' tag was deployed, mrpat, and pop dates and location.
+#' @param bin a `numeric` containing the number of seconds within an
+#' aggregation (e.g., 3600 seconds is 1 hour).
+#' @param make_plot a `logical` value that controls whether the to make the
+#' summary plot. Default is `TRUE`.
+#' @param output_dir Defaults to `NULL` and will not export plot.
+#' Please provide a `character` string containing the path desired
 #' to save the plot.
+#'
+#' @return A `list()` containing a the `raw_log` as `data.frame`, the summarized
+#' log as a `data.frame`, a `ggplot2` object (`depth_profile`), the time
+#' resolution, and the time bin used as single value `vectors`.
 #'
 #' @export
 
