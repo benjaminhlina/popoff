@@ -4,7 +4,7 @@
 \alias{gaussian_kernel}
 \title{Gaussian Kernel}
 \usage{
-gaussian_kernel(kernal_size, sigma, muadv = 0, norm = FALSE, mask = TRUE)
+gaussian_kernel(kernal_size, sigma, muadv = 0, normalize = FALSE, mask = TRUE)
 }
 \arguments{
 \item{kernal_size}{a \code{numerical} value that is the size of the areas
@@ -14,7 +14,7 @@ to calculate the Gaussian Kernel.}
 
 \item{muadv}{a \code{numerical} value that adds to the mean (i.e, mu)}
 
-\item{norm}{a \code{logical} that checks whether to normalize the Kernel estimate.
+\item{normalize}{a \code{logical} that checks whether to normalize the Kernel estimate.
 Default is \code{FALSE}.}
 
 \item{mask}{a \code{logical} that creates a spatial mask based on the elucidan

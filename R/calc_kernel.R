@@ -6,7 +6,7 @@
 #' to calculate the Gaussian Kernel.
 #' @param sigma a `numerical` value that is the standard deviation
 #' @param muadv a `numerical` value that adds to the mean (i.e, mu)
-#' @param norm a `logical` that checks whether to normalize the Kernel estimate.
+#' @param normalize a `logical` that checks whether to normalize the Kernel estimate.
 #' Default is `FALSE`.
 #' @param mask a `logical` that creates a spatial mask based on the elucidan
 #' distance. Default is `TRUE`
@@ -19,13 +19,13 @@ gaussian_kernel <- function(
   kernal_size,
   sigma,
   muadv = 0,
-  norm = FALSE,
+  normalize = FALSE,
   mask = TRUE
 ) {
   error_numeric(kernal_size)
   error_numeric(sigma)
   error_numeric(muadv)
-  error_logical(norm)
+  error_logical(normalize)
   error_logical(mask)
   error_kernel(mask, sigma)
 
@@ -41,7 +41,8 @@ gaussian_kernel <- function(
   fx[!is.finite(fx)] <- 0
   fy[!is.finite(fy)] <- 0
   kern <- (fx %*% t(fy))
-  if (isTRUE(norm)) {
+
+  if (isTRUE(normalize)) {
     kern <- kern / (sum(kern, na.rm = T))
   } else {
     kern
@@ -83,8 +84,12 @@ gaussian_kernel <- function(
     # zero out the masked positions in the original kernel
     kern[mask_kern] <- 0
 
-    # normalize kernel values so the remaining elements sum to 1
-    kern <- kern / sum(kern, na.rm = TRUE)
+    if (isTRUE(normalize)) {
+      # normalize kernel values so the remaining elements sum to 1
+      kern <- kern / sum(kern, na.rm = TRUE)
+    } else {
+      kern
+    }
   }
 
   return(kern)
