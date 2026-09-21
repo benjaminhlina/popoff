@@ -47,12 +47,17 @@ preped_bathy <- prep_bathy_likdepth(bathy = bathy, focal_dim = 3)
 # 3) idx locations 4) idx_na locations, 4) focal dimensions, 5) if weighted
 preped_bathy
 # ------ prep log for summary prior to likelihood calculation ------
+# if you want to save the plot it produces supply out_dir with a character
+# string to a path you want to save it...You do not need to name the file
+# as it will name it self just tell it where you want to save it e.g.,
+# "plots/summary-plots/"
 preped_log <- prep_summary_likdepth(raw_log = pdt, iniloc = iniloc, bin = 3600)
 
 # pepared summary is a list containging 1) raw log, 2) summary table 3) a ggplot
 # of the depth and temperature profiles, 4) time resoulation, 5) bin value
 
 preped_log
+
 
 # ---- calculaite likeilhoood depth -----
 likedepth_transmit <- calc_likdepth_transmit(
