@@ -15,31 +15,29 @@ mask_likelihood_array(
 )
 }
 \arguments{
-\item{predicted}{matrix. Predicted spatial distribution at time t.}
+\item{predicted}{a `matrix``. Predicted spatial distribution at time t.}
 
-\item{likelihood}{matrix. Observation likelihood surface at time t.}
+\item{likelihood}{a `matrix``. Observation likelihood at time t.}
 
-\item{lon}{numeric vector. Grid longitude values (one per column).}
+\item{lon}{a `numeric`` vector. Grid longitude values (one per column).}
 
-\item{lat}{numeric vector. Grid latitude values (one per row).}
+\item{lat}{a `numeric`` vector. Grid latitude values (one per row).}
 
-\item{par0}{numeric. Kernel diameter (odd), used to derive a movement
+\item{par0}{a \code{numeric}. Kernel diameter (odd), used to derive a movement
 radius so the bounding box isn't clipped tighter than the diffusion
-kernel would allow in one step.}
+kernel would allow in one time step.}
 
-\item{bound_threshold}{numeric. Fraction of likelihood's max used to decide
-which  cells count as "plausible fish location" (e.g. 0.1 = 10\% of peak).}
+\item{bound_threshold}{a \code{numeric}.
+Fraction of likelihood's max used to decide which cells count
+as a plausible  location (e.g. 0.1 = 10\% of peak).}
 
-\item{bound_min}{integer. Minimum bounding-box side length (in cells)
+\item{bound_min}{an `integer``. Minimum bounding-box side length (in cells)
 in each dimension; box is widened symmetrically if smaller.}
 }
 \value{
-matrix, same dims as predicted/likelihood: predicted * likelihood
+a `matrix``, same dims as predicted/likelihood: predicted * likelihood
 outside the bounding box zeroed out.
 }
 \description{
-RECONSTRUCTED from the call site only — the original body was never
-available (see stop() guarding this branch upstream). Treat every
-design choice in this function as an ASSUMPTION requiring validation
-against known-good output before relying on it.
+Mask predicted/likelihood surfaces to a threshold-defined bounding region
 }

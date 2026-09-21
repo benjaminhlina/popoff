@@ -1,24 +1,23 @@
 #' Mask predicted/likelihood surfaces to a threshold-defined bounding region
 #'
-#' RECONSTRUCTED from the call site only — the original body was never
-#' available (see stop() guarding this branch upstream). Treat every
-#' design choice in this function as an ASSUMPTION requiring validation
-#' against known-good output before relying on it.
 #'
-#' @param predicted matrix. Predicted spatial distribution at time t.
-#' @param likelihood matrix. Observation likelihood surface at time t.
-#' @param lon numeric vector. Grid longitude values (one per column).
-#' @param lat numeric vector. Grid latitude values (one per row).
-#' @param par0 numeric. Kernel diameter (odd), used to derive a movement
+#' @param predicted a `matrix``. Predicted spatial distribution at time t.
+#' @param likelihood a `matrix``. Observation likelihood at time t.
+#' @param lon a `numeric`` vector. Grid longitude values (one per column).
+#' @param lat a `numeric`` vector. Grid latitude values (one per row).
+#' @param par0 a `numeric`. Kernel diameter (odd), used to derive a movement
 #'   radius so the bounding box isn't clipped tighter than the diffusion
-#'   kernel would allow in one step.
-#' @param bound_threshold numeric. Fraction of likelihood's max used to decide
-#' which  cells count as "plausible fish location" (e.g. 0.1 = 10% of peak).
-#' @param bound_min integer. Minimum bounding-box side length (in cells)
+#'   kernel would allow in one time step.
+#' @param bound_threshold a `numeric`.
+#' Fraction of likelihood's max used to decide which cells count
+#' as a plausible  location (e.g. 0.1 = 10% of peak).
+#' @param bound_min an `integer``. Minimum bounding-box side length (in cells)
 #'   in each dimension; box is widened symmetrically if smaller.
 #'
-#' @return matrix, same dims as predicted/likelihood: predicted * likelihood
+#' @return a `matrix``, same dims as predicted/likelihood: predicted * likelihood
 #' outside the bounding box zeroed out.
+#'
+#' @export
 mask_likelihood_array <- function(
   predicted,
   likelihood,
@@ -28,13 +27,11 @@ mask_likelihood_array <- function(
   bound_threshold = 0.1,
   bound_min = 10
 ) {
-  n_row <- length(lat) # ASSUMPTION: matches g$lat[, 1] passed at call site
-  n_col <- length(lon) # ASSUMPTION: matches g$lon[1, ] passed at call site
+  n_row <- length(lat)
+  n_col <- length(lon)
 
   max_likelhood <- max(likelihood, na.rm = TRUE)
 
-  # ASSUMPTION: bound_threshold is a *fraction of peak*, not an absolute value —
-  # unverified; could equally be an absolute likelihood floor.
   above_thresh <- which(
     likelihood >= bound_threshold * max_likelhood,
     arr.ind = TRUE
