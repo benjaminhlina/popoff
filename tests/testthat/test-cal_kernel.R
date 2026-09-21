@@ -16,34 +16,66 @@ test_that("returns a square numeric matrix sized by round(kernal_size)", {
 })
 
 test_that("kernal_size below 1 is clamped to 1 (returns 1x1 matrix of 1)", {
-  expect_equal(gaussian_kernel(0, 1), matrix(1))
-  expect_equal(gaussian_kernel(-3, 1), matrix(1))
-  expect_equal(gaussian_kernel(1, 1), matrix(1))
+  expect_equal(gaussian_kernel(0, 1, normalize = TRUE), matrix(1), )
+  expect_equal(gaussian_kernel(-3, 1, normalize = TRUE), matrix(1))
+  expect_equal(gaussian_kernel(1, 1, normalize = TRUE), matrix(1))
+
+  # with the normalize = FALSE default, it's just the raw density value at distance 0
+  expect_equal(dim(gaussian_kernel(0, 1)), c(1, 1))
+  expect_equal(gaussian_kernel(0, 1)[1, 1], gaussian_kernel(1, 1)[1, 1])
 })
 
+
+test_that("mask = TRUE zeroes cells outside the circular radius, regardless of normalize", {
+  for (norm_flag in c(FALSE, TRUE)) {
+    k <- gaussian_kernel(5, 1, normalize = norm_flag)
+    expect_equal(k[1, 1], 0)
+    expect_equal(k[1, 5], 0)
+    expect_equal(k[5, 1], 0)
+    expect_equal(k[5, 5], 0)
+    expect_true(k[3, 3] > 0)
+    expect_true(k[2, 3] > 0)
+  }
+})
 test_that("default arguments (norm = FALSE, mask = TRUE) sum to 1 and are symmetric", {
   k <- gaussian_kernel(5, 1)
-  expect_equal(sum(k), 1, tolerance = 1e-8)
-  expect_equal(k, t(k), tolerance = 1e-8)
+  expect_equal(sum(k), 0.97, tolerance = 0.001)
+  expect_equal(k, t(k), tolerance = 0.001)
 })
 
-test_that("mask = TRUE zeroes cells outside the circular radius", {
-  k <- gaussian_kernel(5, 1)
-  # corners of a 5x5 kernel lie outside the circular mask radius (2)
-  expect_equal(k[1, 1], 0)
-  expect_equal(k[1, 5], 0)
-  expect_equal(k[5, 1], 0)
-  expect_equal(k[5, 5], 0)
-  # center and its immediate neighbors are inside the radius
-  expect_true(k[3, 3] > 0)
-  expect_true(k[2, 3] > 0)
+test_that("mask = TRUE zeroes cells outside the circular radius, regardless of normalize", {
+  for (norm_flag in c(FALSE, TRUE)) {
+    k <- gaussian_kernel(5, 1, normalize = norm_flag)
+    expect_equal(k[1, 1], 0)
+    expect_equal(k[1, 5], 0)
+    expect_equal(k[5, 1], 0)
+    expect_equal(k[5, 5], 0)
+    expect_true(k[3, 3] > 0)
+    expect_true(k[2, 3] > 0)
+  }
 })
 
-test_that("mask = TRUE always renormalizes so the kernel sums to 1", {
-  expect_equal(sum(gaussian_kernel(5, 1)), 1, tolerance = 1e-8)
-  expect_equal(sum(gaussian_kernel(4, 1)), 1, tolerance = 1e-8)
-  expect_equal(sum(gaussian_kernel(5, 100)), 1, tolerance = 1e-8)
-  expect_equal(sum(gaussian_kernel(5, 1, norm = TRUE)), 1, tolerance = 1e-8)
+test_that("mask = TRUE when normalizatation = TRUE renormalizes so the kernel sums to 1", {
+  expect_equal(
+    sum(gaussian_kernel(5, 1, normalize = TRUE)),
+    1,
+    tolerance = 1e-8
+  )
+  expect_equal(
+    sum(gaussian_kernel(4, 1, normalize = TRUE)),
+    1,
+    tolerance = 1e-8
+  )
+  expect_equal(
+    sum(gaussian_kernel(5, 100, normalize = TRUE)),
+    1,
+    tolerance = 1e-8
+  )
+  expect_equal(
+    sum(gaussian_kernel(5, 1, normalize = TRUE)),
+    1,
+    tolerance = 1e-8
+  )
 })
 
 test_that("mask = FALSE, norm = FALSE returns the raw (unnormalized) product of 1D densities", {
@@ -110,4 +142,65 @@ test_that("norm and mask must be logical", {
   expect_error(gaussian_kernel(5, 1, mask = "TRUE"))
   expect_error(gaussian_kernel(5, 1, norm = 1))
   expect_error(gaussian_kernel(5, 1, mask = 1))
+})
+
+
+test_that("masked kernel is symmetric regardless of normalize", {
+  expect_equal(
+    gaussian_kernel(5, 1, normalize = FALSE),
+    t(gaussian_kernel(5, 1, normalize = FALSE)),
+    tolerance = 1e-8
+  )
+  expect_equal(
+    gaussian_kernel(5, 1, normalize = TRUE),
+    t(gaussian_kernel(5, 1, normalize = TRUE)),
+    tolerance = 1e-8
+  )
+})
+
+
+test_that("normalize = FALSE never rescales to sum to 1, masked or not (the fixed behavior)", {
+  k_mask_false <- gaussian_kernel(5, 1, normalize = FALSE, mask = FALSE)
+  expect_equal(sum(k_mask_false), 0.9818148, tolerance = 1e-6)
+
+  # previously this was force-renormalized to 1 despite normalize = FALSE;
+  # the switch means it no longer is
+  k_mask_true <- gaussian_kernel(5, 1, normalize = FALSE, mask = TRUE)
+  expect_equal(sum(k_mask_true), 0.9701547, tolerance = 1e-6)
+  expect_false(isTRUE(all.equal(sum(k_mask_true), 1)))
+})
+
+test_that("masking + normalizing only rescales magnitude, not the relative shape", {
+  k_unnorm <- gaussian_kernel(5, 1, normalize = FALSE, mask = TRUE)
+  k_norm <- gaussian_kernel(5, 1, normalize = TRUE, mask = TRUE)
+  expect_equal(k_unnorm / sum(k_unnorm), k_norm, tolerance = 1e-8)
+})
+
+test_that("default arguments now leave the kernel unnormalized (normalize defaults to FALSE)", {
+  k <- gaussian_kernel(5, 1)
+  expect_false(isTRUE(all.equal(sum(k), 1)))
+  expect_equal(sum(k), 0.9701547, tolerance = 1e-6)
+})
+
+
+test_that("sigma = 0 with mask = FALSE does not error (is.finite guard zeroes it out)", {
+  k_unmasked <- gaussian_kernel(5, 0, mask = FALSE)
+  expect_true(all(k_unmasked == 0))
+})
+
+test_that("sigma = 0 with mask = TRUE errors instead of silently returning NaN", {
+  expect_error(gaussian_kernel(5, 0, mask = TRUE))
+})
+
+
+test_that("error_kernel() errors only when mask = TRUE and sigma == 0", {
+  expect_error(error_kernel(TRUE, 0))
+  expect_silent(error_kernel(TRUE, 1))
+  expect_silent(error_kernel(FALSE, 0))
+  expect_silent(error_kernel(FALSE, 1))
+})
+
+test_that("error_kernel() does not fire for sigma values merely close to zero", {
+  expect_silent(error_kernel(TRUE, 1e-8))
+  expect_silent(gaussian_kernel(5, 1e-8))
 })
