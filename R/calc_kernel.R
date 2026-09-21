@@ -2,11 +2,12 @@
 #'
 #' Determines the Gaussian Kernel for an area
 #'
-#' @param kernal_size a `numerical` value that is the size of the areas to calculate the
-#' Kernel
+#' @param kernal_size a `numerical` value that is the size of the areas
+#' to calculate the Gaussian Kernel.
 #' @param sigma a `numerical` value that is the standard deviation
 #' @param muadv a `numerical` value that adds to the mean (i.e, mu)
-#' @param norm a `logical` that checks whether to normalize the Kernel estimate. Default is `FALSE`.
+#' @param norm a `logical` that checks whether to normalize the Kernel estimate.
+#' Default is `FALSE`.
 #' @param mask a `logical` that creates a spatial mask based on the elucidan
 #' distance. Default is `TRUE`
 #'
@@ -26,6 +27,7 @@ gaussian_kernel <- function(
   error_numeric(muadv)
   error_logical(norm)
   error_logical(mask)
+  error_kernel(mask, sigma)
 
   if (round(kernal_size) < 1) {
     kernal_size <- 1

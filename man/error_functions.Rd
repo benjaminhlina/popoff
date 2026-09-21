@@ -9,6 +9,7 @@
 \alias{error_empty_file}
 \alias{error_focal_dim}
 \alias{error_input_data}
+\alias{error_kernel}
 \alias{error_list}
 \alias{error_likelihood_matrix}
 \alias{error_load}
@@ -35,6 +36,8 @@ error_empty_file(path)
 error_focal_dim(obj, arg_name = NULL)
 
 error_input_data(input_data, type)
+
+error_kernel(mask, sigma)
 
 error_list(list)
 
@@ -80,6 +83,10 @@ error_spatrast(spatrast, arg_name = NULL)
 \item{input_data}{a \code{data.frame} to assess}
 
 \item{type}{the type of input data. A \code{character} usually \code{"raw_log"} or \code{"iniloc"}.}
+
+\item{mask}{a \code{logical}.}
+
+\item{sigma}{a \code{numeric}.}
 
 \item{list}{a \code{list}.}
 

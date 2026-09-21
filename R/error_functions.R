@@ -145,6 +145,22 @@ error_input_data <- function(input_data, type) {
   }
 }
 
+#' @param mask a `logical`.
+#' @param sigma a `numeric`.
+#' @name error_functions
+#' @keywords internal
+
+error_kernel <- function(mask, sigma) {
+  if (isTRUE(mask) & sigma == 0) {
+    cli::cli_abort(
+      c(
+        "When mask is {.val {mask}} and sigma is {.val {sigma}} Gaussian Kernel produces {.val {NaN}}",
+        "x" = "If using a value of {.val {mask}} for mask then sigma has to be > {.val 0}"
+      )
+    )
+  }
+}
+
 #' @param list a `list`.
 #' @name error_functions
 #' @keywords internal
