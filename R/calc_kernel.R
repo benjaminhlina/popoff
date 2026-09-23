@@ -28,6 +28,7 @@ gaussian_kernel <- function(
   error_logical(normalize)
   error_logical(mask)
   error_kernel(mask, sigma)
+  t0 <- msg_start("Gaussian kernel")
 
   if (round(kernal_size) < 1) {
     kernal_size <- 1
@@ -91,6 +92,6 @@ gaussian_kernel <- function(
       kern
     }
   }
-
+  msg_end("Calculated Gaussian kernel", t0 = t0)
   return(kern)
 }

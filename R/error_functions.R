@@ -504,3 +504,20 @@ error_spatrast <- function(spatrast, arg_name = NULL) {
     )
   }
 }
+#' @param back_transform a `logical` value
+#' @param parameter_range a `vector` containing two `numerical` values.
+#' @name error_functions
+#' @keywords internal
+
+error_transform <- function(back_transform, parameter_range) {
+  if (isTRUE(back_transform) & is.null(parameter_range)) {
+    cli::cli_abort(
+      c(
+        "When {.arg back_transform} is {.val TRUE}, {.arg parameter_range} 
+        cannot be {.val NULL}",
+        "x" = "Please supply {.arg parameter_range} with a {.cls vector} 
+        containing two numerical values (e.g., {.val c(1, 5)})"
+      )
+    )
+  }
+}

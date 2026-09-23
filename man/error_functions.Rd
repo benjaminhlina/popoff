@@ -21,6 +21,7 @@
 \alias{error_path}
 \alias{error_out_dir}
 \alias{error_spatrast}
+\alias{error_transform}
 \title{Error functions}
 \usage{
 error_chr(chr, col = NULL)
@@ -60,6 +61,8 @@ error_path(path)
 error_out_dir(out_dir)
 
 error_spatrast(spatrast, arg_name = NULL)
+
+error_transform(back_transform, parameter_range)
 }
 \arguments{
 \item{chr}{a character to check}
@@ -103,6 +106,10 @@ error_spatrast(spatrast, arg_name = NULL)
 \item{out_dir}{a chracter string containing the out directory}
 
 \item{spatrast}{a raster object to assess}
+
+\item{back_transform}{a \code{logical} value}
+
+\item{parameter_range}{a \code{vector} containing two \code{numerical} values.}
 }
 \description{
 These functions produce error message displayed to the user.

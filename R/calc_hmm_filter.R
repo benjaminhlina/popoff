@@ -5,7 +5,8 @@ hmm_filter_1B_deal_NA <- function(
   likelihood_array,
   kernal,
   bound_threshold = 0.1,
-  bound_min = 10
+  bound_min = 10,
+  mask_likelihood = FALSE
 ) {
   n_time <- dim(likelihood_array)[1]
   n_row <- dim(grid$lon)[1]
@@ -53,17 +54,17 @@ hmm_filter_1B_deal_NA <- function(
     if (sum_likelihood > 1e-06 & !check_data_update %in% c(0, NA, Inf, -Inf)) {
       if (isTRUE(mask_likelihood)) {
         # post1 <- mask.L(pred.t = pred[1, t, , ], L.t = L[t,
-        #                                                  , ], lon = g$lon[1, ], lat = g$lat[, 1], par0 = dim(K1)[1],
+        #                                                  , ], lon = grid$lon[1, ], lat = grid$lat[, 1], par0 = dim(K1)[1],
         #                 bound.thr = bound.thr, minBounds = minBounds)
         # post2 <- mask.L(pred.t = pred[2, t, , ], L.t = L[t,
-        #                                                  , ], lon = g$lon[1, ], lat = g$lat[, 1], par0 = dim(K1)[1],
+        #                                                  , ], lon = grid$lon[1, ], lat = grid$lat[, 1], par0 = dim(K1)[1],
         #                 bound.thr = bound.thr, minBounds = minBounds)
 
         post <- mask_likelihood_array(
           pred.t = pred[t, , ],
           L.t = L[t, , ],
-          lon = g$lon[1, ],
-          lat = g$lat[, 1],
+          lon = grid$lon[1, ],
+          lat = grid$lat[, 1],
           par0 = dim(K)[1],
           bound.thr = bound.thr,
           minBounds = minBounds
@@ -71,7 +72,7 @@ hmm_filter_1B_deal_NA <- function(
       } else {
         # post1 <- pred[1, t, , ] * L[t, , ]
         # post2 <- pred[2, t, , ] * L[t, , ]
-        post <- predicted[t, , ] * L[t, , ]
+        post <- predicted[t, , ] * likelihood_array[t, , ]
       }
     } else {
       # post1 <- pred[1, t, , ]
@@ -79,7 +80,7 @@ hmm_filter_1B_deal_NA <- function(
       post <- predicted[t, , ]
     }
     # psi[t - 1] <- sum(as.vector(post1), na.rm = T) + sum(as.vector(post2), na.rm = T)
-    psi[t - 1] <- sum(as.vector(post), na.rm = T)
+    psi[t - 1] <- sum(as.vector(post), na.rm = TRUE)
 
     # phi[1, t, , ] <- post1/(psi[t - 1] + 1e-15)
     #  phi[2, t, , ] <- post2/(psi[t - 1] + 1e-15)
