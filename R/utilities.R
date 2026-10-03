@@ -1,3 +1,31 @@
+#' Capture messages and turn them into {cli}
+#'
+#' captures a mesage and turns them into {cli} style.
+#'
+#' @param expr an expression
+#'
+#' @name cli_message
+#' @keywords internal
+
+.cli_messages <- function(expr, success = "Download completed!") {
+  res <- withCallingHandlers(
+    expr,
+    message = function(m) {
+      txt <- trimws(conditionMessage(m))
+      if (nzchar(txt)) {
+        cli::cli_alert_info("{txt}")
+      }
+      invokeRestart("muffleMessage")
+    }
+  )
+
+  if (!is.null(success)) {
+    cli::cli_alert_success("{success}")
+  }
+
+  return(res)
+}
+
 #' Convert functions
 #'
 #' Convert an object of one class to another (e.g., `SpatRaster` to `matrix`
@@ -19,33 +47,6 @@
   # return(as.vector(x))
 }
 
-#' Check whether a list element exists and satisfies a type check
-#'
-#' @param x A list.
-#' @param field Name of the element to check.
-#' @param check Either a class string (checked via `inherits()`) or a
-#'   predicate function (e.g. `is.numeric`) applied to the element.
-#'
-#' @return `TRUE`/`FALSE`.
-#' @keywords internal
-.has_valid_field <- function(x, field, check) {
-  if (!field %in% names(x)) {
-    return(FALSE)
-  }
-
-  val <- x[[field]]
-
-  if (is.character(check)) {
-    inherits(val, check)
-  } else if (is.function(check)) {
-    isTRUE(check(val))
-  } else {
-    rlang::abort(
-      "`check` must be a class string or a predicate function.",
-      call = rlang::caller_env()
-    )
-  }
-}
 
 #' Compute functions
 #'
@@ -106,6 +107,34 @@
     .safe_range_val(valid_temps, type)
   }
 }
+#' Check whether a list element exists and satisfies a type check
+#'
+#' @param x A list.
+#' @param field Name of the element to check.
+#' @param check Either a class string (checked via `inherits()`) or a
+#'   predicate function (e.g. `is.numeric`) applied to the element.
+#'
+#' @return `TRUE`/`FALSE`.
+#' @keywords internal
+.has_valid_field <- function(x, field, check) {
+  if (!field %in% names(x)) {
+    return(FALSE)
+  }
+
+  val <- x[[field]]
+
+  if (is.character(check)) {
+    inherits(val, check)
+  } else if (is.function(check)) {
+    isTRUE(check(val))
+  } else {
+    rlang::abort(
+      "`check` must be a class string or a predicate function.",
+      call = rlang::caller_env()
+    )
+  }
+}
+
 
 #' Integrate dnorm
 #'

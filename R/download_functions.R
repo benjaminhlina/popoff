@@ -41,6 +41,7 @@ download_noaa_bathy <- function(
     lat2 = max(ylim),
     ...
   ) |>
+    .cli_messages() |>
     marmap::as.xyz() |>
     tibble::as_tibble() |>
     tidyr::pivot_wider(
