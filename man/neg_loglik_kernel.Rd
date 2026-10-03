@@ -11,7 +11,8 @@ neg_loglik_kernel(
   normalize = FALSE,
   mask = TRUE,
   back_transform = FALSE,
-  parameter_range = NULL
+  parameter_range = NULL,
+  mask_likelihood = FALSE
 )
 }
 \arguments{
@@ -34,6 +35,6 @@ indicating the range of the \code{parameter}. Defaults to \code{NULL} and is onl
 needed if \code{back_transform} is \code{TRUE}.}
 }
 \description{
-This function takes a parameter, a likelihood and a location and determines
+This function takes a parameter, a likelihood and a grid and determines
 the negative log-lkelihood of a Guassian Kernel
 }
