@@ -1,23 +1,32 @@
 # ----- load packages ----
 
 {
+  library(dplyr)
   library(ggplot2)
   library(poppr)
   library(purrr)
   library(scales)
   library(terra)
+  library(tidyr)
   library(tidyterra)
 }
 
 # ----- load bathymetry for the area of interest ----
+
+bathy_matrix <- download_noaa_bathy(
+  xlim = c(-72.41, -40.0),
+  ylim = c(41.52, 55.0),
+  res = 1
+)
+bathy_matrix
 # in this case Gulf of St. Lawrence
 
-bathy <- load_raster(bathy_matrix, crs = "EPSG:6500")
-
 # we can check that it is SpatRaster
-bathy
+
+bathy <- load_raster(bathy_matrix, crs = "EPSG:4326")
 
 # ----- next we can plot the spat raster using tidyterra ----
+
 ggplot() +
   geom_spatraster(data = bathy) +
   coord_sf() +
@@ -68,22 +77,77 @@ dim(likedepth_transmit)
 
 days <- seq(1, 4, by = 1)
 
+xlim <- attr(bathy_matrix, "xlim")
+ylim <- attr(bathy_matrix, "ylim")
+
+
 # ---- we can convert them into spatrasters using load functions
 likelihood_spr <- days |>
   map(
-    ~ load_raster(likedepth_transmit[,, .x], crs = "EPSG:6500"),
+    ~ load_raster(
+      likedepth_transmit[,, .x],
+      extent = c(xlim, ylim),
+      crs = "EPSG:4326"
+    ),
     .progress = TRUE
   )
-
+likelihood_spr
 # ----- then polt them using ggplot and tidyterra -----
 likelihood_spr |>
   map(
     ~ ggplot() +
       geom_spatraster(data = .x) +
-      coord_sf() +
-      scale_fill_viridis_c(option = "H") +
-      ggview::canvas(11, 8.5)
+      # coord_sf() +
+      scale_fill_viridis_c(option = "H")
   )
+
 
 # ---- Take idx values that equla 0.5 or greater and pull the depth of those
 #idx vlaues -----
+
+likelihood_spr[1]
+
+
+g <- loaded_data$grid.peter
+
+r_extent <- terra::ext(
+  min(g$xgrid) - dflon[1] / 2,
+  max(g$xgrid) + dflon[length(dflon)] / 2,
+  min(g$ygrid) - dflat[1] / 2,
+  max(g$ygrid) + dflat[length(dflat)] / 2
+)
+r_extent
+
+
+terra::ext(bathy) <- r_extent
+terra::crs(bathy) <- "EPSG:4326"
+bathy
+likelihood_spr <- likelihood_spr |>
+  map(
+    ~ {
+      terra::ext(.x) <- r_extent
+      .x
+    }
+  )
+
+
+likelihood_spr <- likelihood_spr |>
+  map(
+    ~ {
+      terra::crs(.x) <- "EPSG:4326"
+      .x
+    }
+  )
+
+
+pts <- cbind(iniloc$lon, iniloc$lat)
+
+cellId <- likelihood_spr |>
+  map(
+    ~ terra::cellFromXY(.x, pts)
+  ) # linear cell index
+
+
+vals <- likelihood_spr |>
+  map(~ terra::extract(.x, pts)) # likelihood value(s) at those cells
+vals
