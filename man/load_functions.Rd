@@ -5,13 +5,15 @@
 \alias{load_raster}
 \title{Load functions}
 \usage{
-load_raster(bathy, crs = NULL)
+load_raster(bathy, extent = NULL, crs = NULL, ...)
 }
 \arguments{
 \item{bathy}{A bathymetric feature to be brought in as a \code{SpatRaster} object}
 
 \item{crs}{a character string that is the coordinate reference system (CRS) of the raster object e.g., \code{"ESPG:4326"}.
 Default is \code{NULL} resulting in not supplying a CRS. See \code{terra::crs()} for valid CRS format.}
+
+\item{...}{addtional arguments to pass \code{terra::rast()}.}
 }
 \description{
 These functions load different data into R

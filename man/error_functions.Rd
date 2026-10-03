@@ -7,11 +7,13 @@
 \alias{error_date}
 \alias{error_df}
 \alias{error_empty_file}
+\alias{error_extent}
 \alias{error_focal_dim}
 \alias{error_input_data}
 \alias{error_kernel}
 \alias{error_list}
 \alias{error_likelihood_matrix}
+\alias{error_limits}
 \alias{error_load}
 \alias{error_logical}
 \alias{error_matrix}
@@ -34,6 +36,8 @@ error_df(df, arg_name = NULL)
 
 error_empty_file(path)
 
+error_extent(vec, arg_name = NULL)
+
 error_focal_dim(obj, arg_name = NULL)
 
 error_input_data(input_data, type)
@@ -43,6 +47,8 @@ error_kernel(mask, sigma)
 error_list(list)
 
 error_likelihood_matrix(matrix, idx)
+
+error_limits(vec, arg_name = NULL)
 
 error_load(obj, arg_name = NULL)
 
@@ -81,6 +87,8 @@ error_transform(back_transform, parameter_range)
 
 \item{path}{The file path to a file.}
 
+\item{vec}{a \code{vector} to check if numeric}
+
 \item{obj}{an object to assess}
 
 \item{input_data}{a \code{data.frame} to assess}
@@ -96,8 +104,6 @@ error_transform(back_transform, parameter_range)
 \item{matrix}{a \code{matrix} to check if valid}
 
 \item{idx}{index value}
-
-\item{vec}{a \code{vector} to check if numeric}
 
 \item{required_val}{a \code{vector} containing \code{characters} of the columns to check.}
 
