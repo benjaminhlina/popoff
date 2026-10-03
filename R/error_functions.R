@@ -88,7 +88,20 @@ error_empty_file <- function(path) {
     ),
   )
 }
-
+#' @name error_functions
+#' @keywords internal
+error_extent <- function(vec, arg_name = NULL) {
+  if (is.null(arg_name)) {
+    arg_name <- rlang::as_label(rlang::enexpr(vec))
+  }
+  if (!is.numeric(vec) || length(vec) != 4 || anyNA(vec)) {
+    cli::cli_abort(c(
+      "{.arg {arg_name}} must be a numeric vector of length 4.",
+      "x" = "You supplied {.cls {class(vec)}} of length {length(vec)}.",
+      "i" = "Use the form {.code {arg_name} = c(xmin, xmax, ymin, ymax)} for the longtidue and latitude extents."
+    ))
+  }
+}
 #' @param obj an object either `vector` or `matrix`
 #' @name error_functions
 #' @keywords internal
