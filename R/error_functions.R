@@ -219,7 +219,20 @@ error_likelihood_matrix <- function(matrix, idx) {
     ))
   }
 }
-
+#' @name error_functions
+#' @keywords internal
+error_limits <- function(vec, arg_name = NULL) {
+  if (is.null(arg_name)) {
+    arg_name <- rlang::as_label(rlang::enexpr(vec))
+  }
+  if (!is.numeric(vec) || length(vec) != 2 || anyNA(vec)) {
+    cli::cli_abort(c(
+      "{.arg {arg_name}} must be a numeric vector of length 2.",
+      "x" = "You supplied {.cls {class(vec)}} of length {length(vec)}.",
+      "i" = "Use the form {.code {arg_name} = c(min, max)} for the longtidue and latitude extents."
+    ))
+  }
+}
 
 #' Validate a prepped list input
 #'
@@ -281,8 +294,7 @@ error_list_prep <- function(
         "sdi",
         "idx",
         "idx_na",
-        "focal_dim",
-        "weighted"
+        "focal_dim"
       )
     )
 

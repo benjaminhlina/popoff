@@ -16,12 +16,14 @@ Imports:
     cli,
     dplyr,
     ggplot2,
+    marmap,
     purrr,
     raster,
     rlang, 
     scales, 
     slider, 
     terra, 
+    tibble,
     tidyr,
     withr
 Suggests: 
