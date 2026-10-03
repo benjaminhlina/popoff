@@ -1,4 +1,4 @@
-bathy_spat <- load_raster(bathy_matrix)
+bathy_spat <- load_raster(bathy_matrix, crs = "EPSG:4326")
 
 set.seed(42)
 
@@ -97,7 +97,6 @@ test_that("fill_sd0 falls back to 1e-3 when every focal sd is zero", {
 # ---- known bugs (documented so regressions/fixes are visible) -----------
 
 test_that("Check if sdi does not inherit bathy's CRS/extent", {
-  terra::crs(bathy_spat) <- "EPSG:4326"
   # terra::ext(bathy_spat) <- terra::ext(0, 10, 0, 10)
 
   result <- suppressMessages(

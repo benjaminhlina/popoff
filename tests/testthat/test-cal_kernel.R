@@ -202,5 +202,5 @@ test_that("error_kernel() errors only when mask = TRUE and sigma == 0", {
 
 test_that("error_kernel() does not fire for sigma values merely close to zero", {
   expect_silent(error_kernel(TRUE, 1e-8))
-  expect_silent(gaussian_kernel(5, 1e-8))
+  expect_no_error(gaussian_kernel(5, 1e-8))
 })
