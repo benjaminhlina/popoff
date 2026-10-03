@@ -7,7 +7,6 @@
   library(purrr)
   library(scales)
   library(terra)
-  library(tidyr)
   library(tidyterra)
 }
 
@@ -105,7 +104,20 @@ likelihood_spr |>
 # ---- Take idx values that equla 0.5 or greater and pull the depth of those
 #idx vlaues -----
 
-likelihood_spr[1]
+?terra::extract()
+
+
+bathy_vec <- bathy |>
+  as.polygons(values = TRUE)
+s <- sf::st_as_sf(bathy_vec)
+
+s
+ggplot() +
+  geom_sf(data = s)
+
+locs <- iniloc |>
+  dplyr::select(lon, lat)
+terra::extract(likelihood_spr[[1]], locs)
 
 
 g <- loaded_data$grid.peter
