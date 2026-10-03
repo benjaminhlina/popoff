@@ -40,9 +40,9 @@ load_raster <- function(bathy, extent = NULL, crs = NULL, ...) {
         extent <- terra::ext(extent)
       }
 
-      bathy <- terra::rast(bathy, extent = extent)
+      bathy <- terra::rast(bathy, extent = extent, ...)
     } else {
-      bathy <- terra::rast(bathy)
+      bathy <- terra::rast(bathy, ...)
     }
 
     attr(bathy, "idx") <- .valid_idx(bathy)
@@ -75,7 +75,7 @@ load_raster <- function(bathy, extent = NULL, crs = NULL, ...) {
     }
     if (grepl("\\.tif$", bathy, ignore.case = TRUE)) {
       msg_load_raster(bathy)
-      obj <- terra::rast(bathy)
+      obj <- terra::rast(bathy, ...)
     }
 
     return(load_raster(obj))
