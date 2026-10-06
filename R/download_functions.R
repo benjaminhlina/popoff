@@ -9,6 +9,9 @@
 #' which are the latitudinal extent.
 #' @param land_value a `numerical` value at which to exclude depth values.
 #' Defaults to `0`.
+#' @param res a `numerical` value that determines the resolution to use. See
+#' `getNOAA.bathy()` for more detail. Defaults to `getNOAA.bathy()` default
+#' which is `4`.
 #' @param ... additional arguments to pass to `getNOAA.bathy()`
 #'
 #' @seealso [marmap::getNOAA.bathy()]
@@ -20,6 +23,7 @@ download_noaa_bathy <- function(
   xlim,
   ylim,
   land_value = NULL,
+  res = NULL,
   ...
 ) {
   suppressMessages(loadNamespace("marmap"))
@@ -34,11 +38,17 @@ download_noaa_bathy <- function(
 
   error_numeric(land_value)
 
+  if (is.null(res)) {
+    res <- 4
+  }
+  error_numeric(res)
+
   bath_matrix <- marmap::getNOAA.bathy(
     lon1 = min(xlim),
     lon2 = max(xlim),
     lat1 = min(ylim),
     lat2 = max(ylim),
+    res = res,
     ...
   ) |>
     .cli_messages() |>
@@ -48,6 +58,7 @@ download_noaa_bathy <- function(
   lon <- colnames(bath_matrix) |>
     as.numeric() |>
     order()
+
   lat <- rownames(bath_matrix) |>
     as.numeric() |>
     order(decreasing = TRUE)
