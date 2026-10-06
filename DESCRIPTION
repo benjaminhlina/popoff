@@ -17,13 +17,11 @@ Imports:
     ggplot2,
     marmap,
     purrr,
-    raster,
     rlang, 
     scales, 
     slider, 
     terra, 
-    tidyr,
-    withr
+    tidyr
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

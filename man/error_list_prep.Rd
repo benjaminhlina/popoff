@@ -7,12 +7,10 @@
 error_list_prep(list, type = c("log", "bathy"))
 }
 \arguments{
+\item{list}{The object to check.}
+
 \item{type}{One of \code{"log"} or \code{"bathy"}, indicating which upstream
 function \code{x} is expected to have come from.}
-
-\item{x}{The object to check.}
-
-\item{call}{The calling environment, passed to \code{cli::cli_abort()}.}
 }
 \value{
 Invisibly returns \code{TRUE} if \code{x} passes validation; otherwise

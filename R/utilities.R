@@ -1,6 +1,4 @@
-#' Capture messages and turn them into {cli}
-#'
-#' captures a mesage and turns them into {cli} style.
+#' Capture messages and turn them into cli styled messages
 #'
 #' @param expr an expression
 #'
