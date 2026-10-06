@@ -10,6 +10,11 @@ load_raster(bathy, extent = NULL, crs = NULL, ...)
 \arguments{
 \item{bathy}{A bathymetric feature to be brought in as a \code{SpatRaster} object}
 
+\item{extent}{default is \code{NULL} and if supplied \code{bathy} object is created by \code{download_noaa_bathy()}
+then the extent is already pulled. If not then no extent will be applied. If
+desiring an extent for the \code{bathy} object you need to supply a vector containing
+the following \code{c(xmin, xmax, ymin, ymax)} as numerics.}
+
 \item{crs}{a character string that is the coordinate reference system (CRS) of the raster object e.g., \code{"ESPG:4326"}.
 Default is \code{NULL} resulting in not supplying a CRS. See \code{terra::crs()} for valid CRS format.}
 

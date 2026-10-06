@@ -5,6 +5,10 @@
 #' @param bathy A bathymetric feature to be brought in as a `SpatRaster` object
 #' @param crs a character string that is the coordinate reference system (CRS) of the raster object e.g., `"ESPG:4326"`.
 #' Default is `NULL` resulting in not supplying a CRS. See `terra::crs()` for valid CRS format.
+#' @param extent default is `NULL` and if supplied `bathy` object is created by `download_noaa_bathy()`
+#' then the extent is already pulled. If not then no extent will be applied. If
+#' desiring an extent for the `bathy` object you need to supply a vector containing
+#' the following `c(xmin, xmax, ymin, ymax)` as numerics.
 #' @param ... addtional arguments to pass `terra::rast()`.
 #' @details returns a `SpatRaster` object to be used with an attribute of index. To access
 #' index use `attr(obj, "idx")`.
