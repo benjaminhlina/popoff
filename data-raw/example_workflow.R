@@ -24,6 +24,7 @@ bathy_matrix
 
 bathy <- load_raster(bathy_matrix, crs = "EPSG:4326")
 
+bathy
 # ----- next we can plot the spat raster using tidyterra ----
 
 ggplot() +
@@ -74,7 +75,7 @@ dim(likedepth_transmit)
 
 # ----- we can plot the first couple of days -----
 
-days <- seq(1, 4, by = 1)
+days <- seq(1, 203, by = 1)
 
 xlim <- attr(bathy_matrix, "xlim")
 ylim <- attr(bathy_matrix, "ylim")
@@ -96,7 +97,7 @@ likelihood_spr |>
   map(
     ~ ggplot() +
       geom_spatraster(data = .x) +
-      # coord_sf() +
+      coord_sf() +
       scale_fill_viridis_c(option = "H")
   )
 
@@ -104,51 +105,42 @@ likelihood_spr |>
 # ---- Take idx values that equla 0.5 or greater and pull the depth of those
 #idx vlaues -----
 
-?terra::extract()
-
-
-bathy_vec <- bathy |>
-  as.polygons(values = TRUE)
-s <- sf::st_as_sf(bathy_vec)
-
-s
-ggplot() +
-  geom_sf(data = s)
-
-locs <- iniloc |>
-  dplyr::select(lon, lat)
-terra::extract(likelihood_spr[[1]], locs)
-
-
-g <- loaded_data$grid.peter
-
-r_extent <- terra::ext(
-  min(g$xgrid) - dflon[1] / 2,
-  max(g$xgrid) + dflon[length(dflon)] / 2,
-  min(g$ygrid) - dflat[1] / 2,
-  max(g$ygrid) + dflat[length(dflat)] / 2
+bb <- sf::st_bbox(
+  c(xmin = xlim[1], xmax = xlim[2], ymin = ylim[1], ymax = ylim[2]),
+  crs = sf::st_crs(4326)
 )
-r_extent
 
-
-terra::ext(bathy) <- r_extent
-terra::crs(bathy) <- "EPSG:4326"
-bathy
-likelihood_spr <- likelihood_spr |>
-  map(
-    ~ {
-      terra::ext(.x) <- r_extent
-      .x
-    }
+bb # an sf bbox
+area_sfc <- sf::st_as_sfc(bb) # rectangle polygon (sfc)
+area_sf <- sf::st_as_sf(area_sfc) # same, as an sf data frame
+grid <- area_sf |>
+  sf::st_transform(32620) |>
+  sf::st_make_grid(cellsize = 10000, square = FALSE, what = "corners") |>
+  sf::st_as_sf() |>
+  rename(
+    geometry = x
   )
+grid
 
-
-likelihood_spr <- likelihood_spr |>
-  map(
-    ~ {
-      terra::crs(.x) <- "EPSG:4326"
-      .x
-    }
+ggplot() +
+  geom_spatraster(data = bathy) +
+  geom_sf(data = grid, alpha = 0.05) +
+  coord_sf() +
+  scale_fill_gradientn(
+    colours = c(
+      "#031E40",
+      "#0B3C73",
+      "#17A2FF",
+      "#7FDBFF",
+      "#EAF6FF",
+      "#FFE8A3",
+      "#E6F38F",
+      "#9AD850"
+    ),
+    values = scales::rescale(c(-4000, -600, -150, -60, 0, 50, 150, 400)),
+    limits = c(-4000, 400),
+    oob = squish,
+    name = "Elevation / Depth (m)"
   )
 
 
@@ -161,5 +153,27 @@ cellId <- likelihood_spr |>
 
 
 vals <- likelihood_spr |>
-  map(~ terra::extract(.x, pts)) # likelihood value(s) at those cells
+  map(
+    \(x) {
+      tibble(
+        likelihood = terra::extract(x, pts)[[1]],
+        event = iniloc$event
+      )
+    }
+  ) |>
+  dplyr::bind_rows(.id = "day") |>
+  mutate(
+    day = as.numeric(day)
+  ) # likelihood value(s) at those cells
 vals
+
+
+ggplot(data = vals, aes(x = day, y = likelihood, fill = event)) +
+  geom_point(
+    shape = 21,
+    size = 3,
+    alpha = 0.5,
+    position = position_jitter(height = 0.03, seed = 4)
+  ) +
+  scale_x_continuous(breaks = seq(0, 205, 10)) +
+  ggview::canvas(14, 11)

@@ -22,6 +22,8 @@ iniloc <- iniloc |>
     date = ymd_hms(date)
   ) |>
   as_tibble()
+
+
 usethis::use_data(iniloc, overwrite = TRUE)
 
 # ----- load psat data -----
@@ -138,6 +140,7 @@ usethis::use_data(bathy_matrix, overwrite = TRUE)
 "/Users/benhlina/Library/CloudStorage/Dropbox/Dal-Post Doc/
   data/Geolocation for Jena/bathy_grid"
 
+
 list_files <- list.files(
   here::here(
     "..",
@@ -176,32 +179,49 @@ library(dplyr)
 library(tidyr)
 
 
-lon <- loaded_data$grid.peter$lon |>
+lon <- loaded_data$grid.gsl.ssgb$lon |>
   dplyr::as_tibble() |>
   mutate(
     id = row_number()
   )
-lat <- loaded_data$grid.peter$lat |>
+lat <- loaded_data$grid.gsl.ssgb$lat |>
   dplyr::as_tibble() |>
   mutate(
     id = row_number()
   )
-
+lat |>
+  glimpse()
 
 lon_longer <- lon |>
   pivot_longer(col = -id, names_to = "grid_no", values_to = "lon")
-lon_long
+lon_longer
 
 lat_longer <- lat |>
   pivot_longer(col = -id, names_to = "grid_no", values_to = "lat")
-lat_long
+lat_longer
 
 grid <- lon_longer |>
   left_join(lat_longer)
 
+
 library(sf)
-grid_sf <- grid |>
+iniloc_sf <- iniloc |>
   st_as_sf(coords = c("lon", "lat"), crs = 4326)
+
+
+grid_sf <- grid |>
+  st_as_sf(coords = c("lon", "lat"), crs = 4326) |>
+  mutate(
+    grid_no = stringr::str_remove(grid_no, 'V')
+  )
+
+grid_sf |>
+  distinct(grid_no)
+
+
+grid_no <- grid_sf$grid_no[st_nearest_feature(iniloc_sf, grid_sf)]
+
+grid_no
 
 
 mapgl::maplibre_view(grid_sf)

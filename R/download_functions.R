@@ -42,14 +42,8 @@ download_noaa_bathy <- function(
     ...
   ) |>
     .cli_messages() |>
-    marmap::as.xyz() |>
-    tibble::as_tibble() |>
-    tidyr::pivot_wider(
-      names_from = V1,
-      values_from = V3
-    ) |>
-    tibble::column_to_rownames("V2") |>
-    as.matrix()
+    unclass() |>
+    t()
 
   lon <- colnames(bath_matrix) |>
     as.numeric() |>
