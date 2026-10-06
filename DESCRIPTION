@@ -5,7 +5,6 @@ Authors@R:
     person("Benjamin L.", "Hlina", , "benjamin.hlina@gmail.com", role = c("aut", "cre"))
 Description: Provides ability to conduct hidden Markoven models for pop-off satlitte transmitter (PSAT) 
              data for marine fishes and megafauna. 
-License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 8.0.0
@@ -23,9 +22,9 @@ Imports:
     scales, 
     slider, 
     terra, 
-    tibble,
     tidyr,
     withr
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
+License: MIT + file LICENSE
