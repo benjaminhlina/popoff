@@ -88,7 +88,20 @@ error_empty_file <- function(path) {
     ),
   )
 }
-
+#' @name error_functions
+#' @keywords internal
+error_extent <- function(vec, arg_name = NULL) {
+  if (is.null(arg_name)) {
+    arg_name <- rlang::as_label(rlang::enexpr(vec))
+  }
+  if (!is.numeric(vec) || length(vec) != 4 || anyNA(vec)) {
+    cli::cli_abort(c(
+      "{.arg {arg_name}} must be a numeric vector of length 4.",
+      "x" = "You supplied {.cls {class(vec)}} of length {length(vec)}.",
+      "i" = "Use the form {.code {arg_name} = c(xmin, xmax, ymin, ymax)} for the longtidue and latitude extents."
+    ))
+  }
+}
 #' @param obj an object either `vector` or `matrix`
 #' @name error_functions
 #' @keywords internal
@@ -145,6 +158,22 @@ error_input_data <- function(input_data, type) {
   }
 }
 
+#' @param mask a `logical`.
+#' @param sigma a `numeric`.
+#' @name error_functions
+#' @keywords internal
+
+error_kernel <- function(mask, sigma) {
+  if (isTRUE(mask) & sigma == 0) {
+    cli::cli_abort(
+      c(
+        "When mask is {.val {mask}} and sigma is {.val {sigma}} Gaussian Kernel produces {.val {NaN}}",
+        "x" = "If using a value of {.val {mask}} for mask then sigma has to be > {.val 0}"
+      )
+    )
+  }
+}
+
 #' @param list a `list`.
 #' @name error_functions
 #' @keywords internal
@@ -190,7 +219,20 @@ error_likelihood_matrix <- function(matrix, idx) {
     ))
   }
 }
-
+#' @name error_functions
+#' @keywords internal
+error_limits <- function(vec, arg_name = NULL) {
+  if (is.null(arg_name)) {
+    arg_name <- rlang::as_label(rlang::enexpr(vec))
+  }
+  if (!is.numeric(vec) || length(vec) != 2 || anyNA(vec)) {
+    cli::cli_abort(c(
+      "{.arg {arg_name}} must be a numeric vector of length 2.",
+      "x" = "You supplied {.cls {class(vec)}} of length {length(vec)}.",
+      "i" = "Use the form {.code {arg_name} = c(min, max)} for the longtidue and latitude extents."
+    ))
+  }
+}
 
 #' Validate a prepped list input
 #'
@@ -483,6 +525,23 @@ error_spatrast <- function(spatrast, arg_name = NULL) {
       c(
         "{arg_name} is not {.class SpatRaster}",
         "x" = "Please provide {arg_name} with a {.class SpatRaster}"
+      )
+    )
+  }
+}
+#' @param back_transform a `logical` value
+#' @param parameter_range a `vector` containing two `numerical` values.
+#' @name error_functions
+#' @keywords internal
+
+error_transform <- function(back_transform, parameter_range) {
+  if (isTRUE(back_transform) & is.null(parameter_range)) {
+    cli::cli_abort(
+      c(
+        "When {.arg back_transform} is {.val TRUE}, {.arg parameter_range} 
+        cannot be {.val NULL}",
+        "x" = "Please supply {.arg parameter_range} with a {.cls vector} 
+        containing two numerical values (e.g., {.val c(1, 5)})"
       )
     )
   }

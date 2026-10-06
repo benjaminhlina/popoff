@@ -7,10 +7,13 @@
 \alias{error_date}
 \alias{error_df}
 \alias{error_empty_file}
+\alias{error_extent}
 \alias{error_focal_dim}
 \alias{error_input_data}
+\alias{error_kernel}
 \alias{error_list}
 \alias{error_likelihood_matrix}
+\alias{error_limits}
 \alias{error_load}
 \alias{error_logical}
 \alias{error_matrix}
@@ -20,6 +23,7 @@
 \alias{error_path}
 \alias{error_out_dir}
 \alias{error_spatrast}
+\alias{error_transform}
 \title{Error functions}
 \usage{
 error_chr(chr, col = NULL)
@@ -32,13 +36,19 @@ error_df(df, arg_name = NULL)
 
 error_empty_file(path)
 
+error_extent(vec, arg_name = NULL)
+
 error_focal_dim(obj, arg_name = NULL)
 
 error_input_data(input_data, type)
 
+error_kernel(mask, sigma)
+
 error_list(list)
 
 error_likelihood_matrix(matrix, idx)
+
+error_limits(vec, arg_name = NULL)
 
 error_load(obj, arg_name = NULL)
 
@@ -57,6 +67,8 @@ error_path(path)
 error_out_dir(out_dir)
 
 error_spatrast(spatrast, arg_name = NULL)
+
+error_transform(back_transform, parameter_range)
 }
 \arguments{
 \item{chr}{a character to check}
@@ -75,19 +87,23 @@ error_spatrast(spatrast, arg_name = NULL)
 
 \item{path}{The file path to a file.}
 
+\item{vec}{a \code{vector} to check if numeric}
+
 \item{obj}{an object to assess}
 
 \item{input_data}{a \code{data.frame} to assess}
 
 \item{type}{the type of input data. A \code{character} usually \code{"raw_log"} or \code{"iniloc"}.}
 
+\item{mask}{a \code{logical}.}
+
+\item{sigma}{a \code{numeric}.}
+
 \item{list}{a \code{list}.}
 
 \item{matrix}{a \code{matrix} to check if valid}
 
 \item{idx}{index value}
-
-\item{vec}{a \code{vector} to check if numeric}
 
 \item{required_val}{a \code{vector} containing \code{characters} of the columns to check.}
 
@@ -96,6 +112,10 @@ error_spatrast(spatrast, arg_name = NULL)
 \item{out_dir}{a chracter string containing the out directory}
 
 \item{spatrast}{a raster object to assess}
+
+\item{back_transform}{a \code{logical} value}
+
+\item{parameter_range}{a \code{vector} containing two \code{numerical} values.}
 }
 \description{
 These functions produce error message displayed to the user.

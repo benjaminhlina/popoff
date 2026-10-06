@@ -79,7 +79,7 @@ test_that("check if error_matrix works properly", {
 
   expect_error(
     error_matrix(
-      bathy_matrix,
+      matrix(c(2, 2, 2)),
       dim_check = c(3, 3)
     ),
     "contains index/indices out of range for a matrix",
@@ -87,7 +87,7 @@ test_that("check if error_matrix works properly", {
   )
 
   error_matrix(
-    bathy_matrix[],
+    matrix(c(2, 2, 2)),
     dim_check = c(1, 2)
   )
 })
@@ -230,82 +230,82 @@ test_that("error_logical errros properly", {
 })
 
 
-test_that("error_out_dir works", {
-  describe("NULL input", {
-    it("is treated as valid/skip and returns invisible NULL", {
-      expect_null(error_out_dir(NULL))
-    })
-  })
-
-  describe("invalid type or length", {
-    it("aborts when out_dir is not a character", {
-      err <- rlang::catch_cnd(error_out_dir(123))
-
-      expect_true(grepl(
-        "Invalid `out_dir` input.",
-        conditionMessage(err),
-        fixed = TRUE
-      ))
-      expect_true(grepl(
-        "must be a single string",
-        conditionMessage(err),
-        fixed = TRUE
-      ))
-    })
-
-    it("aborts when out_dir has length > 1", {
-      err <- rlang::catch_cnd(error_out_dir(c("dir_1", "dir_2")))
-
-      expect_true(grepl(
-        "Invalid `out_dir` input.",
-        conditionMessage(err),
-        fixed = TRUE
-      ))
-      expect_true(grepl(
-        "must be a single string",
-        conditionMessage(err),
-        fixed = TRUE
-      ))
-    })
-
-    it("aborts when out_dir has length 0", {
-      err <- rlang::catch_cnd(error_out_dir(character(0)))
-
-      expect_true(grepl(
-        "Invalid `out_dir` input.",
-        conditionMessage(err),
-        fixed = TRUE
-      ))
-    })
-  })
-
-  describe("non-existent directory", {
-    it("aborts with a directory-not-found message", {
-      fake_dir <- file.path(tempdir(), "definitely_does_not_exist_xyz")
-
-      err <- rlang::catch_cnd(error_out_dir(fake_dir))
-
-      expect_true(grepl(
-        "Output directory not found.",
-        conditionMessage(err),
-        fixed = TRUE
-      ))
-      expect_true(grepl(
-        "No such directory",
-        conditionMessage(err),
-        fixed = TRUE
-      ))
-      expect_true(grepl(
-        "Please provide a valid, existing directory path.",
-        conditionMessage(err),
-        fixed = TRUE
-      ))
-    })
-  })
-
-  describe("valid, existing directory", {
-    it("returns invisible NULL without error", {
-      expect_null(error_out_dir(tempdir()))
-    })
+# test_that("error_out_dir works", {
+describe("NULL input", {
+  it("is treated as valid/skip and returns invisible NULL", {
+    expect_null(error_out_dir(NULL))
   })
 })
+
+describe("invalid type or length", {
+  it("aborts when out_dir is not a character", {
+    err <- rlang::catch_cnd(error_out_dir(123))
+
+    expect_true(grepl(
+      "Invalid `out_dir` input.",
+      conditionMessage(err),
+      fixed = TRUE
+    ))
+    expect_true(grepl(
+      "must be a single string",
+      conditionMessage(err),
+      fixed = TRUE
+    ))
+  })
+
+  it("aborts when out_dir has length > 1", {
+    err <- rlang::catch_cnd(error_out_dir(c("dir_1", "dir_2")))
+
+    expect_true(grepl(
+      "Invalid `out_dir` input.",
+      conditionMessage(err),
+      fixed = TRUE
+    ))
+    expect_true(grepl(
+      "must be a single string",
+      conditionMessage(err),
+      fixed = TRUE
+    ))
+  })
+
+  it("aborts when out_dir has length 0", {
+    err <- rlang::catch_cnd(error_out_dir(character(0)))
+
+    expect_true(grepl(
+      "Invalid `out_dir` input.",
+      conditionMessage(err),
+      fixed = TRUE
+    ))
+  })
+})
+
+describe("non-existent directory", {
+  it("aborts with a directory-not-found message", {
+    fake_dir <- file.path(tempdir(), "definitely_does_not_exist_xyz")
+
+    err <- rlang::catch_cnd(error_out_dir(fake_dir))
+
+    expect_true(grepl(
+      "Output directory not found.",
+      conditionMessage(err),
+      fixed = TRUE
+    ))
+    expect_true(grepl(
+      "No such directory",
+      conditionMessage(err),
+      fixed = TRUE
+    ))
+    expect_true(grepl(
+      "Please provide a valid, existing directory path.",
+      conditionMessage(err),
+      fixed = TRUE
+    ))
+  })
+})
+
+describe("valid, existing directory", {
+  it("returns invisible NULL without error", {
+    expect_null(error_out_dir(tempdir()))
+  })
+})
+# })
