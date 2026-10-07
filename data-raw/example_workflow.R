@@ -75,7 +75,7 @@ dim(likedepth_transmit)
 
 # ----- we can plot the first couple of days -----
 
-days <- seq(1, 203, by = 1)
+days <- unique(preped_log$summary_table$date)
 
 xlim <- attr(bathy_matrix, "xlim")
 ylim <- attr(bathy_matrix, "ylim")
@@ -83,9 +83,10 @@ ylim <- attr(bathy_matrix, "ylim")
 
 # ---- we can convert them into spatrasters using load functions
 likelihood_spr <- days |>
+  set_names() |>
   map(
     ~ load_raster(
-      likedepth_transmit[,, .x],
+      likedepth_transmit[,, as.character(.x)],
       extent = c(xlim, ylim),
       crs = "EPSG:4326"
     ),
@@ -94,11 +95,19 @@ likelihood_spr <- days |>
 likelihood_spr
 # ----- then polt them using ggplot and tidyterra -----
 likelihood_spr |>
-  map(
+  imap(
     ~ ggplot() +
       geom_spatraster(data = .x) +
       coord_sf() +
-      scale_fill_viridis_c(option = "H")
+      scale_fill_viridis_c(option = "H") +
+      theme_bw(
+        base_size = 15
+      ) +
+      theme(
+        panel.grid = element_blank(),
+        plot.title = element_text(hjust = 0.5)
+      ) +
+      labs(title = .y)
   )
 
 
