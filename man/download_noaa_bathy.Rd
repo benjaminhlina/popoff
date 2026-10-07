@@ -4,7 +4,7 @@
 \alias{download_noaa_bathy}
 \title{Download Functions}
 \usage{
-download_noaa_bathy(xlim, ylim, land_value = NULL, ...)
+download_noaa_bathy(xlim, ylim, land_value = NULL, res = NULL, ...)
 }
 \arguments{
 \item{xlim}{a \code{vector} that contains two \code{numerical} values
@@ -15,6 +15,10 @@ which are the latitudinal extent.}
 
 \item{land_value}{a \code{numerical} value at which to exclude depth values.
 Defaults to \code{0}.}
+
+\item{res}{a \code{numerical} value that determines the resolution to use. See
+\code{getNOAA.bathy()} for more detail. Defaults to \code{getNOAA.bathy()} default
+which is \code{4}.}
 
 \item{...}{additional arguments to pass to \code{getNOAA.bathy()}}
 }

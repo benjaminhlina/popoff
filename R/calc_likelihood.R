@@ -129,6 +129,9 @@ calc_likdepth_transmit <- function(
   # start of heavy daily loop
   # here is the place to implement parallelisation
   #--------------------------
+  # ---- get date names -----
+
+  dates <- names(sum_split)
 
   lik_list <- purrr::imap(
     sum_split,
@@ -145,13 +148,11 @@ calc_likdepth_transmit <- function(
     },
     .progress = "Calculating depth likelihood"
   )
-  likeihood_array <- array(0, dim = c(zbi_dims[1], zbi_dims[2], n_days))
-  for (i in seq_len(n_days)) {
-    likeihood_array[,, i] <- lik_list[[i]]
-  }
-  likeihood_array <- aperm(likeihood_array, c(1, 2, 3))
+
+  likelihood_array <- simplify2array(lik_list)
+  dimnames(likelihood_array)[[3]] <- dates
 
   msg_end(chr = "Depth-transmission likelihood calculation", t0 = t0)
 
-  return(likeihood_array)
+  return(likelihood_array)
 }

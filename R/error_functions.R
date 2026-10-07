@@ -240,10 +240,9 @@ error_limits <- function(vec, arg_name = NULL) {
 #' `prep_summary_likdepth()` (`type = "log"`) or `prep_bathy_raster()`
 #' (`type = "bathy"`), and throws an informative error if not.
 #'
-#' @param x The object to check.
+#' @param list The object to check.
 #' @param type One of `"log"` or `"bathy"`, indicating which upstream
 #'   function `x` is expected to have come from.
-#' @param call The calling environment, passed to `cli::cli_abort()`.
 #'
 #' @return Invisibly returns `TRUE` if `x` passes validation; otherwise
 #'   aborts with an informative error.

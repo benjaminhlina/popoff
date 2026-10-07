@@ -3,7 +3,7 @@
 \name{cli_message}
 \alias{cli_message}
 \alias{.cli_messages}
-\title{Capture messages and turn them into {cli}}
+\title{Capture messages and turn them into cli styled messages}
 \usage{
 .cli_messages(expr, success = "Download completed!")
 }
@@ -11,6 +11,6 @@
 \item{expr}{an expression}
 }
 \description{
-captures a mesage and turns them into {cli} style.
+Capture messages and turn them into cli styled messages
 }
 \keyword{internal}
