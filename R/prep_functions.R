@@ -170,6 +170,17 @@ prep_summary_likdepth <- function(
     time_res = median_min_lag,
     bin = bin
   )
+  # ---- this is risky as it may produce two - will need to add in duplicate rm ----
+  pop_date_as_date <- lubridate::as_date(pop_date)
+
+  if (!pop_date_as_date %in% summary_table$date) {
+    summary_table <- summary_table |>
+      dplyr::bind_rows(
+        data.frame(
+          date = lubridate::as_date(pop_date)
+        )
+      )
+  }
 
   summary_list <- list(
     raw_log_filter = raw_log_filter,
