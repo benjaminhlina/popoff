@@ -129,7 +129,7 @@ error_focal_dim <- function(obj, arg_name = NULL) {
 }
 
 #' @param input_data a `data.frame` to assess
-#' @param type the type of input data. A `character` usually `"raw_log"` or `"iniloc"`.
+#' @param type the type of input data. A `character` usually `"raw_log"` or `"event_log"`.
 #' @name error_functions
 #' @keywords internal
 error_input_data <- function(input_data, type) {
@@ -147,7 +147,7 @@ error_input_data <- function(input_data, type) {
     error_date(input_data$date_time, col = "date_time", expected_cls = "POSIXt")
     error_numeric_min(input_data$depth, col = "depth", min_val = 0)
   }
-  if (type == "iniloc") {
+  if (type == "event_log") {
     error_missing_names(
       obj = input_data,
       required_val = c("fish_id", "date", "event")
@@ -231,6 +231,18 @@ error_limits <- function(vec, arg_name = NULL) {
       "x" = "You supplied {.cls {class(vec)}} of length {length(vec)}.",
       "i" = "Use the form {.code {arg_name} = c(min, max)} for the longtidue and latitude extents."
     ))
+  }
+}
+
+#' @param linear_index the linear index column of event_log `data.frame` to check
+#' @param event_date a `vector` containing event dates in event_log
+#' @name error_functions
+#' @keywords internal
+error_linear_index <- function(event_date, linear_index) {
+  if (anyNA(linear_index)) {
+    cli::cli_abort(
+      "Known location{?s} on {.val {event_date[is.na(linear_index)]}} fall outside the bathymetry."
+    )
   }
 }
 
@@ -403,6 +415,22 @@ error_matrix <- function(matrix, dim_check = NULL, arg_name = NULL) {
 
   return(matrix)
 }
+
+#' @param event_log_dates a `vector` containing event dates
+#' @param summary_dates a `vector` containing sumamry dates
+#' @name error_functions
+#' @keywords internal
+
+error_missing_dates <- function(event_log_dates, summary_dates) {
+  missing_dates <- setdiff(event_log_dates, summary_dates)
+  if (length(missing_dates) > 0) {
+    cli::cli_abort(
+      "Known date{?s} not in the likelihood array: {.val {missing_dates}}."
+    )
+  }
+}
+
+
 #' @param required_val a `vector` containing `characters` of the columns to check.
 #' @name error_functions
 #' @keywords internal
