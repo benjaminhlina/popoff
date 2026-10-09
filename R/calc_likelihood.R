@@ -77,30 +77,37 @@ calc_daily_likdepth <- function(
 #' These are functions that will calculated the likelihood of depth occupancy based on
 #' depth values transmitted and bathymetry
 #'
-#' @param preped_log a `list` containing summary objects crated by `prep_summary_likdepth()`.
-#' @param preped_bathy a `list` containinging objects created by `prep_bathy_likdepth()`.
+#' @param prepped_log a `list` containing summary objects crated by `prep_summary_likdepth()`.
+#' @param prepped_bathy a `list` containing objects created by `prep_bathy_likdepth()`.
+#' @param event_log a `data.frame` containing the event log data such as
+#' tagging, mrpat, and and pop-off date and time.
+#' popoff data.
 #' @param daily_sd_depth a numeric value
 #'
 #' @export
 
 calc_likdepth_transmit <- function(
-  preped_log,
-  preped_bathy,
+  prepped_log,
+  prepped_bathy,
+  event_log,
   daily_sd_depth = 0.57
 ) {
-  # ctd.dir="C:/Users/pgatti/Documents/halibut/R/Data_PGalbraith/toBeLoaded/";ncores=4;weighted=FALSE; focalDim = 3;daily.sd.depth=.57; pdt=sm$sm;depth.list=depth.mix
+  # ctd.dir="C:/Users/pgatti/Documents/halibut/R/Data_PGalbraith/toBeLoaded/";
+  # ncores=4;weighted=FALSE; focalDim = 3;daily.sd.depth=.57;
+  # pdt=sm$sm;depth.list=depth.mix
 
-  # rlang::arg_match(preped_log)
-  # rlang::arg_match(preped_bathy)
+  # rlang::arg_match(prepped_log)
+  # rlang::arg_match(prepped_bathy)
 
-  error_list_prep(preped_log, type = "log")
-  error_list_prep(preped_bathy, type = "bathy")
+  error_list_prep(prepped_log, type = "log")
+  error_list_prep(prepped_bathy, type = "bathy")
   error_numeric(daily_sd_depth)
+  error_input_data(input_data = event_log, type = "event_log")
 
   # ---- msg_start
   t0 <- msg_start(chr = "depth (m) likelihood")
   # grab summary table
-  summary_table <- preped_log$summary_table
+  summary_table <- prepped_log$summary_table
 
   # make sure its ordered by date and then split it
   sum_split <- summary_table |>
@@ -113,17 +120,36 @@ calc_likdepth_transmit <- function(
   msg_dates(df = summary_table, n_days = n_days)
 
   # grab indx and index na
-  idx <- preped_bathy$idx
-  idx_na <- preped_bathy$idx_na
+  idx <- prepped_bathy$idx
+  idx_na <- prepped_bathy$idx_na
 
   # grab bathymetry and convert it to a vector
-  zbi <- .convert_spr_to_vec(x = preped_bathy$bathy)
-  zbi_dims <- dim(preped_bathy$bathy)
+
+  zbi <- .convert_spr_to_vec(x = prepped_bathy$bathy)
+  zbi_dims <- dim(prepped_bathy$bathy)
+
+  # ----- create index_vector ----
+  # this might be same as idx and idx_na
+  idx_vec <- .convert_spr_to_vec(
+    x = terra::init(prepped_bathy$bathy, fun = "cell")
+  )
+  # force into matrix on the dims of zbi
+  idx_mat <- array(idx_vec, dim = zbi_dims[1:2])
+
   # grab sdi and convert to vector
-  sdi <- .convert_spr_to_vec(x = preped_bathy$sdi)
+  sdi <- .convert_spr_to_vec(x = prepped_bathy$sdi)
 
   # add daily_sd_depth to sdi
   sdi_dsd <- sdi + daily_sd_depth
+
+  # ----- modify the event_log table -----
+  event_log <- event_log |>
+    dplyr::mutate(
+      date = as.Date(date) |>
+        as.character(),
+      raster_cell = terra::cellFromXY(prepped_bathy$bathy, cbind(lon, lat)),
+      linear_index = match(raster_cell, idx_mat)
+    )
 
   #---------------------------------------------------------------------
   # start of heavy daily loop
@@ -132,6 +158,13 @@ calc_likdepth_transmit <- function(
   # ---- get date names -----
 
   dates <- names(sum_split)
+
+  error_linear_index(
+    event_date = event_log$date,
+    linear_index = event_log$linear_index
+  )
+
+  error_missing_dates(event_log$date, dates)
 
   lik_list <- purrr::imap(
     sum_split,
@@ -151,6 +184,23 @@ calc_likdepth_transmit <- function(
 
   likelihood_array <- simplify2array(lik_list)
   dimnames(likelihood_array)[[3]] <- dates
+  valid_mask <- .valid_mask(bathy_vec = zbi, dims = zbi_dims)
+
+  purrr::pwalk(
+    event_log,
+    function(date, linear_index, ...) {
+      # slice <- likelihood_array[,, date]
+
+      # msg_slice(slice, date, linear_index)
+      msg_slice(valid_mask, date, linear_index)
+
+      slice <- array(NA, dim = dim(valid_mask))
+      slice[valid_mask] <- 0
+      slice[linear_index] <- 1
+      likelihood_array[,, date] <<- slice
+    },
+    .progress = "Updating likelihoods for known locations in the provided event log. "
+  )
 
   msg_end(chr = "Depth-transmission likelihood calculation", t0 = t0)
 

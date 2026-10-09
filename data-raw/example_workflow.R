@@ -12,17 +12,17 @@
 
 # ----- load bathymetry for the area of interest ----
 
-bathy_matrix <- download_noaa_bathy(
+bathy_matrix_download <- download_noaa_bathy(
   xlim = c(-72.41, -40.0),
   ylim = c(41.52, 55.0),
   res = 1
 )
-bathy_matrix
+bathy_matrix_download
 # in this case Gulf of St. Lawrence
 
 # we can check that it is SpatRaster
 
-bathy <- load_raster(bathy_matrix, crs = "EPSG:4326")
+bathy <- load_raster(bathy_matrix_download, crs = "EPSG:4326")
 
 bathy
 # ----- next we can plot the spat raster using tidyterra ----
@@ -50,23 +50,28 @@ ggplot() +
 # aesome the bathymetr looks great
 
 # ----- next prepare bathy for likelihood calculations -----
-preped_bathy <- prep_bathy_likdepth(bathy = bathy, focal_dim = 3)
+prepped_bathy <- prep_bathy_likdepth(bathy = bathy, focal_dim = 3)
 
 # we can view the output which is a list containing 1) bathy 2) sd of bathy
 # 3) idx locations 4) idx_na locations, 4) focal dimensions, 5) if weighted
-preped_bathy
+prepped_bathy
 # ------ prep log for summary prior to likelihood calculation ------
-preped_log <- prep_summary_likdepth(raw_log = pdt, iniloc = iniloc, bin = 3600)
+prepped_log <- prep_summary_likdepth(
+  raw_log = pdt,
+  event_log = event_log,
+  bin = 3600
+)
 
 # pepared summary is a list containging 1) raw log, 2) summary table 3) a ggplot
 # of the depth and temperature profiles, 4) time resoulation, 5) bin value
 
-preped_log
+prepped_log
 
 # ---- calculaite likeilhoood depth -----
 likedepth_transmit <- calc_likdepth_transmit(
-  preped_log = preped_log,
-  preped_bathy = preped_bathy,
+  prepped_log = prepped_log,
+  prepped_bathy = prepped_bathy,
+  event_log = event_log,
   daily_sd_depth = 0.57
 )
 dim(likedepth_transmit)
@@ -75,7 +80,7 @@ dim(likedepth_transmit)
 
 # ----- we can plot the first couple of days -----
 
-days <- unique(preped_log$summary_table$date)
+days <- unique(prepped_log$summary_table$date)
 
 xlim <- attr(bathy_matrix, "xlim")
 ylim <- attr(bathy_matrix, "ylim")
@@ -92,9 +97,10 @@ likelihood_spr <- days |>
     ),
     .progress = TRUE
   )
-likelihood_spr
+
+
 # ----- then polt them using ggplot and tidyterra -----
-likelihood_spr |>
+likelihood_spr[204] |>
   imap(
     ~ ggplot() +
       geom_spatraster(data = .x) +
@@ -113,6 +119,14 @@ likelihood_spr |>
 
 # ---- Take idx values that equla 0.5 or greater and pull the depth of those
 #idx vlaues -----
+likelihood_spr[204]
+r <- likelihood_spr$`2022-02-28`
+
+terra::where.max(r) # cell number + value
+cell <- terra::where.max(r)[, "cell"]
+terra::xyFromCell(r, cell) # lon/lat of that cell
+
+event_log
 
 bb <- sf::st_bbox(
   c(xmin = xlim[1], xmax = xlim[2], ymin = ylim[1], ymax = ylim[2]),

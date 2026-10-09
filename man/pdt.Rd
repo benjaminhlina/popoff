@@ -3,7 +3,7 @@
 \docType{data}
 \name{pdt}
 \alias{pdt}
-\title{An example of psat transmitter as a \code{data.frame}.}
+\title{PSAT log data}
 \format{
 \code{data.frame} containing 19,462 rows and 17 variables
 \describe{
@@ -29,6 +29,6 @@
 pdt
 }
 \description{
-An example of psat transmitter as a \code{data.frame}.
+An example of psat transmitter log file as a \code{data.frame}.
 }
 \keyword{datasets}
