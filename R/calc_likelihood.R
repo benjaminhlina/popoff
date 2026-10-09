@@ -198,7 +198,8 @@ calc_likdepth_transmit <- function(
       slice[valid_mask] <- 0
       slice[linear_index] <- 1
       likelihood_array[,, date] <<- slice
-    }
+    },
+    .progress = "Updating likelihoods for known locations in the provided event log. "
   )
 
   msg_end(chr = "Depth-transmission likelihood calculation", t0 = t0)
