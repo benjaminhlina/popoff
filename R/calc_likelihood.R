@@ -145,7 +145,7 @@ calc_likdepth_transmit <- function(
   # ----- modify the event_log table -----
   event_log <- event_log |>
     dplyr::mutate(
-      date = lubridate::floor_date(date, unit = '1 day') |>
+      date = as.Date(date) |>
         as.character(),
       raster_cell = terra::cellFromXY(prepped_bathy$bathy, cbind(lon, lat)),
       linear_index = match(raster_cell, idx_mat)
