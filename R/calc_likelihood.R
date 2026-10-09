@@ -184,15 +184,18 @@ calc_likdepth_transmit <- function(
 
   likelihood_array <- simplify2array(lik_list)
   dimnames(likelihood_array)[[3]] <- dates
+  valid_mask <- .valid_mask(bathy_vec = zbi, dims = zbi_dims)
 
   purrr::pwalk(
     event_log,
     function(date, linear_index, ...) {
-      slice <- likelihood_array[,, date]
+      # slice <- likelihood_array[,, date]
 
-      msg_slice(slice, date, linear_index)
+      # msg_slice(slice, date, linear_index)
+      msg_slice(valid_mask, date, linear_index)
 
-      slice[!is.na(slice)] <- 0
+      slice <- array(NA, dim = dim(valid_mask))
+      slice[valid_mask] <- 0
       slice[linear_index] <- 1
       likelihood_array[,, date] <<- slice
     }

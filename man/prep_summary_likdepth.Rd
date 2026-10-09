@@ -15,7 +15,7 @@ prep_summary_likdepth(
 \arguments{
 \item{raw_log}{a \code{data.frame} containing the raw pop-off satalitte tag log}
 
-\item{event_log}{a \code{data.frame} containing the event log information about when the
+\item{event_log}{a \code{data.frame} containing the eventlog information about when the
 tag was deployed, mrpat, and pop dates and location.}
 
 \item{bin}{a \code{numeric} containing the number of seconds within an
