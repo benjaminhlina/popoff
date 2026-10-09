@@ -167,12 +167,12 @@ ggplot() +
   )
 
 
-pts <- cbind(iniloc$lon, iniloc$lat)
+pts <- cbind(event_log$lon, event_log$lat)
 
-cellId <- likelihood_spr |>
+cell_id <- likelihood_spr |>
   map(
     ~ terra::cellFromXY(.x, pts)
-  ) # linear cell index
+  )
 
 
 vals <- likelihood_spr |>
@@ -180,23 +180,45 @@ vals <- likelihood_spr |>
     \(x) {
       tibble(
         likelihood = terra::extract(x, pts)[[1]],
-        event = iniloc$event
+        event = event_log$event
       )
     }
   ) |>
-  dplyr::bind_rows(.id = "day") |>
+  dplyr::bind_rows(.id = "date") |>
   mutate(
-    day = as.numeric(day)
-  ) # likelihood value(s) at those cells
+    date = as.Date(date),
+    event = factor(event, levels = c("tag", "mrpat", "pop"))
+  )
 vals
 
 
-ggplot(data = vals, aes(x = day, y = likelihood, fill = event)) +
+p <- ggplot(data = vals, aes(x = date, y = likelihood, fill = event)) +
   geom_point(
     shape = 21,
     size = 3,
     alpha = 0.5,
     position = position_jitter(height = 0.03, seed = 4)
   ) +
-  scale_x_continuous(breaks = seq(0, 205, 10)) +
-  ggview::canvas(14, 11)
+  scale_fill_brewer(
+    name = "Event",
+    type = "div",
+    palette = 8,
+    labels = c("Tag", "Mrpat", "Pop")
+  ) +
+  scale_x_date(date_breaks = "2 weeks", date_labels = "%m-%d") +
+  theme_bw(
+    base_size = 15
+  ) +
+  theme(
+    legend.position = "inside",
+    legend.position.inside = c(0.95, 0.5),
+    legend.background = element_rect(colour = "black", linewidth = 0.5)
+  ) +
+  labs(
+    x = "Date",
+    y = "Likelihood"
+  )
+
+p
+
+p + ggview::canvas(14, 8.5)
