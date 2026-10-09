@@ -7,6 +7,7 @@
 \alias{msg_end}
 \alias{msg_load_raster}
 \alias{msg_load_rdata}
+\alias{msg_slice}
 \alias{msg_start}
 \alias{msg_window}
 \title{Message functions}
@@ -20,6 +21,8 @@ msg_end(chr, t0, t1 = round(Sys.time()))
 msg_load_raster(path)
 
 msg_load_rdata(obj, obj_name)
+
+msg_slice(obj, date, linear_index)
 
 msg_start(chr, t0 = round(Sys.time()))
 
@@ -43,6 +46,10 @@ msg_window(window)
 \item{obj}{an object}
 
 \item{obj_name}{the name of an object}
+
+\item{date}{A date value}
+
+\item{linear_index}{Position of the known location within a daily slice}
 
 \item{window}{a numerical value}
 }

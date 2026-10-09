@@ -93,7 +93,7 @@ prep_bathy_likdepth <- function(
 #' This function prepared summary data to be used in the likelihood estimates.
 #'
 #' @param raw_log a `data.frame` containing the raw pop-off satalitte tag log
-#' @param iniloc a `data.frame` containing the iniloc information about when the
+#' @param event_log a `data.frame` containing the eventlog information about when the
 #' tag was deployed, mrpat, and pop dates and location.
 #' @param bin a `numeric` containing the number of seconds within an
 #' aggregation (e.g., 3600 seconds is 1 hour).
@@ -111,32 +111,36 @@ prep_bathy_likdepth <- function(
 
 prep_summary_likdepth <- function(
   raw_log,
-  iniloc,
+  event_log,
   bin = NULL,
   out_dir = NULL,
   make_plot = TRUE
 ) {
   # ----- first check if arguments needed are supplied ----
   rlang::check_required(raw_log)
-  rlang::check_required(iniloc)
+  rlang::check_required(event_log)
   rlang::check_required(bin)
 
   error_input_data(input_data = raw_log, type = "raw_log")
-  error_input_data(input_data = iniloc, type = "iniloc")
+  error_input_data(input_data = event_log, type = "event_log")
   error_out_dir(out_dir)
   error_logical(make_plot)
 
   error_numeric(bin)
 
-  iniloc_f <- iniloc |>
+  event_log_f <- event_log |>
     dplyr::filter(fish_id %in% raw_log$fish_id)
 
-  tag_date <- iniloc_f$date[iniloc_f$event == "tag"]
+  tag_datetime <- event_log_f$date[event_log_f$event == "tag"]
 
-  pop_date <- iniloc_f$date[iniloc_f$event == "pop"]
+  pop_datetime <- event_log_f$date[event_log_f$event == "pop"]
+  pop_date <- as.Date(pop_datetime)
 
   raw_log_filter <- raw_log |>
-    dplyr::filter(date >= as.Date(tag_date), date <= as.Date(pop_date)) |>
+    dplyr::filter(
+      date >= as.Date(tag_datetime),
+      date <= as.Date(pop_datetime)
+    ) |>
     dplyr::mutate(
       depth = depth * -1
     )
@@ -170,6 +174,16 @@ prep_summary_likdepth <- function(
     time_res = median_min_lag,
     bin = bin
   )
+  # ----- added iff statment for pop date -----
+
+  if (!pop_date %in% summary_table$date) {
+    summary_table <- summary_table |>
+      dplyr::bind_rows(
+        data.frame(
+          date = pop_date
+        )
+      )
+  }
 
   summary_list <- list(
     raw_log_filter = raw_log_filter,

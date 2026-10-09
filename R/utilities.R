@@ -255,3 +255,19 @@
 
   return(idx)
 }
+
+#' Checks if the mask is vaild
+#' Provides logical is maks is valid
+#'
+#' @param bathy_vec a bathymetric dataset that is a vector usually converted by
+#' [.convert_spr_to_vec()]
+#' @param dims the dimensions
+#' @name mask_functions
+#' @keywords internal
+
+.valid_mask <- function(bathy_vec, dims) {
+  bathy_array <- array(data = bathy_vec, dim = dims)
+
+  mask <- !is.na(bathy_array)
+  return(mask)
+}

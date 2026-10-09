@@ -4,12 +4,21 @@
 \alias{calc_likdepth_transmit}
 \title{Calculate Likelihood Depth Transmitted}
 \usage{
-calc_likdepth_transmit(preped_log, preped_bathy, daily_sd_depth = 0.57)
+calc_likdepth_transmit(
+  prepped_log,
+  prepped_bathy,
+  event_log,
+  daily_sd_depth = 0.57
+)
 }
 \arguments{
-\item{preped_log}{a \code{list} containing summary objects crated by \code{prep_summary_likdepth()}.}
+\item{prepped_log}{a \code{list} containing summary objects crated by \code{prep_summary_likdepth()}.}
 
-\item{preped_bathy}{a \code{list} containinging objects created by \code{prep_bathy_likdepth()}.}
+\item{prepped_bathy}{a \code{list} containing objects created by \code{prep_bathy_likdepth()}.}
+
+\item{event_log}{a \code{data.frame} containing the event log data such as
+tagging, mrpat, and and pop-off date and time.
+popoff data.}
 
 \item{daily_sd_depth}{a numeric value}
 }

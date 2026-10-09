@@ -14,9 +14,11 @@
 \alias{error_list}
 \alias{error_likelihood_matrix}
 \alias{error_limits}
+\alias{error_linear_index}
 \alias{error_load}
 \alias{error_logical}
 \alias{error_matrix}
+\alias{error_missing_dates}
 \alias{error_missing_names}
 \alias{error_numeric}
 \alias{error_numeric_min}
@@ -50,11 +52,15 @@ error_likelihood_matrix(matrix, idx)
 
 error_limits(vec, arg_name = NULL)
 
+error_linear_index(event_date, linear_index)
+
 error_load(obj, arg_name = NULL)
 
 error_logical(vec, arg_name = NULL)
 
 error_matrix(matrix, dim_check = NULL, arg_name = NULL)
+
+error_missing_dates(event_log_dates, summary_dates)
 
 error_missing_names(obj, required_val)
 
@@ -93,7 +99,7 @@ error_transform(back_transform, parameter_range)
 
 \item{input_data}{a \code{data.frame} to assess}
 
-\item{type}{the type of input data. A \code{character} usually \code{"raw_log"} or \code{"iniloc"}.}
+\item{type}{the type of input data. A \code{character} usually \code{"raw_log"} or \code{"event_log"}.}
 
 \item{mask}{a \code{logical}.}
 
@@ -104,6 +110,14 @@ error_transform(back_transform, parameter_range)
 \item{matrix}{a \code{matrix} to check if valid}
 
 \item{idx}{index value}
+
+\item{event_date}{a \code{vector} containing event dates in event_log}
+
+\item{linear_index}{the linear index column of event_log \code{data.frame} to check}
+
+\item{event_log_dates}{a \code{vector} containing event dates}
+
+\item{summary_dates}{a \code{vector} containing sumamry dates}
 
 \item{required_val}{a \code{vector} containing \code{characters} of the columns to check.}
 

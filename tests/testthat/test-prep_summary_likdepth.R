@@ -12,7 +12,7 @@ describe("prep_summary_likdepth()", {
     temperature = c(12, 11.5, 11, 10.5, 10, 9.5, 9, 10, 11, 12, 12.5, 13)
   )
 
-  test_iniloc <- data.frame(
+  test_event_log <- data.frame(
     fish_id = c("Fish_101", "Fish_101", "Fish_999"),
     event = c("tag", "pop", "tag"),
     date = as.POSIXct(c(
@@ -24,11 +24,11 @@ describe("prep_summary_likdepth()", {
 
   # ---- 1. Input Validation Checks ----
   it("throws error when required arguments are missing", {
-    expect_error(prep_summary_likdepth(iniloc = test_iniloc, bin = 3600))
+    expect_error(prep_summary_likdepth(event_log = test_event_log, bin = 3600))
     expect_error(prep_summary_likdepth(raw_log = test_raw_log, bin = 3600))
     expect_error(prep_summary_likdepth(
       raw_log = test_raw_log,
-      iniloc = test_iniloc
+      event_log = test_event_log
     ))
   })
 
@@ -36,7 +36,7 @@ describe("prep_summary_likdepth()", {
   it("processes data correctly and returns expected list components", {
     res <- prep_summary_likdepth(
       raw_log = test_raw_log,
-      iniloc = test_iniloc,
+      event_log = test_event_log,
       bin = 3600,
       make_plot = FALSE
     )
@@ -59,7 +59,7 @@ describe("prep_summary_likdepth()", {
     expect_message(
       prep_summary_likdepth(
         raw_log = test_raw_log,
-        iniloc = test_iniloc,
+        event_log = test_event_log,
         bin = 360000,
         make_plot = FALSE
       ),
@@ -71,7 +71,7 @@ describe("prep_summary_likdepth()", {
   it("filters date range correctly and inverts depth values", {
     res <- prep_summary_likdepth(
       raw_log = test_raw_log,
-      iniloc = test_iniloc,
+      event_log = test_event_log,
       bin = 3600,
       make_plot = FALSE
     )
@@ -92,7 +92,7 @@ describe("prep_summary_likdepth()", {
   it("generates a ggplot object when make_plot is TRUE", {
     res <- prep_summary_likdepth(
       raw_log = test_raw_log,
-      iniloc = test_iniloc,
+      event_log = test_event_log,
       bin = 3600,
       make_plot = TRUE
     )
@@ -111,7 +111,7 @@ describe("prep_summary_likdepth()", {
 
     prep_summary_likdepth(
       raw_log = test_raw_log,
-      iniloc = test_iniloc,
+      event_log = test_event_log,
       bin = 3600,
       out_dir = temp_dir,
       make_plot = TRUE
@@ -131,5 +131,60 @@ describe("prep_summary_likdepth()", {
     expect_equal(.safe_range_val(c(NA, NA), type = "min"), NA_real_)
     expect_equal(.safe_range_val(c(10, 20, 5, NA), type = "min"), 5)
     expect_equal(.safe_range_val(c(10, 20, 5, NA), type = "max"), 20)
+  })
+  # ---- 6. Pop date appended to summary table when missing ----
+  it("appends a pop date row to summary_table when pop date has no data", {
+    # Pop occurs 2 days after the last logged record (2026-01-03)
+    event_log_late_pop <- data.frame(
+      fish_id = c("Fish_101", "Fish_101"),
+      event = c("tag", "pop"),
+      date = as.POSIXct(
+        c("2026-01-01 00:12:00", "2026-01-05 01:12:01"),
+        tz = "UTC"
+      )
+    )
+    pop_date <- as.Date("2026-01-05")
+
+    res <- prep_summary_likdepth(
+      raw_log = test_raw_log,
+      event_log = event_log_late_pop,
+      bin = 3600,
+      make_plot = FALSE
+    )
+
+    st <- res$summary_table
+
+    # pop date was added
+    expect_true(pop_date %in% st$date)
+    expect_equal(sum(st$date == pop_date, na.rm = TRUE), 1)
+
+    # it is the final row, and every other column is NA
+    last_row <- st[nrow(st), ]
+    expect_equal(last_row$date, pop_date)
+    other_cols <- setdiff(names(st), "date")
+    expect_true(all(is.na(unlist(last_row[other_cols]))))
+
+    # date column keeps its Date class after bind_rows
+    expect_s3_class(st$date, "Date")
+  })
+
+  it("does not append a duplicate pop date row when pop date is already present", {
+    # Pop (2026-01-02) falls on a day that already has logged data
+    res <- prep_summary_likdepth(
+      raw_log = test_raw_log,
+      event_log = test_event_log,
+      bin = 3600,
+      make_plot = FALSE
+    )
+
+    pop_date <- as.Date("2026-01-02")
+    st <- res$summary_table
+    other_cols <- setdiff(names(st), "date")
+
+    expect_true(pop_date %in% st$date)
+
+    # no placeholder (date-only, all-NA) row was added
+    placeholder_rows <- rowSums(!is.na(st[other_cols])) == 0
+    expect_false(any(placeholder_rows))
   })
 })

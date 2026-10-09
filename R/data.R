@@ -6,9 +6,9 @@
 #'
 "bathy_matrix"
 
-#' Iniloc data
+#' Event log data
 #'
-#' An example of psat transmitter info as a `data.frame`.
+#' An example of psat transmitter event log as a `data.frame`.
 #'
 #' @format `data.frame` containing 3 rows and 8 variables
 #'  \describe{
@@ -21,9 +21,11 @@
 #'    \item{lat}{The latitude of an event}
 #'    \item{event}{The event type}
 #' }
-"iniloc"
+"event_log"
 
-#' An example of psat transmitter as a `data.frame`.
+#' PSAT log data
+#'
+#' An example of psat transmitter log file as a `data.frame`.
 #'
 #' @format `data.frame` containing 19,462 rows and 17 variables
 #'  \describe{

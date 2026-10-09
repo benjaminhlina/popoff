@@ -219,15 +219,25 @@ test_that("calc_likdepth_transmit produces a correctly-shaped, correctly-normali
     idx_na = fx$idx_na
   )
 
-  dates <- as.Date(c("2020-01-01", "2020-01-02"))
+  dates <- as.Date(c("2020-01-01", "2020-01-02", "2020-01-03", "2020-01-04"))
   preped_log <- list(
     summary_table = make_summary_table_2(
       dates = dates,
-      depth_min = c(15, NA),
-      depth_max = c(25, NA)
+      depth_min = c(15, NA, 20, 25),
+      depth_max = c(25, NA, 30, 35)
     )
   )
 
+  event_log_test <- data.frame(
+    fish_id = rep('1234', 2),
+    date = c(
+      as.POSIXct("2020-01-01 00:00:00"),
+      as.POSIXct("2020-01-04 00:00:00")
+    ),
+    lon = c(-59.10835, -59.04600),
+    lat = c(44.33739, 44.23701),
+    event = c("tag", "pop")
+  )
   # bypass the broken validation lines and stub out the msg_* helpers, whose
   # implementations live elsewhere in the package and aren't under test here
   testthat::local_mocked_bindings(
@@ -242,7 +252,12 @@ test_that("calc_likdepth_transmit produces a correctly-shaped, correctly-normali
     msg_end = function(...) invisible(NULL)
   )
 
-  out <- calc_likdepth_transmit(preped_log, preped_bathy, daily_sd_depth = 0.57)
+  out <- calc_likdepth_transmit(
+    preped_log,
+    preped_bathy,
+    event_log = event_log_test,
+    daily_sd_depth = 0.57
+  )
 
   # dims: aperm(c(2,1,3)) swaps rows/cols relative to the raw
   # array(dims = c(nrow, ncol, n_days))
@@ -269,13 +284,24 @@ test_that("calc_likdepth_transmit orders days by date regardless of input row or
   )
 
   # deliberately out of chronological order
-  dates <- as.Date(c("2020-01-03", "2020-01-01", "2020-01-02"))
+  dates <- as.Date(c("2020-01-03", "2020-01-01", "2020-01-02", "2020-01-04"))
   preped_log <- list(
     summary_table = make_summary_table_2(
       dates = dates,
-      depth_min = c(NA, 15, NA),
-      depth_max = c(NA, 25, NA)
+      depth_min = c(NA, 15, NA, 20),
+      depth_max = c(NA, 25, NA, 30)
     )
+  )
+
+  event_log_test <- data.frame(
+    fish_id = rep('1234', 2),
+    date = c(
+      as.POSIXct("2020-01-01 00:00:00"),
+      as.POSIXct("2020-01-04 00:00:00")
+    ),
+    lon = c(-59.10835, -59.04600),
+    lat = c(44.33739, 44.23701),
+    event = c("tag", "pop")
   )
 
   testthat::local_mocked_bindings(
@@ -290,7 +316,12 @@ test_that("calc_likdepth_transmit orders days by date regardless of input row or
     msg_end = function(...) invisible(NULL)
   )
 
-  out <- calc_likdepth_transmit(preped_log, preped_bathy, daily_sd_depth = 0.57)
+  out <- calc_likdepth_transmit(
+    preped_log,
+    preped_bathy,
+    event_log = event_log_test,
+    daily_sd_depth = 0.57
+  )
 
   # after arrange(date), 2020-01-01 (the only informative day) is slice 1
   slice1 <- out[,, 1]

@@ -84,6 +84,20 @@ msg_load_rdata <- function(obj, obj_name) {
   )
 }
 
+#' @param obj an object
+#' @param date A date value
+#' @param linear_index Position of the known location within a daily slice
+#' @name msg_function
+#' @keywords internal
+msg_slice <- function(obj, date, linear_index) {
+  if (is.na(obj[linear_index])) {
+    cli::cli_warn(
+      "Known location on {.val {date}} falls on an NA (masked/land) cell."
+    )
+  }
+}
+
+
 #' @param chr a `character` string that tells which likelihood such as e.g., `"Depth"`
 #' @param t0 current time
 #' @name msg_function
