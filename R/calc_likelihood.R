@@ -88,7 +88,7 @@ calc_daily_likdepth <- function(
 calc_likdepth_transmit <- function(
   prepped_log,
   prepped_bathy,
-  iniloc,
+  event_log,
   daily_sd_depth = 0.57
 ) {
   # ctd.dir="C:/Users/pgatti/Documents/halibut/R/Data_PGalbraith/toBeLoaded/";
@@ -101,7 +101,7 @@ calc_likdepth_transmit <- function(
   error_list_prep(prepped_log, type = "log")
   error_list_prep(prepped_bathy, type = "bathy")
   error_numeric(daily_sd_depth)
-  error_df(iniloc)
+  error_input_data(input_data = event_log, type = "event_log")
 
   # ---- msg_start
   t0 <- msg_start(chr = "depth (m) likelihood")

@@ -7,7 +7,7 @@
 calc_likdepth_transmit(
   prepped_log,
   prepped_bathy,
-  iniloc,
+  event_log,
   daily_sd_depth = 0.57
 )
 }
@@ -16,7 +16,8 @@ calc_likdepth_transmit(
 
 \item{prepped_bathy}{a \code{list} containing objects created by \code{prep_bathy_likdepth()}.}
 
-\item{iniloc}{a \code{data.frame} containing the initial location data, mrpat, and
+\item{event_log}{a \code{data.frame} containing the event log data such as
+tagging, mrpat, and and pop-off date and time.
 popoff data.}
 
 \item{daily_sd_depth}{a numeric value}
