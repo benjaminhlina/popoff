@@ -56,7 +56,11 @@ prepped_bathy <- prep_bathy_likdepth(bathy = bathy, focal_dim = 3)
 # 3) idx locations 4) idx_na locations, 4) focal dimensions, 5) if weighted
 prepped_bathy
 # ------ prep log for summary prior to likelihood calculation ------
-prepped_log <- prep_summary_likdepth(raw_log = pdt, iniloc = iniloc, bin = 3600)
+prepped_log <- prep_summary_likdepth(
+  raw_log = pdt,
+  event_log = event_log,
+  bin = 3600
+)
 
 # pepared summary is a list containging 1) raw log, 2) summary table 3) a ggplot
 # of the depth and temperature profiles, 4) time resoulation, 5) bin value
@@ -67,7 +71,7 @@ prepped_log
 likedepth_transmit <- calc_likdepth_transmit(
   prepped_log = prepped_log,
   prepped_bathy = prepped_bathy,
-  iniloc = iniloc,
+  event_log = event_log,
   daily_sd_depth = 0.57
 )
 dim(likedepth_transmit)
@@ -93,9 +97,10 @@ likelihood_spr <- days |>
     ),
     .progress = TRUE
   )
-likelihood_spr
+
+
 # ----- then polt them using ggplot and tidyterra -----
-likelihood_spr[203] |>
+likelihood_spr[204] |>
   imap(
     ~ ggplot() +
       geom_spatraster(data = .x) +
@@ -114,6 +119,14 @@ likelihood_spr[203] |>
 
 # ---- Take idx values that equla 0.5 or greater and pull the depth of those
 #idx vlaues -----
+likelihood_spr[204]
+r <- likelihood_spr$`2022-02-28`
+
+terra::where.max(r) # cell number + value
+cell <- terra::where.max(r)[, "cell"]
+terra::xyFromCell(r, cell) # lon/lat of that cell
+
+event_log
 
 bb <- sf::st_bbox(
   c(xmin = xlim[1], xmax = xlim[2], ymin = ylim[1], ymax = ylim[2]),
