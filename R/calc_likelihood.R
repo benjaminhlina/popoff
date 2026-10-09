@@ -79,7 +79,8 @@ calc_daily_likdepth <- function(
 #'
 #' @param prepped_log a `list` containing summary objects crated by `prep_summary_likdepth()`.
 #' @param prepped_bathy a `list` containing objects created by `prep_bathy_likdepth()`.
-#' @param iniloc a `data.frame` containing the initial location data, mrpat, and
+#' @param event_log a `data.frame` containing the event log data such as
+#' tagging, mrpat, and and pop-off date and time.
 #' popoff data.
 #' @param daily_sd_depth a numeric value
 #'
@@ -141,8 +142,8 @@ calc_likdepth_transmit <- function(
   # add daily_sd_depth to sdi
   sdi_dsd <- sdi + daily_sd_depth
 
-  # ----- modify the iniloc table -----
-  iniloc <- iniloc |>
+  # ----- modify the event_log table -----
+  event_log <- event_log |>
     dplyr::mutate(
       date = lubridate::floor_date(date, unit = '1 day') |>
         as.character(),
@@ -158,18 +159,12 @@ calc_likdepth_transmit <- function(
 
   dates <- names(sum_split)
 
-  if (anyNA(iniloc$linear_index)) {
-    cli::cli_abort(
-      "Known location{?s} on {.val {iniloc_table$date[is.na(iniloc_table$linear_index)]}} fall outside the bathymetry."
-    )
-  }
+  error_linear_index(
+    event_date = event_log$date,
+    linear_index = event_log$linear_index
+  )
 
-  missing_dates <- setdiff(iniloc$date, dates)
-  if (length(missing_dates) > 0) {
-    cli::cli_abort(
-      "Known date{?s} not in the likelihood array: {.val {missing_dates}}."
-    )
-  }
+  error_missing_dates(event_log$date, dates)
 
   lik_list <- purrr::imap(
     sum_split,
@@ -191,15 +186,11 @@ calc_likdepth_transmit <- function(
   dimnames(likelihood_array)[[3]] <- dates
 
   purrr::pwalk(
-    iniloc,
+    event_log,
     function(date, linear_index, ...) {
       slice <- likelihood_array[,, date]
 
-      if (is.na(slice[linear_index])) {
-        cli::cli_warn(
-          "Known location on {.val {date}} falls on an NA (masked/land) cell."
-        )
-      }
+      msg_slice(slice, date, linear_index)
 
       slice[!is.na(slice)] <- 0
       slice[linear_index] <- 1

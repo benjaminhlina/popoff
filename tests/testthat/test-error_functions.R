@@ -72,7 +72,7 @@ test_that("check if error_list works properly", {
 
 test_that("check if error_matrix works properly", {
   expect_error(
-    error_matrix(iniloc),
+    error_matrix(event_log),
     "must be a matrix.",
     fixed = TRUE,
   )
