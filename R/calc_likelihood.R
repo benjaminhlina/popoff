@@ -77,30 +77,36 @@ calc_daily_likdepth <- function(
 #' These are functions that will calculated the likelihood of depth occupancy based on
 #' depth values transmitted and bathymetry
 #'
-#' @param preped_log a `list` containing summary objects crated by `prep_summary_likdepth()`.
-#' @param preped_bathy a `list` containinging objects created by `prep_bathy_likdepth()`.
+#' @param prepped_log a `list` containing summary objects crated by `prep_summary_likdepth()`.
+#' @param prepped_bathy a `list` containing objects created by `prep_bathy_likdepth()`.
+#' @param iniloc a `data.frame` containing the initial location data, mrpat, and
+#' popoff data.
 #' @param daily_sd_depth a numeric value
 #'
 #' @export
 
 calc_likdepth_transmit <- function(
-  preped_log,
-  preped_bathy,
+  prepped_log,
+  prepped_bathy,
+  iniloc,
   daily_sd_depth = 0.57
 ) {
-  # ctd.dir="C:/Users/pgatti/Documents/halibut/R/Data_PGalbraith/toBeLoaded/";ncores=4;weighted=FALSE; focalDim = 3;daily.sd.depth=.57; pdt=sm$sm;depth.list=depth.mix
+  # ctd.dir="C:/Users/pgatti/Documents/halibut/R/Data_PGalbraith/toBeLoaded/";
+  # ncores=4;weighted=FALSE; focalDim = 3;daily.sd.depth=.57;
+  # pdt=sm$sm;depth.list=depth.mix
 
-  # rlang::arg_match(preped_log)
-  # rlang::arg_match(preped_bathy)
+  # rlang::arg_match(prepped_log)
+  # rlang::arg_match(prepped_bathy)
 
-  error_list_prep(preped_log, type = "log")
-  error_list_prep(preped_bathy, type = "bathy")
+  error_list_prep(prepped_log, type = "log")
+  error_list_prep(prepped_bathy, type = "bathy")
   error_numeric(daily_sd_depth)
+  error_df(iniloc)
 
   # ---- msg_start
   t0 <- msg_start(chr = "depth (m) likelihood")
   # grab summary table
-  summary_table <- preped_log$summary_table
+  summary_table <- prepped_log$summary_table
 
   # make sure its ordered by date and then split it
   sum_split <- summary_table |>
@@ -113,17 +119,36 @@ calc_likdepth_transmit <- function(
   msg_dates(df = summary_table, n_days = n_days)
 
   # grab indx and index na
-  idx <- preped_bathy$idx
-  idx_na <- preped_bathy$idx_na
+  idx <- prepped_bathy$idx
+  idx_na <- prepped_bathy$idx_na
 
   # grab bathymetry and convert it to a vector
-  zbi <- .convert_spr_to_vec(x = preped_bathy$bathy)
-  zbi_dims <- dim(preped_bathy$bathy)
+
+  zbi <- .convert_spr_to_vec(x = prepped_bathy$bathy)
+  zbi_dims <- dim(prepped_bathy$bathy)
+
+  # ----- create index_vector ----
+  # this might be same as idx and idx_na
+  idx_vec <- .convert_spr_to_vec(
+    x = terra::init(prepped_bathy$bathy, fun = "cell")
+  )
+  # force into matrix on the dims of zbi
+  idx_mat <- array(idx_vec, dim = zbi_dims[1:2])
+
   # grab sdi and convert to vector
-  sdi <- .convert_spr_to_vec(x = preped_bathy$sdi)
+  sdi <- .convert_spr_to_vec(x = prepped_bathy$sdi)
 
   # add daily_sd_depth to sdi
   sdi_dsd <- sdi + daily_sd_depth
+
+  # ----- modify the iniloc table -----
+  iniloc <- iniloc |>
+    dplyr::mutate(
+      date = lubridate::floor_date(date, unit = '1 day') |>
+        as.character(),
+      raster_cell = terra::cellFromXY(prepped_bathy$bathy, cbind(lon, lat)),
+      linear_index = match(raster_cell, idx_mat)
+    )
 
   #---------------------------------------------------------------------
   # start of heavy daily loop
@@ -132,6 +157,19 @@ calc_likdepth_transmit <- function(
   # ---- get date names -----
 
   dates <- names(sum_split)
+
+  if (anyNA(iniloc$linear_index)) {
+    cli::cli_abort(
+      "Known location{?s} on {.val {iniloc_table$date[is.na(iniloc_table$linear_index)]}} fall outside the bathymetry."
+    )
+  }
+
+  missing_dates <- setdiff(iniloc$date, dates)
+  if (length(missing_dates) > 0) {
+    cli::cli_abort(
+      "Known date{?s} not in the likelihood array: {.val {missing_dates}}."
+    )
+  }
 
   lik_list <- purrr::imap(
     sum_split,
@@ -151,6 +189,23 @@ calc_likdepth_transmit <- function(
 
   likelihood_array <- simplify2array(lik_list)
   dimnames(likelihood_array)[[3]] <- dates
+
+  purrr::pwalk(
+    iniloc,
+    function(date, linear_index, ...) {
+      slice <- likelihood_array[,, date]
+
+      if (is.na(slice[linear_index])) {
+        cli::cli_warn(
+          "Known location on {.val {date}} falls on an NA (masked/land) cell."
+        )
+      }
+
+      slice[!is.na(slice)] <- 0
+      slice[linear_index] <- 1
+      likelihood_array[,, date] <<- slice
+    }
+  )
 
   msg_end(chr = "Depth-transmission likelihood calculation", t0 = t0)
 
