@@ -128,6 +128,18 @@ calc_likdepth_transmit <- function(
   zbi <- .convert_spr_to_vec(x = prepped_bathy$bathy)
   zbi_dims <- dim(prepped_bathy$bathy)
 
+  lat_vals <- terra::yFromRow(
+    prepped_bathy$bathy,
+    seq_len(
+      terra::nrow(prepped_bathy$bathy)
+    )
+  )
+  lon_vals <- terra::xFromCol(
+    prepped_bathy$bathy,
+    seq_len(
+      terra::ncol(prepped_bathy$bathy)
+    )
+  )
   # ----- create index_vector ----
   # this might be same as idx and idx_na
   idx_vec <- .convert_spr_to_vec(
@@ -183,7 +195,14 @@ calc_likdepth_transmit <- function(
   )
 
   likelihood_array <- simplify2array(lik_list)
-  dimnames(likelihood_array)[[3]] <- dates
+
+  # dimnames(likelihood_array)[[3]] <- dates
+  dimnames(likelihood_array) <- list(
+    lat = lat_vals,
+    lon = lon_vals,
+    date = dates
+  )
+
   valid_mask <- .valid_mask(bathy_vec = zbi, dims = zbi_dims)
 
   purrr::pwalk(
@@ -199,7 +218,7 @@ calc_likdepth_transmit <- function(
       slice[linear_index] <- 1
       likelihood_array[,, date] <<- slice
     },
-    .progress = "Updating likelihoods for known locations in the provided event log. "
+    .progress = "Updating likelihoods for known locations in the provided event log."
   )
 
   msg_end(chr = "Depth-transmission likelihood calculation", t0 = t0)
