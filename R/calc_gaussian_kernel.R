@@ -2,38 +2,63 @@
 #'
 #' Determines the Gaussian Kernel for an area
 #'
-#' @param kernal_size a `numerical` value that is the size of the areas
-#' to calculate the Gaussian Kernel.
 #' @param sigma a `numerical` value that is the standard deviation
 #' @param muadv a `numerical` value that adds to the mean (i.e, mu)
 #' @param normalize a `logical` that checks whether to normalize the Kernel estimate.
 #' Default is `FALSE`.
 #' @param mask a `logical` that creates a spatial mask based on the elucidan
 #' distance. Default is `TRUE`
+#' @param back_transform a `loctical` value that controls back transformation
+#' @param sigma_range a `vector` containing two `numerical` values
+#' indicating the range of the `sigma`. Defaults to `NULL` and is only
+#' needed if `back_transform` is `TRUE`.
 #'
 #' @return a `matrix` that is Gaussian Kernel over an area.
 #'
 #' @export
 
 gaussian_kernel <- function(
-  kernal_size,
   sigma,
   muadv = 0,
   normalize = FALSE,
-  mask = TRUE
+  mask = TRUE,
+  back_transform = FALSE,
+  sigma_range = NULL
 ) {
-  error_numeric(kernal_size)
   error_numeric(sigma)
   error_numeric(muadv)
   error_logical(normalize)
   error_logical(mask)
   error_kernel(mask, sigma)
-  t0 <- msg_start("Gaussian kernel")
+  error_logical(back_transform)
+  error_transform(
+    back_transform = back_transform,
+    parameter_range = sigma_range
+  )
 
-  if (round(kernal_size) < 1) {
-    kernal_size <- 1
+  if (isTRUE(back_transform)) {
+    sigma <- .transpose_back(
+      parameter_real = sigma,
+      parameter_range = sigma_range
+    )
   }
+
+  kernal_size <- ceiling(sigma * 4)
+
+  if (kernal_size %% 2 == 0) {
+    kernal_size <- kernal_size + 1
+  } # si resultat pair on rajoute 1 pour assurer une cellule centrale (point de depart)
+  # this ensure to gather around 90-95% of diffusion
+  # The round(kernal_size) < 1 check is redundant since ceiling()
+  # already returns an integer, and for sigma > 0 it’s at least 1.
+  # It only matters if sigma is 0 or negative, and in that case you’d rather
+  # error out than silently return a 1x1 kernel.
+  # ajout 22/03
+  # avoid that the fish go further in diagnal that in straight line
+
   x <- 1:round(kernal_size)
+  # muadv is added to both x and y, so it shifts the kernel diagonally only.
+  # If you want independent x/y drift, it needs to be a length-2 vector.
   mu <- c(mean(x), mean(x)) + muadv
 
   # cal elducidan distance from mu, x and sigma
@@ -45,9 +70,10 @@ gaussian_kernel <- function(
 
   if (isTRUE(normalize)) {
     kern <- kern / (sum(kern, na.rm = T))
-  } else {
-    kern
   }
+  # ern[is.nan(kern)] <- 0 comes after normalization. If sum(kern) is 0,
+  # normalizing produces NaN, so the cleanup is in the right place, but
+  # the same risk exists in the second normalization after masking.
 
   kern[is.nan(kern)] <- 0
 
@@ -84,14 +110,16 @@ gaussian_kernel <- function(
 
     # zero out the masked positions in the original kernel
     kern[mask_kern] <- 0
-
-    if (isTRUE(normalize)) {
-      # normalize kernel values so the remaining elements sum to 1
-      kern <- kern / sum(kern, na.rm = TRUE)
-    } else {
-      kern
-    }
   }
-  msg_end("Calculated Gaussian kernel", t0 = t0)
+
+  if (isTRUE(normalize)) {
+    kern <- kern / (sum(kern, na.rm = T))
+  }
+  # ern[is.nan(kern)] <- 0 comes after normalization. If sum(kern) is 0,
+  # normalizing produces NaN, so the cleanup is in the right place, but
+  # the same risk exists in the second normalization after masking.
+
+  kern[is.nan(kern)] <- 0
+
   return(kern)
 }
