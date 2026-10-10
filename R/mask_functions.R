@@ -17,7 +17,8 @@
 #' @return a `matrix``, same dims as predicted/likelihood: predicted * likelihood
 #' outside the bounding box zeroed out.
 #'
-#' @export
+#' @name mask_functions
+#' @keywords internal
 mask_likelihood_array <- function(
   predicted,
   likelihood,
