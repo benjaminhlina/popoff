@@ -113,7 +113,7 @@ gaussian_kernel <- function(
   }
 
   if (isTRUE(normalize)) {
-    kern <- kern / (sum(kern, na.rm = T))
+    kern <- kern / (sum(kern, na.rm = TRUE))
   }
   # ern[is.nan(kern)] <- 0 comes after normalization. If sum(kern) is 0,
   # normalizing produces NaN, so the cleanup is in the right place, but

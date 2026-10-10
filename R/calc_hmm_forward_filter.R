@@ -124,7 +124,7 @@ hmm_forward_filter <- function(
   # ---- calculate the log likelihood and then calcualte the
   #  negative log likelihood ----
 
-  log_lik <- ncps_calc |>
+  log_lik <- ncps_calc[!ncps_calc == 0] |>
     log() |>
     sum()
 
