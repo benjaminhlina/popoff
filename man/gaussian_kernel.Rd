@@ -34,5 +34,5 @@ needed if \code{back_transform} is \code{TRUE}.}
 a \code{matrix} that is Gaussian Kernel over an area.
 }
 \description{
-Determines the Gaussian Kernel for an area
+Determines the Gaussian Kernel for a given area.
 }
