@@ -6,10 +6,6 @@
 #' @param muadv a `numerical` value that adds to the mean (i.e, mu)
 #' @param normalize a `logical` that checks whether to normalize the Kernel estimate.
 #' Default is `FALSE`.
-#' @param truncate a `numerical` value that limits the size that `sigma` is
-#' extended to. Defaults to `3` which results in extending the the size of the
-#' kernel at a factor of 3 which creaetes a radius of the Gaussian keneral that
-#' covers 90-95%.
 #' @param mask a `logical` that creates a spatial mask based on the elucidan
 #' distance. Default is `TRUE`
 #' @param back_transform a `loctical` value that controls back transformation
@@ -24,8 +20,6 @@
 gaussian_kernel <- function(
   sigma,
   muadv = 0,
-  truncate = 3,
-  radius = NULL,
   normalize = FALSE,
   mask = TRUE,
   back_transform = FALSE,
@@ -33,7 +27,7 @@ gaussian_kernel <- function(
 ) {
   error_numeric_min(sigma)
   error_numeric(muadv)
-  error_numeric(truncate)
+  # error_numeric(truncate)
   error_logical(normalize)
   error_logical(mask)
   error_kernel(mask, sigma)
@@ -43,6 +37,10 @@ gaussian_kernel <- function(
     parameter_range = sigma_range
   )
 
+  # if (!is.null(radius)) {
+  #   error_numeric_min(radius)
+  # }
+
   # the following blog post walks th
   if (isTRUE(back_transform)) {
     sigma <- .transpose_back(
@@ -51,17 +49,24 @@ gaussian_kernel <- function(
     )
   }
 
-  if (is.null(radius)) {
-    radius <- ceiling(truncate * sigma)
+  # ----- old method -----
+  kernel_size <- ceiling(sigma * 4)
+  if (kernel_size %% 2 == 0) {
+    kernel_size <- kernel_size + 1
   }
-  kernal_size <- 2 * radius + 1
+  x <- 1:round(kernel_size)
 
-  x <- seq_len(kernal_size)
-  mu <- (size + 1) / 2 + muadv
+  mu <- c(mean(x), mean(x)) + muadv
 
-  # if (kernal_size %% 2 == 0) {
-  #   kernal_size <- kernal_size + 1
+  # ----- new method -----
+  # if (is.null(radius)) {
+  #   radius <- ceiling(truncate * sigma)
   # }
+
+  # kernel_size <- 2 * radius + 1
+
+  # x <- seq_len(kernel_size)
+  # mu <- (kernel_size + 1) / 2 + muadv
 
   # sigma * 4 is the kernel’s full width, so the radius is only about 2 sigma.
   # In 2D, with your circular mask, that keeps only about 86% of the mass
@@ -80,17 +85,16 @@ gaussian_kernel <- function(
 
   # si resultat pair on rajoute 1 pour assurer une cellule centrale (point de depart)
   # this ensure to gather around 90-95% of diffusion
-  # The round(kernal_size) < 1 check is redundant since ceiling()
+  # The round(kernel_size) < 1 check is redundant since ceiling()
   # already returns an integer, and for sigma > 0 it’s at least 1.
   # It only matters if sigma is 0 or negative, and in that case you’d rather
   # error out than silently return a 1x1 kernel.
   # ajout 22/03
   # avoid that the fish go further in diagnal that in straight line
 
-  x <- 1:round(kernal_size)
   # muadv is added to both x and y, so it shifts the kernel diagonally only.
   # If you want independent x/y drift, it needs to be a length-2 vector.
-  mu <- c(mean(x), mean(x)) + muadv
+  # mu <- c(mean(x), mean(x)) + muadv
 
   # cal elducidan distance from mu, x and sigma
   fx <- exp(-0.5 * ((x - mu[1]) / sigma)^2) / sqrt((2 * pi) * sigma**2)

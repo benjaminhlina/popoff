@@ -2,6 +2,7 @@
 
 export(calc_likdepth_transmit)
 export(download_noaa_bathy)
+export(eval_sigma)
 export(gaussian_kernel)
 export(hmm_forward_filter)
 export(load_raster)
