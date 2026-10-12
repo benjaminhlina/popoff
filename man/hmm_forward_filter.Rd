@@ -6,7 +6,7 @@
 \usage{
 hmm_forward_filter(
   likelihood_array,
-  kernal,
+  kernel,
   grid,
   bound_threshold = 0.1,
   bound_min = 10,
@@ -19,7 +19,7 @@ hmm_forward_filter(
 \code{\link[=calc_likdepth_transmit]{calc_likdepth_transmit()}} with the following dimensions
 \verb{[n_col, n_row, n_time]}.}
 
-\item{kernal}{Movement kernel (matrix) created by \code{\link[=gaussian_kernel]{gaussian_kernel()}}}
+\item{kernel}{Movement kernel (matrix) created by \code{\link[=gaussian_kernel]{gaussian_kernel()}}}
 
 \item{grid}{a \code{data.frame} containing \code{lon} and \code{lat} that are evenly spaced
 across the extent of the study area.}

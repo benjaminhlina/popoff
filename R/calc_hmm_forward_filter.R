@@ -11,7 +11,7 @@
 #' @param likelihood_array Array of likelihoods, calculated using
 #' [calc_likdepth_transmit()] with the following dimensions
 #' `[n_col, n_row, n_time]`.
-#' @param kernal Movement kernel (matrix) created by [gaussian_kernel()]
+#' @param kernel Movement kernel (matrix) created by [gaussian_kernel()]
 #' @param grid a `data.frame` containing `lon` and `lat` that are evenly spaced
 #' across the extent of the study area.
 #' @param bound_threshold,bound_min Passed to [mask_likelihood_array()] when
@@ -30,7 +30,7 @@
 #' @export
 hmm_forward_filter <- function(
   likelihood_array,
-  kernal,
+  kernel,
   grid,
   bound_threshold = 0.1,
   bound_min = 10,
@@ -55,7 +55,7 @@ hmm_forward_filter <- function(
   # normalised posterior (`normalised_posterior`),
   # the prediction and the normaliser (`normalising constant per step`).
   filter_step <- function(state, t) {
-    pred_t <- imagine::convolution2D(state$normalised_posterior, kernal)
+    pred_t <- imagine::convolution2D(state$normalised_posterior, kernel)
     lik_t <- likelihood_array[,, t]
 
     # Only update with the likelihood if it has mass and does not zero out the
@@ -73,7 +73,7 @@ hmm_forward_filter <- function(
         likelihood = lik_t,
         lon = grid$lon,
         lat = grid$lat,
-        par0 = dim(kernal)[1],
+        par0 = dim(kernel)[1],
         bound_threshold = bound_threshold,
         bound_min = bound_min
       )
@@ -88,7 +88,8 @@ hmm_forward_filter <- function(
     list(
       normalised_posterior = post / psi_t,
       predicted = pred_t,
-      psi = psi_t
+      psi = psi_t,
+      updated = use_likelihood
     )
   }
 
@@ -149,7 +150,7 @@ hmm_forward_filter <- function(
     ),
     ncps = ncps_calc,
     log_lik = log_lik,
-    neg_log_lik = neg_log_lik
+    n_updated = n_updated
   )
 
   return(results)
