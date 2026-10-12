@@ -1,11 +1,15 @@
 #' Gaussian Kernel
 #'
-#' Determines the Gaussian Kernel for an area
+#' Determines the Gaussian Kernel for a given area.
 #'
 #' @param sigma a `numerical` value that is the standard deviation
 #' @param muadv a `numerical` value that adds to the mean (i.e, mu)
 #' @param normalize a `logical` that checks whether to normalize the Kernel estimate.
 #' Default is `FALSE`.
+#' @param truncate a `numerical` value that limits the size that `sigma` is
+#' extended to. Defaults to `3` which results in extending the the size of the
+#' kernel at a factor of 3 which creaetes a radius of the Gaussian keneral that
+#' covers 90-95%.
 #' @param mask a `logical` that creates a spatial mask based on the elucidan
 #' distance. Default is `TRUE`
 #' @param back_transform a `loctical` value that controls back transformation
@@ -20,13 +24,16 @@
 gaussian_kernel <- function(
   sigma,
   muadv = 0,
+  truncate = 3,
+  radius = NULL,
   normalize = FALSE,
   mask = TRUE,
   back_transform = FALSE,
   sigma_range = NULL
 ) {
-  error_numeric(sigma)
+  error_numeric_min(sigma)
   error_numeric(muadv)
+  error_numeric(truncate)
   error_logical(normalize)
   error_logical(mask)
   error_kernel(mask, sigma)
@@ -36,6 +43,7 @@ gaussian_kernel <- function(
     parameter_range = sigma_range
   )
 
+  # the following blog post walks th
   if (isTRUE(back_transform)) {
     sigma <- .transpose_back(
       parameter_real = sigma,
@@ -43,11 +51,34 @@ gaussian_kernel <- function(
     )
   }
 
-  kernal_size <- ceiling(sigma * 4)
+  if (is.null(radius)) {
+    radius <- ceiling(truncate * sigma)
+  }
+  kernal_size <- 2 * radius + 1
 
-  if (kernal_size %% 2 == 0) {
-    kernal_size <- kernal_size + 1
-  } # si resultat pair on rajoute 1 pour assurer une cellule centrale (point de depart)
+  x <- seq_len(kernal_size)
+  mu <- (size + 1) / 2 + muadv
+
+  # if (kernal_size %% 2 == 0) {
+  #   kernal_size <- kernal_size + 1
+  # }
+
+  # sigma * 4 is the kernel’s full width, so the radius is only about 2 sigma.
+  # In 2D, with your circular mask, that keeps only about 86% of the mass
+  #  (1 - exp(-2)), not the 90-95% in your comment.
+  # The ceiling and the odd-size bump then change the
+  # effective cutoff as sigma moves:
+  # sigma	size	radius	radius in sigma units
+  # 1.01	5	2	1.98σ
+  # 1.25	5	2	1.6σ
+  # 1.30	7	3	2.3σ
+  #
+  # Sigma 1.25 and sigma 1.3 get quite different truncations.
+  # After normalization the kernel shape changes in a sawtooth pattern, which is
+  # the source of the neg_likelihood jumps I flagged earlier.
+  # The truncation is cutting off enough mass that the jumps show up in the NLL.
+
+  # si resultat pair on rajoute 1 pour assurer une cellule centrale (point de depart)
   # this ensure to gather around 90-95% of diffusion
   # The round(kernal_size) < 1 check is redundant since ceiling()
   # already returns an integer, and for sigma > 0 it’s at least 1.
