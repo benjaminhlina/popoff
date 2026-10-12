@@ -107,6 +107,26 @@ hmm_forward_filter <- function(
     .f = filter_step,
     .init = init
   )
+
+  # Look at your use_likelihood guard. When the predicted surface doesn’t
+  # overlap the likelihood (overlap == 0), you fall back to post <- pred_t.
+  # Then psi_t = sum(pred_t), which is roughly 1, so log(psi) ≈ 0.
+  # That step adds nothing to the NLL, as if it were a free pass.
+  #
+  # This matters for sigma. A small sigma produces a narrow kernel that can’t
+  # reach where the likelihood moved, so more steps get skipped, and those
+  # steps are never penalized. A too-small sigma can therefore
+  # look better than it should. Track this as well:
+  #
+  # Reject a sigma if n_bad > 0, or if
+  #  n_updated is much lower than at larger sigmas.
+  # Or compare only sigmas with the same n_updated, or use NLL per
+  # updated step (neg_log_lik / n_updated).
+  #
+  #
+  n_updated <- purrr::map_lgl(states[-1], "updated") |>
+    sum()
+
   dn <- dimnames(likelihood_array)
 
   # ----- get noramlized posteriors ----
@@ -125,7 +145,15 @@ hmm_forward_filter <- function(
   # ---- calculate the log likelihood and then calcualte the
   #  negative log likelihood ----
 
-  log_lik <- ncps_calc[!ncps_calc == 0] |>
+  bad <- !is.finite(ncps_calc) | ncps_calc <= 0
+  n_bad <- sum(bad)
+  msg_no_mass(n_bad)
+
+  # floor instead of drop: each collapsed step costs ~690 nats
+  safe_ncps <- pmax(ncps_calc, 1e-300)
+  safe_ncps[!is.finite(safe_ncps)] <- 1e-300
+
+  log_lik <- safe_ncps |>
     log() |>
     sum()
 
@@ -150,6 +178,8 @@ hmm_forward_filter <- function(
     ),
     ncps = ncps_calc,
     log_lik = log_lik,
+    neg_log_lik = neg_log_lik,
+    n_bad = n_bad,
     n_updated = n_updated
   )
 

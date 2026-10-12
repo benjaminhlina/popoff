@@ -57,7 +57,9 @@ describe("hmm_forward_filter() output structure", {
         "pc_predicted",
         "ncps",
         "log_lik",
-        "neg_log_lik"
+        "neg_log_lik",
+        "n_bad",
+        "n_updated"
       )
     )
   })
@@ -391,8 +393,19 @@ describe("hmm_forward_filter() known issues", {
     expect_null(err)
     expect_true(all(is.nan(res$normalised_posterior[,, 2])))
     expect_equal(unname(res$ncps[1]), 0)
-    expect_equal(res$log_lik, -Inf)
-    expect_equal(res$neg_log_lik, Inf)
+    expect_equal(
+      tolerance = 0.1,
+      res$log_lik,
+      -690.8
+      # -Inf
+    )
+
+    expect_equal(
+      tolerance = 0.1,
+      res$neg_log_lik,
+      690
+      # Inf
+    )
 
     # TODO: once a guard is added, this should abort (or warn) with a clear
     # message instead of silently returning NaN:
