@@ -3,7 +3,7 @@
 export(calc_likdepth_transmit)
 export(download_noaa_bathy)
 export(eval_sigma)
-export(eval_sigma_parallel)
+export(eval_sigma_iterate)
 export(gaussian_kernel)
 export(hmm_forward_filter)
 export(load_raster)

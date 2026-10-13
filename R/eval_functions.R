@@ -124,42 +124,57 @@ eval_sigma <- function(
 #'
 #' @return A tibble with columns `sigma` and `neg_log_lik`.
 #' @export
-eval_sigma_parallel <- function(
+eval_sigma_iterate <- function(
   sigma_vec,
   likelihood_array,
   grid,
+  parallel = TRUE,
+  workers = NULL,
   ...,
-  progress = TRUE
+  .progress = TRUE
 ) {
   t0 <- msg_start("sigma evaluation in parallel")
 
-  if (mirai::daemons_set()) {
-    likelihoods_shared <- mori::share(likelihood_array)
-    grid_shared <- mori::share(grid)
+  extra_args <- list(...)
 
-    res <- mirai::mirai_map(
-      sigma_vec,
-      function(eval_sigma, sigma_val, likelihoods_shared, grid_shared, ...) {
-        eval_sigma(
-          sigma_val,
-          likelihoods_shared,
-          grid_shared,
-          ...,
-          progress = FALSE
+  if (isTRUE(parallel)) {
+    if (!is.null(workers) && workers > 1) {
+      if (mirai::daemons_set()) {
+        cli::cli_inform(
+          "Daemons already running, ignoring {.arg workers} and using a total of 
+        {.val {mirai::status()$connection}} workers"
         )
-      },
-      .args = list(
-        likelihoods = likelihoods_shared,
-        grid = grid_shared,
-        eval_sigma = eval_sigma,
-        ...
-      )
-    )
+      } else {
+        mirai::daemons(workers)
+        on.exit(mirai::daemons(0), add = TRUE) # only reached if we started them
+      }
+      # ----- share across daemons using mori -----
+      likelihoods_shared <- mori::share(likelihood_array)
+      grid_shared <- mori::share(grid)
 
-    if (isTRUE(progress)) {
-      out <- res[.progress]
+      # ----- args list -----
+      args_list <- c(
+        list(
+          likelihood_array = likelihoods_shared,
+          grid = grid_shared,
+          progress = FALSE
+        ),
+        extra_args
+      )
+
+      # ---- use mirai to map over ------
+      results <- mirai::mirai_map(
+        sigma_vec,
+        eval_sigma,
+        .args = args_list
+      )
+
+      if (isTRUE(.progress)) {
+        out <- results[.progress]
+      } else {
+        out <- results[]
+      }
     }
-    out <- res[]
   } else {
     out <- purrr::map(
       sigma_vec,
@@ -168,7 +183,7 @@ eval_sigma_parallel <- function(
       grid = grid,
       ...,
       progress = FALSE,
-      .progress = if (progress) "Evaluating sigma" else FALSE
+      .progress = if (isTRUE(.progress)) "Evaluating sigma" else FALSE
     )
   }
 
