@@ -134,14 +134,23 @@ eval_sigma_parallel <- function(
   t0 <- msg_start("sigma evaluation in parallel")
 
   if (mirai::daemons_set()) {
+    likelihoods_shared <- mori::share(likelihood_array)
+    grid_shared <- mori::share(grid)
+
     res <- mirai::mirai_map(
       sigma_vec,
-      function(eval_sigma, sigma_val, likelihoods, grid, ...) {
-        eval_sigma(sigma_val, likelihoods, grid, ..., progress = FALSE)
+      function(eval_sigma, sigma_val, likelihoods_shared, grid_shared, ...) {
+        eval_sigma(
+          sigma_val,
+          likelihoods_shared,
+          grid_shared,
+          ...,
+          progress = FALSE
+        )
       },
       .args = list(
-        likelihoods = likelihood_array,
-        grid = grid,
+        likelihoods = likelihoods_shared,
+        grid = grid_shared,
         eval_sigma = eval_sigma,
         ...
       )
@@ -149,9 +158,8 @@ eval_sigma_parallel <- function(
 
     if (isTRUE(progress)) {
       out <- res[.progress]
-    } else {
-      out <- res[]
     }
+    out <- res[]
   } else {
     out <- purrr::map(
       sigma_vec,
