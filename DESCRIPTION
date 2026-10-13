@@ -17,6 +17,8 @@ Imports:
     ggplot2,
     imagine,
     marmap,
+    mirai,
+    mori,
     purrr,
     raster,
     rlang, 
