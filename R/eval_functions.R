@@ -91,16 +91,23 @@ eval_sigma <- function(
       list(
         likelihood_array = likelihood_array,
         kernel = kern,
-        grid = grid
+        grid = grid,
+        return_maps = FALSE
       ),
       hmm_args
     )
   )
 
-  out <- list(
+  out <- data.frame(
     sigma = sigma,
-    neg_log_lik = hmm_foward$neg_log_lik,
-    n_bad = hmm_foward$n_bad,
-    n_updated = hmm_foward$n_updated
+    log_lik = hmm_forward$log_lik,
+    neg_log_lik = hmm_forward$neg_log_lik,
+    n_bad = hmm_forward$n_bad,
+    n_updated = hmm_forward$n_updated,
+    n_steps = length(hmm_forward$ncps)
   )
+  rm(hmm_forward, kern)
+  gc(verbose = FALSE)
+  return(out)
+}
 }
