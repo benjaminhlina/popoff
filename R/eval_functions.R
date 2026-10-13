@@ -124,7 +124,7 @@ eval_sigma <- function(
 #'
 #' @return A tibble with columns `sigma` and `neg_log_lik`.
 #' @export
-sigma_eval_parallel <- function(
+eval_sigma_parallel <- function(
   sigma_vec,
   likelihood_array,
   grid,
