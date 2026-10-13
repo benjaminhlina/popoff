@@ -3,7 +3,10 @@
 #' Determines the Gaussian Kernel for a given area.
 #'
 #' @param sigma a `numerical` value that is the standard deviation
-#' @param muadv a `numerical` value that adds to the mean (i.e, mu)
+#' @param muadv a `numerical` value that adds to the mean (i.e, mu).
+#' @param truncate a value to truncate `sigma` defaults to `3`
+#' @param radius a value to set radius if `NULL` it uses `sigma * truncate` and
+#' takes the [ceiling()] of that.
 #' @param normalize a `logical` that checks whether to normalize the Kernel estimate.
 #' Default is `FALSE`.
 #' @param mask a `logical` that creates a spatial mask based on the elucidan
@@ -20,6 +23,8 @@
 gaussian_kernel <- function(
   sigma,
   muadv = 0,
+  truncate = 3,
+  radius = NULL,
   normalize = FALSE,
   mask = TRUE,
   back_transform = FALSE,
@@ -27,7 +32,7 @@ gaussian_kernel <- function(
 ) {
   error_numeric_min(sigma)
   error_numeric(muadv)
-  # error_numeric(truncate)
+  error_numeric(truncate)
   error_logical(normalize)
   error_logical(mask)
   error_kernel(mask, sigma)
@@ -37,9 +42,9 @@ gaussian_kernel <- function(
     parameter_range = sigma_range
   )
 
-  # if (!is.null(radius)) {
-  #   error_numeric_min(radius)
-  # }
+  if (!is.null(radius)) {
+    error_numeric_min(radius)
+  }
 
   # the following blog post walks th
   if (isTRUE(back_transform)) {
@@ -50,23 +55,23 @@ gaussian_kernel <- function(
   }
 
   # ----- old method -----
-  kernel_size <- ceiling(sigma * 4)
-  if (kernel_size %% 2 == 0) {
-    kernel_size <- kernel_size + 1
-  }
-  x <- 1:round(kernel_size)
+  # kernel_size <- ceiling(sigma * 4)
+  # if (kernel_size %% 2 == 0) {
+  #   kernel_size <- kernel_size + 1
+  # }
+  # x <- 1:round(kernel_size)
 
-  mu <- c(mean(x), mean(x)) + muadv
+  # mu <- c(mean(x), mean(x)) + muadv
 
   # ----- new method -----
-  # if (is.null(radius)) {
-  #   radius <- ceiling(truncate * sigma)
-  # }
+  if (is.null(radius)) {
+    radius <- ceiling(truncate * sigma)
+  }
 
-  # kernel_size <- 2 * radius + 1
+  kernel_size <- 2 * radius + 1
 
-  # x <- seq_len(kernel_size)
-  # mu <- (kernel_size + 1) / 2 + muadv
+  x <- seq_len(kernel_size)
+  mu <- (kernel_size + 1) / 2 + muadv
 
   # sigma * 4 is the kernel’s full width, so the radius is only about 2 sigma.
   # In 2D, with your circular mask, that keeps only about 86% of the mass
@@ -97,8 +102,8 @@ gaussian_kernel <- function(
   # mu <- c(mean(x), mean(x)) + muadv
 
   # cal elducidan distance from mu, x and sigma
-  fx <- exp(-0.5 * ((x - mu[1]) / sigma)^2) / sqrt((2 * pi) * sigma**2)
-  fy <- exp(-0.5 * ((x - mu[2]) / sigma)^2) / sqrt((2 * pi) * sigma**2)
+  fx <- exp(-0.5 * ((x - mu) / sigma)^2) / sqrt((2 * pi) * sigma**2)
+  fy <- exp(-0.5 * ((x - mu) / sigma)^2) / sqrt((2 * pi) * sigma**2)
   fx[!is.finite(fx)] <- 0
   fy[!is.finite(fy)] <- 0
   kern <- (fx %*% t(fy))

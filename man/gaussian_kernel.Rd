@@ -7,6 +7,8 @@
 gaussian_kernel(
   sigma,
   muadv = 0,
+  truncate = 3,
+  radius = NULL,
   normalize = FALSE,
   mask = TRUE,
   back_transform = FALSE,
@@ -16,7 +18,12 @@ gaussian_kernel(
 \arguments{
 \item{sigma}{a \code{numerical} value that is the standard deviation}
 
-\item{muadv}{a \code{numerical} value that adds to the mean (i.e, mu)}
+\item{muadv}{a \code{numerical} value that adds to the mean (i.e, mu).}
+
+\item{truncate}{a value to truncate \code{sigma} defaults to \code{3}}
+
+\item{radius}{a value to set radius if \code{NULL} it uses \code{sigma * truncate} and
+takes the \code{\link[=ceiling]{ceiling()}} of that.}
 
 \item{normalize}{a \code{logical} that checks whether to normalize the Kernel estimate.
 Default is \code{FALSE}.}
