@@ -31,27 +31,32 @@ mask_likelihood_array <- function(
   n_row <- length(lat)
   n_col <- length(lon)
 
-  max_likelhood <- max(likelihood, na.rm = TRUE)
+  max_likelihood <- max(likelihood, na.rm = TRUE)
 
-  above_thresh <- which(
-    likelihood >= bound_threshold * max_likelhood,
-    arr.ind = TRUE
-  )
+  # Avoid which(arr.ind = TRUE) on a 3D array: it materialises a huge
+  # (n_hits x 3) matrix (~38M rows here). Instead, collapse the date
+  # dimension and find the occupied rows/cols directly.
+  above <- likelihood >= bound_threshold * max_likelihood
+  above[is.na(above)] <- FALSE
 
-  if (nrow(above_thresh) == 0) {
-    # ASSUMPTION: fallback to unmasked product rather than returning all-NA
-    # or all-zero, matching the "in case of data update led to an empty
-    # matrix" comment at the call site — but the actual fallback behavior
-    # is unverified.
+  if (length(dim(above)) == 3) {
+    above_2d <- apply(above, c(1, 2), any)
+  } else {
+    above_2d <- above
+  }
+
+  if (!any(above_2d)) {
+    # Fallback: unmasked product (unverified against call-site intent)
     return(predicted * likelihood)
   }
 
-  row_range <- range(above_thresh[, "row"])
-  col_range <- range(above_thresh[, "col"])
+  rows_hit <- which(rowSums(above_2d) > 0)
+  cols_hit <- which(colSums(above_2d) > 0)
 
-  # ASSUMPTION: par0 is the kernel's odd diameter (as built in
-  # gaussian_kernel()), so (par0 - 1) / 2 is the radius in cells — expand
-  # the box by this much so a step's worth of diffusion isn't clipped.
+  row_range <- range(rows_hit)
+  col_range <- range(cols_hit)
+
+  # par0 is the kernel's odd diameter, so (par0 - 1) / 2 is the radius in cells
   kernel_radius <- (par0 - 1) / 2
 
   row_min <- row_range[1] - kernel_radius
@@ -59,9 +64,7 @@ mask_likelihood_array <- function(
   col_min <- col_range[1] - kernel_radius
   col_max <- col_range[2] + kernel_radius
 
-  # ASSUMPTION: widen symmetrically, one cell at a time each side, until
-  # bound_min is met in both dimensions. Untested edge case: this can
-  # widen past the grid extent before clamping below.
+  # Widen symmetrically until bound_min is met (can overshoot grid; clamped below)
   while ((row_max - row_min + 1) < bound_min) {
     row_min <- row_min - 1
     row_max <- row_max + 1
@@ -77,13 +80,26 @@ mask_likelihood_array <- function(
   col_min <- max(1, floor(col_min))
   col_max <- min(n_col, ceiling(col_max))
 
+  # 2D keep mask, recycled across the date dimension if present
   keep <- matrix(FALSE, nrow = n_row, ncol = n_col)
   keep[row_min:row_max, col_min:col_max] <- TRUE
 
   pred_masked <- predicted
   likelihood_masked <- likelihood
-  pred_masked[!keep] <- 0
-  likelihood_masked[!keep] <- 0
+
+  if (length(dim(likelihood)) == 3) {
+    for (k in seq_len(dim(likelihood)[3])) {
+      pred_k <- pred_masked[,, k]
+      lik_k <- likelihood_masked[,, k]
+      pred_k[!keep] <- 0
+      lik_k[!keep] <- 0
+      pred_masked[,, k] <- pred_k
+      likelihood_masked[,, k] <- lik_k
+    }
+  } else {
+    pred_masked[!keep] <- 0
+    likelihood_masked[!keep] <- 0
+  }
 
   out <- pred_masked * likelihood_masked
   return(out)
