@@ -10,10 +10,11 @@
 #' normalized. See [gaussian_kernel()]. Defults to `FALSE`.
 #' @param mask a `logical` that changes whether a maks is applied to the
 #' kernel. See [gaussian_kernel()]. Defults to `TRUE`.
-#' @param likelihood_arra the `likelihood_array` produced by
+#' @param likelihood_array the `likelihood_array` produced by
 #' [calc_likdepth_transmit()].
-#' @param grid a grid to evaluate and filter the foward filtering process
 #'
+#' @param return_map a `logical` that returns posterior and predicted layers
+#' when `TRUE`. Defaults to `FALSE` as this is computationally expensive.
 #' @param ... additional named arguments passed to either
 #' [gaussian_kernel()] (`muadv`, `back_transform`, `sigma_range`) or
 #' [hmm_forward_filter()] (`bound_threshold`, `bound_min`,
@@ -21,9 +22,10 @@
 #' unrecognized arguments cause an error.
 #'
 #'
-#' @return a `list` containing the `sigma` value, the `neg_log_lik`,
-#' `n_bad` which is the number of days that did not have a valid estimate,
-#' and `n_updated` the number of times the the updated `likelihood` was used.
+#' @return a `data.frame` containing the `sigma` value, the `neg_log_lik` and
+#' `log_lik`, `n_bad_days` which is the number of days that did not have a valid estimate,
+#' and `n_updated` the number of times the the updated `likelihood` was used, and
+#' `n_steps`.
 #'
 #' @seealso [gaussian_kernel()], [hmm_forward_filter()]
 #' @export
@@ -32,7 +34,7 @@ eval_sigma <- function(
   normalize = FALSE,
   mask = TRUE,
   likelihood_array,
-  grid,
+  return_maps = FALSE,
   ...
 ) {
   dots <- list(...)
@@ -53,7 +55,7 @@ eval_sigma <- function(
     )
     hmm_formals <- setdiff(
       names(formals(hmm_forward_filter)),
-      c("likelihood_array", "kernel", "grid")
+      c("likelihood_array", "kernel", "return_maps")
     )
 
     unknown <- setdiff(dot_names, c(kern_formals, hmm_formals))
@@ -91,23 +93,28 @@ eval_sigma <- function(
       list(
         likelihood_array = likelihood_array,
         kernel = kern,
-        grid = grid,
-        return_maps = FALSE
+        return_maps = return_maps
       ),
       hmm_args
     )
   )
 
-  out <- data.frame(
-    sigma = sigma,
-    log_lik = hmm_forward$log_lik,
-    neg_log_lik = hmm_forward$neg_log_lik,
-    n_bad = hmm_forward$n_bad,
-    n_updated = hmm_forward$n_updated,
-    n_steps = length(hmm_forward$ncps)
-  )
-  rm(hmm_forward, kern)
-  gc(verbose = FALSE)
+  if (isFALSE(return_maps)) {
+    out <- data.frame(
+      sigma = sigma,
+      log_lik = hmm_forward$log_lik,
+      neg_log_lik = hmm_forward$neg_log_lik,
+      n_bad = hmm_forward$n_bad,
+      n_updated = hmm_forward$n_updated,
+      n_steps = length(hmm_forward$ncps)
+    )
+    rm(hmm_forward, kern)
+    gc(verbose = FALSE)
+  } else {
+    out <- hmm_forward
+    rm(kern)
+    gc(verbose = FALSE)
+  }
   return(out)
 }
 
@@ -117,17 +124,19 @@ eval_sigma <- function(
 #' mirai daemons are set) so the best-fitting sigma can be identified.
 #'
 #' @param sigma_vec A numeric vector of sigma values.
-#' @param likelihood_array Likelihood array.
-#' @param grid A `data.frame` containing the grid.
-#' @param ... Further arguments passed to `eval_sigma()`.
-#' @param progress Logical; show a progress bar over sigma values.
+#' @param likelihood_array Likelihood array produced by [calc_likdepth_transmit()]
+#' @param ... Further arguments passed to `eval_sigma()`. See [eval_sigma()],
+#' [gaussian_kernel()], and [hmm_forward_filter()].
+#' @param .progress Logical value to show a progress bar.
 #'
-#' @return A tibble with columns `sigma` and `neg_log_lik`.
+#' @return A `data.frame` containing the columns `sigma`, `log_lik`,
+#' `neg_log_lik`, `n_bad_days`, and `n_updated` and `n_steps`.
+#'
+#' @seealso [gaussian_kernel()], [hmm_forward_filter()], and [eval_sigma()]
 #' @export
 eval_sigma_iterate <- function(
   sigma_vec,
   likelihood_array,
-  grid,
   parallel = TRUE,
   workers = NULL,
   ...,
@@ -138,49 +147,50 @@ eval_sigma_iterate <- function(
   extra_args <- list(...)
 
   if (isTRUE(parallel)) {
-    if (!is.null(workers) && workers > 1) {
-      if (mirai::daemons_set()) {
-        cli::cli_inform(
-          "Daemons already running, ignoring {.arg workers} and using a total of 
-        {.val {mirai::status()$connection}} workers"
+    # ---- make sure daemons exist ----
+    if (mirai::daemons_set()) {
+      cli::cli_inform(
+        "Daemons already running, ignoring {.arg workers} and using a total of
+        {.val {mirai::status()$connections}} workers"
+      )
+    } else {
+      if (is.null(workers) || workers < 2) {
+        cli::cli_abort(
+          "Parallel execution requested, but no mirai daemons are set. Please provide {.arg workers} (> 1) or call {.fn mirai::daemons} first."
         )
-      } else {
-        mirai::daemons(workers)
-        on.exit(mirai::daemons(0), add = TRUE) # only reached if we started them
       }
-      # ----- share across daemons using mori -----
-      likelihoods_shared <- mori::share(likelihood_array)
-      grid_shared <- mori::share(grid)
+      mirai::daemons(workers)
+      on.exit(mirai::daemons(0), add = TRUE) # only reached if we started them
+    }
+    # ----- share across daemons using mori -----
+    likelihoods_shared <- mori::share(likelihood_array)
 
-      # ----- args list -----
-      args_list <- c(
-        list(
-          likelihood_array = likelihoods_shared,
-          grid = grid_shared,
-          progress = FALSE
-        ),
-        extra_args
-      )
+    # ----- args list -----
+    args_list <- c(
+      list(
+        likelihood_array = likelihoods_shared,
+        progress = FALSE
+      ),
+      extra_args
+    )
 
-      # ---- use mirai to map over ------
-      results <- mirai::mirai_map(
-        sigma_vec,
-        eval_sigma,
-        .args = args_list
-      )
+    # ---- use mirai to map over ------
+    results <- mirai::mirai_map(
+      sigma_vec,
+      eval_sigma,
+      .args = args_list
+    )
 
-      if (isTRUE(.progress)) {
-        out <- results[.progress]
-      } else {
-        out <- results[]
-      }
+    if (isTRUE(.progress)) {
+      out <- results[.progress]
+    } else {
+      out <- results[]
     }
   } else {
     out <- purrr::map(
       sigma_vec,
       eval_sigma,
       likelihood_array = likelihood_array,
-      grid = grid,
       ...,
       progress = FALSE,
       .progress = if (isTRUE(.progress)) "Evaluating sigma" else FALSE

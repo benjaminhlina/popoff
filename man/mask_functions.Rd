@@ -9,8 +9,6 @@
 mask_likelihood_array(
   predicted,
   likelihood,
-  lon,
-  lat,
   par0,
   bound_threshold = 0.1,
   bound_min = 10
@@ -22,10 +20,6 @@ mask_likelihood_array(
 \item{predicted}{a `matrix``. Predicted spatial distribution at time t.}
 
 \item{likelihood}{a `matrix``. Observation likelihood at time t.}
-
-\item{lon}{a `numeric`` vector. Grid longitude values (one per column).}
-
-\item{lat}{a `numeric`` vector. Grid latitude values (one per row).}
 
 \item{par0}{a \code{numeric}. Kernel diameter (odd), used to derive a movement
 radius so the bounding box isn't clipped tighter than the diffusion

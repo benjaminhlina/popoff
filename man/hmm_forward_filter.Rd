@@ -7,7 +7,6 @@
 hmm_forward_filter(
   likelihood_array,
   kernel,
-  grid,
   bound_threshold = 0.1,
   bound_min = 10,
   mask_likelihood = FALSE,
@@ -21,9 +20,6 @@ hmm_forward_filter(
 \verb{[n_col, n_row, n_time]}.}
 
 \item{kernel}{Movement kernel (matrix) created by \code{\link[=gaussian_kernel]{gaussian_kernel()}}}
-
-\item{grid}{a \code{data.frame} containing \code{lon} and \code{lat} that are evenly spaced
-across the extent of the study area.}
 
 \item{bound_threshold, bound_min}{Passed to \code{\link[=mask_likelihood_array]{mask_likelihood_array()}} when
 \code{mask_likelihood = TRUE}. \code{bound_threshold} is fraction of

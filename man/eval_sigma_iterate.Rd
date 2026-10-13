@@ -7,7 +7,6 @@
 eval_sigma_iterate(
   sigma_vec,
   likelihood_array,
-  grid,
   parallel = TRUE,
   workers = NULL,
   ...,
@@ -17,18 +16,21 @@ eval_sigma_iterate(
 \arguments{
 \item{sigma_vec}{A numeric vector of sigma values.}
 
-\item{likelihood_array}{Likelihood array.}
+\item{likelihood_array}{Likelihood array produced by \code{\link[=calc_likdepth_transmit]{calc_likdepth_transmit()}}}
 
-\item{grid}{A \code{data.frame} containing the grid.}
+\item{...}{Further arguments passed to \code{eval_sigma()}. See \code{\link[=eval_sigma]{eval_sigma()}},
+\code{\link[=gaussian_kernel]{gaussian_kernel()}}, and \code{\link[=hmm_forward_filter]{hmm_forward_filter()}}.}
 
-\item{...}{Further arguments passed to \code{eval_sigma()}.}
-
-\item{progress}{Logical; show a progress bar over sigma values.}
+\item{.progress}{Logical value to show a progress bar.}
 }
 \value{
-A tibble with columns \code{sigma} and \code{neg_log_lik}.
+A \code{data.frame} containing the columns \code{sigma}, \code{log_lik},
+\code{neg_log_lik}, \code{n_bad_days}, and \code{n_updated} and \code{n_steps}.
 }
 \description{
 Evaluates \code{eval_sigma()} for each value in \code{sigma_vec} (in parallel if
 mirai daemons are set) so the best-fitting sigma can be identified.
+}
+\seealso{
+\code{\link[=gaussian_kernel]{gaussian_kernel()}}, \code{\link[=hmm_forward_filter]{hmm_forward_filter()}}, and \code{\link[=eval_sigma]{eval_sigma()}}
 }

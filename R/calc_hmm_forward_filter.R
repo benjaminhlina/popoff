@@ -12,8 +12,6 @@
 #' [calc_likdepth_transmit()] with the following dimensions
 #' `[n_col, n_row, n_time]`.
 #' @param kernel Movement kernel (matrix) created by [gaussian_kernel()]
-#' @param grid a `data.frame` containing `lon` and `lat` that are evenly spaced
-#' across the extent of the study area.
 #' @param bound_threshold,bound_min Passed to [mask_likelihood_array()] when
 #' `mask_likelihood = TRUE`. `bound_threshold` is fraction of
 #' likelihood's max used to decide which cells count as a plausible location
@@ -33,7 +31,6 @@
 hmm_forward_filter <- function(
   likelihood_array,
   kernel,
-  grid,
   bound_threshold = 0.1,
   bound_min = 10,
   mask_likelihood = FALSE,
@@ -88,8 +85,6 @@ hmm_forward_filter <- function(
       mask_likelihood_array(
         predicted = pred_t,
         likelihood = lik_t,
-        lon = grid$lon,
-        lat = grid$lat,
         par0 = dim(kernel)[1],
         bound_threshold = bound_threshold,
         bound_min = bound_min
@@ -141,7 +136,7 @@ hmm_forward_filter <- function(
 
   n_updated <- sum(updated_vec)
   bad <- !is.finite(ncps_vec) | ncps_vec <= 0
-  n_bad <- sum(bad)
+  n_bad_days <- sum(bad)
 
   # Floor instead of drop: each collapsed step costs ~690 nats
   safe_ncps <- pmax(ncps_vec, 1e-300)
@@ -158,7 +153,7 @@ hmm_forward_filter <- function(
     ncps = ncps_vec,
     log_lik = log_lik,
     neg_log_lik = neg_log_lik,
-    n_bad = n_bad,
+    n_bad_days = n_bad_days,
     n_updated = n_updated
   )
 
