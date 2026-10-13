@@ -8,7 +8,7 @@
 #' behaviour. Futher itterations of this function may have an argument
 #' `behaviour` that allows the user to switch this to be used for two behaviours.
 #'
-#' @param likelihood_array Array of likelihoods, calculated using
+#' @param likelihood_array Arrxy of likelihoods, calculated using
 #' [calc_likdepth_transmit()] with the following dimensions
 #' `[n_col, n_row, n_time]`.
 #' @param kernel Movement kernel (matrix) created by [gaussian_kernel()]
@@ -22,6 +22,8 @@
 #' step instead of a plain product.
 #' @param progress a `logical` value that turns on and off the progress bar.
 #' Default is `TRUE`.
+#' @param return_maps a `logical` value that returns maps of posteriors and
+#' predictions which are large. Defaults to `FALSE`.
 #'
 #' @return List with `normalised_posterior` (`[n_col, n_row, n_time]`),
 #' `pc_predicted` (post-convolution prediction, same dims) and
@@ -35,11 +37,25 @@ hmm_forward_filter <- function(
   bound_threshold = 0.1,
   bound_min = 10,
   mask_likelihood = FALSE,
-  progress = TRUE
+  progress = TRUE,
+  return_maps = FALSE
 ) {
   t0 <- msg_start("HMM forward filter")
   n_time <- dim(likelihood_array)[3]
 
+  # Preallocate vectors for performance and minimal memory overhead
+  ncps_vec <- numeric(n_time - 1)
+  updated_vec <- logical(n_time - 1)
+
+  # Optional storage lists only if maps are explicitly requested
+  if (isTRUE(return_maps)) {
+    post_list <- vector("list", n_time)
+    pred_list <- vector("list", n_time)
+    post_list[[1]] <- likelihood_array[,, 1]
+    pred_list[[1]] <- likelihood_array[,, 1]
+  }
+
+  current_posterior <- likelihood_array[,, 1]
   if (isTRUE(progress)) {
     pb <- cli::cli_progress_bar(
       name = "HMM forward filter",
@@ -54,8 +70,9 @@ hmm_forward_filter <- function(
   # One filter step: previous state to the next state. The state carries the
   # normalised posterior (`normalised_posterior`),
   # the prediction and the normaliser (`normalising constant per step`).
-  filter_step <- function(state, t) {
-    pred_t <- imagine::convolution2D(state$normalised_posterior, kernel)
+  # Iterative forward loop (Memory efficient)
+  for (t in 2:n_time) {
+    pred_t <- imagine::convolution2D(current_posterior, kernel)
     lik_t <- likelihood_array[,, t]
 
     # Only update with the likelihood if it has mass and does not zero out the
@@ -82,31 +99,24 @@ hmm_forward_filter <- function(
     }
 
     psi_t <- sum(post, na.rm = TRUE)
+    current_posterior <- post / psi_t
+
+    # Record metrics
+    ncps_vec[t - 1] <- psi_t
+    updated_vec[t - 1] <- use_likelihood
+
+    if (isTRUE(return_maps)) {
+      post_list[[t]] <- current_posterior
+      pred_list[[t]] <- pred_t
+    }
+
     if (isTRUE(progress)) {
       cli::cli_progress_update(id = pb)
     }
-    list(
-      normalised_posterior = post / psi_t,
-      predicted = pred_t,
-      psi = psi_t,
-      updated = use_likelihood
-    )
   }
 
   # initial state is the first likelihood surface; psi - normalizing constant per step
   #  is undefined at t = 1
-
-  init <- list(
-    normalised_posterior = likelihood_array[,, 1],
-    predicted = likelihood_array[,, 1],
-    psi = NA
-  )
-
-  states <- purrr::accumulate(
-    .x = seq_len(n_time)[-1],
-    .f = filter_step,
-    .init = init
-  )
 
   # Look at your use_likelihood guard. When the predicted surface doesn’t
   # overlap the likelihood (overlap == 0), you fall back to post <- pred_t.
@@ -124,33 +134,17 @@ hmm_forward_filter <- function(
   # updated step (neg_log_lik / n_updated).
   #
   #
-  n_updated <- purrr::map_lgl(states[-1], "updated") |>
-    sum()
-
   dn <- dimnames(likelihood_array)
+  if (!is.null(dn[[3]])) {
+    names(ncps_vec) <- dn[[3]][-1]
+  }
 
-  # ----- get noramlized posteriors ----
-  normalised_posterior_calc <- purrr::map(states, "normalised_posterior")
-
-  # ---- get predicted post convuteles -----
-  predicted_calc <- purrr::map(
-    states,
-    "predicted",
-  )
-
-  # ---- get normalizing constant per setp -----
-  ncps_calc <- purrr::map_dbl(states[-1], "psi") |>
-    stats::setNames(dn[[3]][-1])
-
-  # ---- calculate the log likelihood and then calcualte the
-  #  negative log likelihood ----
-
-  bad <- !is.finite(ncps_calc) | ncps_calc <= 0
+  n_updated <- sum(updated_vec)
+  bad <- !is.finite(ncps_vec) | ncps_vec <= 0
   n_bad <- sum(bad)
-  msg_no_mass(n_bad)
 
-  # floor instead of drop: each collapsed step costs ~690 nats
-  safe_ncps <- pmax(ncps_calc, 1e-300)
+  # Floor instead of drop: each collapsed step costs ~690 nats
+  safe_ncps <- pmax(ncps_vec, 1e-300)
   safe_ncps[!is.finite(safe_ncps)] <- 1e-300
 
   log_lik <- safe_ncps |>
@@ -159,29 +153,29 @@ hmm_forward_filter <- function(
 
   neg_log_lik <- log_lik * -1
 
-  # ---- results -----
-  msg_end(chr = "HMM forward filter", t0 = t0)
+  # Base results payload (lightweight)
   results <- list(
-    normalised_posterior = array(
-      unlist(
-        normalised_posterior_calc
-      ),
-      dim = dim(likelihood_array),
-      dimnames = dn
-    ),
-    pc_predicted = array(
-      unlist(
-        predicted_calc
-      ),
-      dim = dim(likelihood_array),
-      dimnames = dn
-    ),
-    ncps = ncps_calc,
+    ncps = ncps_vec,
     log_lik = log_lik,
     neg_log_lik = neg_log_lik,
     n_bad = n_bad,
     n_updated = n_updated
   )
 
+  # Conditionally attach heavy matrices only if requested
+  if (isTRUE(return_maps)) {
+    results$normalised_posterior <- array(
+      unlist(post_list),
+      dim = dim(likelihood_array),
+      dimnames = dn
+    )
+    results$pc_predicted <- array(
+      unlist(pred_list),
+      dim = dim(likelihood_array),
+      dimnames = dn
+    )
+  }
+
+  msg_end(chr = "HMM forward filter", t0 = t0)
   return(results)
 }

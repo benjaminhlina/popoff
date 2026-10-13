@@ -11,11 +11,12 @@ hmm_forward_filter(
   bound_threshold = 0.1,
   bound_min = 10,
   mask_likelihood = FALSE,
-  progress = TRUE
+  progress = TRUE,
+  return_maps = FALSE
 )
 }
 \arguments{
-\item{likelihood_array}{Array of likelihoods, calculated using
+\item{likelihood_array}{Arrxy of likelihoods, calculated using
 \code{\link[=calc_likdepth_transmit]{calc_likdepth_transmit()}} with the following dimensions
 \verb{[n_col, n_row, n_time]}.}
 
@@ -34,6 +35,9 @@ step instead of a plain product.}
 
 \item{progress}{a \code{logical} value that turns on and off the progress bar.
 Default is \code{TRUE}.}
+
+\item{return_maps}{a \code{logical} value that returns maps of posteriors and
+predictions which are large. Defaults to \code{FALSE}.}
 }
 \value{
 List with \code{normalised_posterior} (\verb{[n_col, n_row, n_time]}),
