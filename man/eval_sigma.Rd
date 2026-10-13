@@ -9,7 +9,7 @@ eval_sigma(
   normalize = FALSE,
   mask = TRUE,
   likelihood_array,
-  return_map = FALSE,
+  return_maps = FALSE,
   ...
 )
 }
@@ -25,14 +25,14 @@ kernel. See \code{\link[=gaussian_kernel]{gaussian_kernel()}}. Defults to \code{
 \item{likelihood_array}{the \code{likelihood_array} produced by
 \code{\link[=calc_likdepth_transmit]{calc_likdepth_transmit()}}.}
 
-\item{return_map}{a \code{logical} that returns posterior and predicted layers
-when \code{TRUE}. Defaults to \code{FALSE} as this is computationally expensive.}
-
 \item{...}{additional named arguments passed to either
 \code{\link[=gaussian_kernel]{gaussian_kernel()}} (\code{muadv}, \code{back_transform}, \code{sigma_range}) or
 \code{\link[=hmm_forward_filter]{hmm_forward_filter()}} (\code{bound_threshold}, \code{bound_min},
 \code{mask_likelihood}, \code{progress}). Arguments are routed by name. Unnamed or
 unrecognized arguments cause an error.}
+
+\item{return_map}{a \code{logical} that returns posterior and predicted layers
+when \code{TRUE}. Defaults to \code{FALSE} as this is computationally expensive.}
 }
 \value{
 a \code{data.frame} containing the \code{sigma} value, the \code{neg_log_lik} and
