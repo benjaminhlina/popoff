@@ -70,6 +70,7 @@ prep_bathy_likdepth <- function(
 
     sdi <- terra::rast(sdi, extent = extent)
   }
+  extent_vec <- as.vector(extent)
 
   # set crs and georeferecne
   terra::crs(sdi) <- terra::crs(bathy)
@@ -81,7 +82,9 @@ prep_bathy_likdepth <- function(
     sdi = sdi,
     idx = idx,
     idx_na = idx_na,
-    focal_dim = focal_dim
+    focal_dim = focal_dim,
+    xlim = extent_vec[c("xmin", "xmax")],
+    ylim = extent_vec[c("ymin", "ymax")]
   )
   return(out)
 }
