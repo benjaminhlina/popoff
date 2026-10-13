@@ -7,6 +7,7 @@
 \alias{msg_end}
 \alias{msg_load_raster}
 \alias{msg_load_rdata}
+\alias{msg_no_mass}
 \alias{msg_slice}
 \alias{msg_start}
 \alias{msg_window}
@@ -21,6 +22,8 @@ msg_end(chr, t0, t1 = round(Sys.time()))
 msg_load_raster(path)
 
 msg_load_rdata(obj, obj_name)
+
+msg_no_mass(n_bad)
 
 msg_slice(obj, date, linear_index)
 
@@ -46,6 +49,8 @@ msg_window(window)
 \item{obj}{an object}
 
 \item{obj_name}{the name of an object}
+
+\item{n_bad}{an integer of the bad esimtates}
 
 \item{date}{A date value}
 
