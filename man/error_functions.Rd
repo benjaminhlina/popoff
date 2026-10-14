@@ -8,7 +8,9 @@
 \alias{error_df}
 \alias{error_empty_file}
 \alias{error_extent}
+\alias{error_filter_array}
 \alias{error_focal_dim}
+\alias{error_forward_filter_obj}
 \alias{error_input_data}
 \alias{error_kernel}
 \alias{error_list}
@@ -40,7 +42,11 @@ error_empty_file(path)
 
 error_extent(vec, arg_name = NULL)
 
+error_filter_array(array, name)
+
 error_focal_dim(obj, arg_name = NULL)
+
+error_forward_filter_obj(forward_filter_obj)
 
 error_input_data(input_data, type)
 
@@ -95,7 +101,13 @@ error_transform(back_transform, parameter_range)
 
 \item{vec}{a \code{vector} to check if numeric}
 
+\item{array}{an array to check}
+
+\item{name}{name of array}
+
 \item{obj}{an object to assess}
+
+\item{forward_filter_obj}{a \code{list} produced by \code{\link[=hmm_forward_filter]{hmm_forward_filter()}}}
 
 \item{input_data}{a \code{data.frame} to assess}
 
