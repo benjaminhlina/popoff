@@ -197,7 +197,7 @@ hmm_forward_filter <- function(
 #' used in `hmm_forward_filter()`.
 #' @param likelihood_array A `numeric` array with dimensions `[x, y, t_step]` holding the
 #' observation likelihood surfaces. It must have the same dimensions as both
-#' `normalized_posterior` and `pc_predicted`.
+#' `normalised_posterior` and `pc_predicted`.
 #'
 #' @details
 #' All arrays use the layout `[x, y, t_step]`, with time as the last dimension.
@@ -270,53 +270,47 @@ hmm_backward_smooth <- function(
 
   error_forward_filter_obj(forward_filter_obj)
 
-  list2env(forward_filter_obj, envir = environment())
-
-  dims <- dim(normalised_posterior)
-
-  dn <- dimnames(likelihood_array)
-
+  normalised_posterior <- forward_filter_obj$normalised_posterior
+  pc_predicted <- forward_filter_obj$pc_predicted
+  dims <- dim(forward_filter_obj$normalised_posterior)
+  dn <- dimnames(normalised_posterior)
   time_step <- dims[3]
 
   smooth <- array(0, dim = dims, dimnames = dn)
+
   smooth[,, time_step] <- normalised_posterior[,, time_step]
+  # premier pas de temps du smooth est le dernier du backward !!
+  time_seq <- time_step:2
 
   if (isTRUE(progress)) {
-    pb <- cli::cli_progress_bar(
-      name = "HMM backwards smoothing",
-      format = paste0(
-        "{cli::pb_spin} Smoothing time step {cli::pb_current}/{cli::pb_total} ",
-        "{cli::pb_bar} {cli::pb_percent} | ETA: {cli::pb_eta}"
-      ),
-      total = time_step - 1,
-      clear = FALSE
+    # cli_progress_along wraps the iterator and manages the progress bar lifecycle automatically
+    time_seq <- cli::cli_progress_along(
+      time_seq,
+      name = "HMM backwards smoothing"
     )
   }
-  # premier pas de temps du smooth est le dernier du backward !!
 
-  for (t in time_step:2) {
-    backward_ratio <- smooth[,, t] / (pc_predicted[,, t])
-    # delete +1e-15 smooth[, , t]/(f$pred[, ,  t] + 1e-15)
+  # Backward recursion loop
+  for (t in time_seq) {
+    rat <- smooth[,, t] / (pc_predicted[,, t])
+    # delete +1e-15 smooth[ t, , ]/(f$pred[ t, , ] + 1e-15)
 
-    post <- imagine::convolution2D(backward_ratio, kernel) #Rp
+    post <- imagine::convolution2D(rat, kernel) #Rp
 
     if (time_step == t) {
       post <- likelihood_array[,, t]
-      norm_const <- sum(as.vector(post), na.rm = TRUE)
+      fac <- sum(as.vector(post), na.rm = TRUE)
 
-      smooth[,, t] <- post / norm_const
+      smooth[,, t] <- post / fac
       post <- post * normalised_posterior[,, t - 1]
-      norm_const <- sum(as.vector(post), na.rm = TRUE)
-      smooth[,, t - 1] <- post / norm_const
+      fac <- sum(as.vector(post), na.rm = TRUE)
+      smooth[,, t - 1] <- post / fac
     } else {
       post <- post * normalised_posterior[,, t - 1]
-      norm_const <- sum(as.vector(post), na.rm = TRUE)
-      smooth[,, t - 1] <- post / norm_const
-    }
-    if (isTRUE(progress)) {
-      cli::cli_progress_update(id = pb)
+      fac <- sum(as.vector(post), na.rm = TRUE)
+      smooth[t - 1, , ] <- post / fac
     }
   }
-  msg_end(chr = "HMM backwards smoothing", t0 = t0)
+  msg_end("HMM backwards smoothing", t0)
   return(smooth)
 }
