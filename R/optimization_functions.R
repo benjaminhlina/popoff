@@ -28,7 +28,7 @@
 #' @details
 #' In each round the search window is the best sigma from the previous search
 #' plus or minus one step. The step is the interval of the previous search,
-#' calculated as `(max(sigma) - min(sigma)) / (nrow(res) - 1)`. The window is
+#' calculated as `(max(sigma) - min(sigma)) / (nrow(result) - 1)`. The window is
 #' clipped to `[0, max_sigma]`, and `n_interval` values are spaced evenly across
 #' it. Because the window shrinks each round, the effective resolution
 #' increases geometrically with `n_interval`.
@@ -58,7 +58,7 @@
 #' )
 #'
 #' # Refine around the best coarse value
-#' refine_sigma(
+#' optimize_sigma(
 #'   sigma_iterate_obj = coarse,
 #'   max_sigma = 10,
 #'   likelihood_array = lik_array,
@@ -69,9 +69,9 @@
 #'
 #' @export
 
-refine_sigma <- function(
+optimize_sigma <- function(
   sigma_iterate_obj,
-  max_sigma,
+  # max_sigma,
   likelihood_array,
   n_points = 17,
   n_interval = 2,
@@ -81,13 +81,14 @@ refine_sigma <- function(
   parallel = TRUE,
   .progress = TRUE
 ) {
-  res <- sigma_iterate_obj
+  result <- sigma_iterate_obj
+  max_sigma <- max(sigma_iterate_obj$sigma)
 
   for (i in seq_len(n_interval)) {
-    best <- res$sigma[which.min(res$neg_log_lik)]
-    step <- (max(res$sigma) - min(res$sigma)) / (nrow(res) - 1)
+    best <- result$sigma[which.min(result$neg_log_lik)]
+    step <- (max(result$sigma) - min(result$sigma)) / (nrow(result) - 1)
 
-    res <- eval_sigma_iterate(
+    result <- eval_sigma_iterate(
       sigma_vec = seq(
         max(0, best - step),
         min(max_sigma, best + step),
@@ -102,7 +103,7 @@ refine_sigma <- function(
     )
   }
 
-  top <- res[which.min(res$neg_log_lik), ]
+  top <- result[which.min(result$neg_log_lik), ]
 
   out <- data.frame(
     optimal_sigma = top$sigma,

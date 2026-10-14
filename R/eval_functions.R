@@ -109,8 +109,6 @@ eval_sigma <- function(
       n_steps = length(hmm_forward$ncps)
     )
 
-    attr(out, "max_sigma") <- max(sigma)
-
     rm(hmm_forward, kern)
     gc(verbose = FALSE)
   } else {

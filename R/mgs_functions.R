@@ -96,6 +96,34 @@ msg_no_mass <- function(n_bad) {
   }
 }
 
+#' @param n_time a `numeric` value that is the number of time intervals
+#' @param name a `character` vector that contains the name of the progress bar
+#' @param type a `character` vector that contains whether filtering or smoothing
+#' @param .envir the envirnoment
+#' @name msg_function
+#' @keywords internal
+msg_progress <- function(
+  n_time,
+  name = c("HMM forward filtering", "HMM backwards smoothing"),
+  type = c("Filtering", "Smoothing"),
+  .envir = parent.frame()
+) {
+  name <- match.arg(name)
+  type <- match.arg(type)
+
+  cli::cli_progress_bar(
+    name = name,
+    format = paste0(
+      "{cli::pb_spin} ",
+      type,
+      " time step {cli::pb_current}/{cli::pb_total} ",
+      "{cli::pb_bar} {cli::pb_percent} | ETA: {cli::pb_eta}"
+    ),
+    total = n_time - 1,
+    clear = FALSE,
+    .envir = .envir
+  )
+}
 #' @param obj an object
 #' @param date A date value
 #' @param linear_index Position of the known location within a daily slice

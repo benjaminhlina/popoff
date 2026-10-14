@@ -41,8 +41,9 @@ prep_bathy_likdepth <- function(
   error_focal_dim(focal_dim)
   t0 <- msg_start("bathymetric standard deviation")
 
-  idx <- attr(bathy, 'idx')
-  idx_na <- attr(bathy, 'idx_na')
+  bathy_vec <- .convert_spr_to_vec(x = bathy)
+  idx <- which(!is.na(bathy_vec))
+  idx_na <- which(is.na(bathy_vec))
 
   # ---- local bathymetric roughness (sd within a moving window) ----
   if (!is.null(ctd)) {

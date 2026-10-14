@@ -8,6 +8,7 @@
 \alias{msg_load_raster}
 \alias{msg_load_rdata}
 \alias{msg_no_mass}
+\alias{msg_progress}
 \alias{msg_slice}
 \alias{msg_start}
 \alias{msg_window}
@@ -24,6 +25,13 @@ msg_load_raster(path)
 msg_load_rdata(obj, obj_name)
 
 msg_no_mass(n_bad)
+
+msg_progress(
+  n_time,
+  name = c("HMM forward filtering", "HMM backwards smoothing"),
+  type = c("Filtering", "Smoothing"),
+  .envir = parent.frame()
+)
 
 msg_slice(obj, date, linear_index)
 
@@ -51,6 +59,14 @@ msg_window(window)
 \item{obj_name}{the name of an object}
 
 \item{n_bad}{an integer of the bad esimtates}
+
+\item{n_time}{a \code{numeric} value that is the number of time intervals}
+
+\item{name}{a \code{character} vector that contains the name of the progress bar}
+
+\item{type}{a \code{character} vector that contains whether filtering or smoothing}
+
+\item{.envir}{the envirnoment}
 
 \item{date}{A date value}
 

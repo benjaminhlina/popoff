@@ -49,9 +49,6 @@ load_raster <- function(bathy, extent = NULL, crs = NULL, ...) {
       bathy <- terra::rast(bathy, ...)
     }
 
-    attr(bathy, "idx") <- .valid_idx(bathy)
-    attr(bathy, "idx_na") <- .valid_idx(bathy, na = TRUE)
-
     if (!is.null(crs)) {
       error_crs(crs)
       terra::crs(bathy) <- crs

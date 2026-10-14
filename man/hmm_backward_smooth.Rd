@@ -4,7 +4,12 @@
 \alias{hmm_backward_smooth}
 \title{HMM backward filter with handling for empty or missing likelihood updates}
 \usage{
-hmm_backward_smooth(forward_filter_obj, kernel, likelihood_array)
+hmm_backward_smooth(
+  forward_filter_obj,
+  kernel,
+  likelihood_array,
+  progress = TRUE
+)
 }
 \arguments{
 \item{forward_filter_obj}{A \code{list} containing at least two elements,
@@ -19,7 +24,7 @@ the filtered surface after applying the movement kernel0.}
 
 \item{likelihood_array}{A \code{numeric} array with dimensions \verb{[x, y, t_step]} holding the
 observation likelihood surfaces. It must have the same dimensions as both
-\code{normalized_posterior} and \code{pc_predicted}.}
+\code{normalised_posterior} and \code{pc_predicted}.}
 }
 \value{
 A numeric array with the same dimensions as \code{normalised_posterior},
