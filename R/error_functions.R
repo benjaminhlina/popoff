@@ -102,6 +102,35 @@ error_extent <- function(vec, arg_name = NULL) {
     ))
   }
 }
+
+#' @param array an array to check
+#' @param name name of array
+#' @name error_functions
+#' @keywords internal
+error_filter_array <- function(array, name) {
+  dims <- dim(array)
+
+  if (length(dims) != 3) {
+    cli::cli_abort(
+      c(
+        "{.field {name}} must be a 3-dimensional array with dimensions {.code [x, y, t_steps]}.",
+        "x" = "It has {length(dims)} dimension{?s}."
+      )
+    )
+  }
+
+  if (dims[3] < 2) {
+    cli::cli_abort(
+      c(
+        "{.field {name}} must have at least 2 time steps.",
+        "x" = "The third dimension (time) has length {dims[3]}."
+      )
+    )
+  }
+
+  invisible(dims)
+}
+
 #' @param obj an object either `vector` or `matrix`
 #' @name error_functions
 #' @keywords internal
@@ -125,6 +154,27 @@ error_focal_dim <- function(obj, arg_name = NULL) {
         )
       )
     }
+  }
+}
+#' @param forward_filter_obj a `list` produced by [hmm_forward_filter()]
+#' @name error_functions
+#' @keywords internal
+error_forward_filter_obj <- function(forward_filter_obj) {
+  error_list(forward_filter_obj)
+  required <- c("normalised_posterior", "pc_predicted")
+  missing <- setdiff(required, names(forward_filter_obj))
+
+  if (length(missing) > 0) {
+    cli::cli_abort(
+      c(
+        "{.arg forward_filter_obj} is missing required array{?s}: {.field {missing}}.",
+        "i" = "Did you run {.fn hmm_forward_filter} without {.code return_maps = TRUE}?",
+        "i" = "Re-run {.fn hmm_forward_filter} with {.code return_maps = TRUE}."
+      )
+    )
+  }
+  for (nm in required) {
+    error_filter_array(forward_filter_obj[[nm]], nm)
   }
 }
 
@@ -473,6 +523,7 @@ error_numeric <- function(vec, arg_name = NULL) {
     )
   }
 }
+
 
 #' @param min_val a numerical mimimum value allowed
 #' @name error_functions
