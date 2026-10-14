@@ -263,18 +263,35 @@ hmm_forward_filter <- function(
 hmm_backward_smooth <- function(
   forward_filter_obj,
   kernel,
-  likelihood_array
+  likelihood_array,
+  progress = TRUE
 ) {
+  t0 <- msg_start("HMM backwards smoothing")
+
   error_forward_filter_obj(forward_filter_obj)
 
   list2env(forward_filter_obj, envir = environment())
 
   dims <- dim(normalised_posterior)
 
+  dn <- dimnames(likelihood_array)
+
   time_step <- dims[3]
 
-  smooth <- array(0, dim = dims)
+  smooth <- array(0, dim = dims, dimnames = dn)
   smooth[,, time_step] <- normalised_posterior[,, time_step]
+
+  if (isTRUE(progress)) {
+    pb <- cli::cli_progress_bar(
+      name = "HMM backwards smoothing",
+      format = paste0(
+        "{cli::pb_spin} Smoothing time step {cli::pb_current}/{cli::pb_total} ",
+        "{cli::pb_bar} {cli::pb_percent} | ETA: {cli::pb_eta}"
+      ),
+      total = time_step - 1,
+      clear = FALSE
+    )
+  }
   # premier pas de temps du smooth est le dernier du backward !!
 
   for (t in time_step:2) {
@@ -287,15 +304,19 @@ hmm_backward_smooth <- function(
       post <- likelihood_array[,, t]
       norm_const <- sum(as.vector(post), na.rm = TRUE)
 
-      smooth[,, t] <- post / fac
+      smooth[,, t] <- post / norm_const
       post <- post * normalised_posterior[,, t - 1]
       norm_const <- sum(as.vector(post), na.rm = TRUE)
-      smooth[,, t - 1] <- post / fac
+      smooth[,, t - 1] <- post / norm_const
     } else {
       post <- post * normalised_posterior[,, t - 1]
       norm_const <- sum(as.vector(post), na.rm = TRUE)
-      smooth[,, t - 1] <- post / fac
+      smooth[,, t - 1] <- post / norm_const
+    }
+    if (isTRUE(progress)) {
+      cli::cli_progress_update(id = pb)
     }
   }
+  msg_end(chr = "HMM backwards smoothing", t0 = t0)
   return(smooth)
 }
