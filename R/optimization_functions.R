@@ -17,7 +17,7 @@
 #' @param n_interval an `integer`. Number of sigma values to evaluate in each
 #' refinement iteration. Use an odd number so that the previous best value is
 #' included in the new search Default is `17`.
-#' @param n_rounds an `integer`. Number of refinement iteration. Default is `2`.
+#' @param n_interval an `integer`. Number of refinement iteration. Default is `2`.
 #' @param normalize a `logical`. Passed to [eval_sigma_iterate()]. Default is
 #' `FALSE`.
 #' @param mask_likelihood a `logical`. Passed to [eval_sigma_iterate()].
@@ -31,7 +31,7 @@
 #' calculated as `(max(sigma) - min(sigma)) / (nrow(res) - 1)`. The window is
 #' clipped to `[0, max_sigma]`, and `n_interval` values are spaced evenly across
 #' it. Because the window shrinks each round, the effective resolution
-#' increases geometrically with `n_rounds`.
+#' increases geometrically with `n_interval`.
 #'
 #' `n_interval` should be odd so that the previous best value falls on the new
 #' search window and the refined estimate cannot be worse than the previous one.
@@ -39,7 +39,7 @@
 #' best value sits at a boundary, the window is asymmetric and the previous
 #' best may no longer be included.
 #'
-#' The returned optimum comes from the final round only. If `n_rounds = 0`, the
+#' The returned optimum comes from the final round only. If `n_interval = 0`, the
 #' best row of `sigma_iterate_obj` is returned unchanged.
 #'
 #' @return A `data.frame` with the following columns `optimal_sigma` which is
@@ -63,7 +63,7 @@
 #'   max_sigma = 10,
 #'   likelihood_array = lik_array,
 #'   n_interval = 17,
-#'   n_rounds = 3
+#'   n_interval = 3
 #' )
 #' }
 #'
@@ -71,29 +71,27 @@
 
 refine_sigma <- function(
   sigma_iterate_obj,
+  max_sigma,
   likelihood_array,
-  n_interval = 17, # odd, so the previous best is on the new grid
-  n_rounds = 2,
+  n_points = 17,
+  n_interval = 2,
   normalize = FALSE,
   mask_likelihood = FALSE,
   workers = NULL,
   parallel = TRUE,
   .progress = TRUE
 ) {
-  sigma <- sigma_iterate_obj$sigma
-  max_sigma <- attr(sigma_iterate_obj, 'max_sigma')
-  neg_log_lik <- sigma_iterate_obj$neg_log_lik
+  res <- sigma_iterate_obj
 
-  for (i in seq_len(n_rounds)) {
-    best_sigma <- sigma[which.min(neg_log_lik)]
-
-    step <- (max_sigma - min(sigma) / (nrow(sigma_iterate_obj) - 1))
+  for (i in seq_len(n_interval)) {
+    best <- res$sigma[which.min(res$neg_log_lik)]
+    step <- (max(res$sigma) - min(res$sigma)) / (nrow(res) - 1)
 
     res <- eval_sigma_iterate(
       sigma_vec = seq(
-        max(0, best_sigma - step),
-        min(max_sigma, best_sigma + step),
-        length.out = n_interval
+        max(0, best - step),
+        min(max_sigma, best + step),
+        length.out = n_points
       ),
       parallel = parallel,
       workers = workers,
