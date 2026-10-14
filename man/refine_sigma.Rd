@@ -6,70 +6,63 @@
 \usage{
 refine_sigma(
   sigma_iterate_obj,
-  max_sigma,
   likelihood_array,
-  n_points = 17,
+  n_interval = 17,
   n_rounds = 2,
   normalize = FALSE,
   mask_likelihood = FALSE,
   workers = NULL,
   parallel = TRUE,
-  .progress = FALSE
+  .progress = TRUE
 )
 }
 \arguments{
-\item{sigma_iterate_obj}{A data frame of initial sigma search results, as
-returned by \code{\link[=eval_sigma_iterate]{eval_sigma_iterate()}}. It must contain the columns \code{sigma}
-(the sigma values evaluated) and \code{neg_log_lik} (the negative
-log-likelihood at each value), and must have at least two rows so a grid
-step can be calculated.}
-
-\item{max_sigma}{Numeric. Upper bound on sigma. Refined grids are never
-extended beyond this value (the lower bound is fixed at 0).}
+\item{sigma_iterate_obj}{A \verb{data.frame`` of initial sigma search results, as returned by [eval_sigma_iterate()]. It must contain the columns }sigma\verb{(the sigma values evaluated) and}neg_log_lik` (the negative
+log-likelihood at each value), and must have at least two rows so a a new
+search step can be calculated.}
 
 \item{likelihood_array}{The likelihood array passed to
 \code{\link[=eval_sigma_iterate]{eval_sigma_iterate()}} for evaluating each candidate sigma.}
 
-\item{n_points}{Integer. Number of sigma values to evaluate in each
-refinement round. Use an odd number so that the previous best value is
-included in the new grid. Default is \code{17}.}
+\item{n_interval}{an \code{integer}. Number of sigma values to evaluate in each
+refinement iteration. Use an odd number so that the previous best value is
+included in the new search Default is \code{17}.}
 
-\item{n_rounds}{Integer. Number of refinement rounds. Default is \code{2}.}
+\item{n_rounds}{an \code{integer}. Number of refinement iteration. Default is \code{2}.}
 
-\item{normalize}{Logical. Passed to \code{\link[=eval_sigma_iterate]{eval_sigma_iterate()}}. Default is
+\item{normalize}{a \code{logical}. Passed to \code{\link[=eval_sigma_iterate]{eval_sigma_iterate()}}. Default is
 \code{FALSE}.}
 
-\item{mask_likelihood}{Logical. Passed to \code{\link[=eval_sigma_iterate]{eval_sigma_iterate()}}. Default
-is \code{FALSE}.}
+\item{mask_likelihood}{a \code{logical}. Passed to \code{\link[=eval_sigma_iterate]{eval_sigma_iterate()}}.
+Default is \code{FALSE}.}
 
-\item{.progress}{Logical. Whether to show a progress bar during parallel
-evaluation. Passed to \code{\link[=eval_sigma_iterate]{eval_sigma_iterate()}}. Default is \code{FALSE}.}
+\item{.progress}{a \code{logical}. Whether to show a progress bar during parallel
+evaluation. Passed to \code{\link[=eval_sigma_iterate]{eval_sigma_iterate()}}. Default is \code{TRUE}.}
 }
 \value{
-A one-row data frame with columns:
-\describe{
-\item{\code{optimal_sigma}}{The sigma value with the lowest negative
-log-likelihood in the final refinement round.}
-\item{\code{neg_log_lik}}{The negative log-likelihood at \code{optimal_sigma}.}
-}
+A \code{data.frame} with the following columns \code{optimal_sigma} which is
+the sigma value with the lowest negative log-likelihood in the final
+refinement round and the \code{neg_log_lik} which is the negative log-likelihood
+at \code{optimal_sigma}.
 }
 \description{
-Takes the results of an initial coarse sigma search and zooms in on the
-best value over one or more rounds. Each round builds a finer grid of sigma
-values around the current best estimate, evaluates the likelihood at each
-value with \code{\link[=eval_sigma_iterate]{eval_sigma_iterate()}}, and keeps the result for the next round.
+Takes the results of an initial coarse sigma search and determine the optimal
+value of sigma over serveral iterations (i.e., \code{rounds}).
+Each iteration builds a finer level of sigma values around the current
+best estimate, evaluates the likelihood at each value with
+\code{\link[=eval_sigma_iterate]{eval_sigma_iterate()}}, and keeps the result for the next iteration.
 }
 \details{
-In each round the search window is the best sigma from the previous grid
-plus or minus one grid step. The step is the spacing of the previous grid,
+In each round the search window is the best sigma from the previous search
+plus or minus one step. The step is the interval of the previous search,
 calculated as \code{(max(sigma) - min(sigma)) / (nrow(res) - 1)}. The window is
-clipped to \verb{[0, max_sigma]}, and \code{n_points} values are spaced evenly across
+clipped to \verb{[0, max_sigma]}, and \code{n_interval} values are spaced evenly across
 it. Because the window shrinks each round, the effective resolution
 increases geometrically with \code{n_rounds}.
 
-\code{n_points} should be odd so that the previous best value falls on the new
-grid and the refined estimate cannot be worse than the previous one. This
-holds only when the window is not truncated by \code{0} or \code{max_sigma}. If the
+\code{n_interval} should be odd so that the previous best value falls on the new
+search window and the refined estimate cannot be worse than the previous one.
+This holds only when the window is not truncated by \code{0} or \code{max_sigma}. If the
 best value sits at a boundary, the window is asymmetric and the previous
 best may no longer be included.
 
@@ -89,7 +82,7 @@ refine_sigma(
   sigma_iterate_obj = coarse,
   max_sigma = 10,
   likelihood_array = lik_array,
-  n_points = 17,
+  n_interval = 17,
   n_rounds = 3
 )
 }

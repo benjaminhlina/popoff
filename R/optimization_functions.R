@@ -1,53 +1,51 @@
 #' Refine an optimal sigma estimate by iterative grid narrowing
 #'
-#' Takes the results of an initial coarse sigma search and zooms in on the
-#' best value over one or more rounds. Each round builds a finer grid of sigma
-#' values around the current best estimate, evaluates the likelihood at each
-#' value with [eval_sigma_iterate()], and keeps the result for the next round.
+#' Takes the results of an initial coarse sigma search and determine the optimal
+#' value of sigma over serveral iterations (i.e., `rounds`).
+#' Each iteration builds a finer level of sigma values around the current
+#' best estimate, evaluates the likelihood at each value with
+#' [eval_sigma_iterate()], and keeps the result for the next iteration.
+#'
+#'
+#' @param sigma_iterate_obj A `data.frame`` of initial sigma search results, as
+#' returned by [eval_sigma_iterate()]. It must contain the columns `sigma`
+#' (the sigma values evaluated) and `neg_log_lik` (the negative
+#' log-likelihood at each value), and must have at least two rows so a a new
+#' search step can be calculated.
+#' @param likelihood_array The likelihood array passed to
+#' [eval_sigma_iterate()] for evaluating each candidate sigma.
+#' @param n_interval an `integer`. Number of sigma values to evaluate in each
+#' refinement iteration. Use an odd number so that the previous best value is
+#' included in the new search Default is `17`.
+#' @param n_rounds an `integer`. Number of refinement iteration. Default is `2`.
+#' @param normalize a `logical`. Passed to [eval_sigma_iterate()]. Default is
+#' `FALSE`.
+#' @param mask_likelihood a `logical`. Passed to [eval_sigma_iterate()].
+#' Default is `FALSE`.
+#' @param .progress a `logical`. Whether to show a progress bar during parallel
+#' evaluation. Passed to [eval_sigma_iterate()]. Default is `TRUE`.
 #'
 #' @details
-#' In each round the search window is the best sigma from the previous grid
-#' plus or minus one grid step. The step is the spacing of the previous grid,
+#' In each round the search window is the best sigma from the previous search
+#' plus or minus one step. The step is the interval of the previous search,
 #' calculated as `(max(sigma) - min(sigma)) / (nrow(res) - 1)`. The window is
-#' clipped to `[0, max_sigma]`, and `n_points` values are spaced evenly across
+#' clipped to `[0, max_sigma]`, and `n_interval` values are spaced evenly across
 #' it. Because the window shrinks each round, the effective resolution
 #' increases geometrically with `n_rounds`.
 #'
-#' `n_points` should be odd so that the previous best value falls on the new
-#' grid and the refined estimate cannot be worse than the previous one. This
-#' holds only when the window is not truncated by `0` or `max_sigma`. If the
+#' `n_interval` should be odd so that the previous best value falls on the new
+#' search window and the refined estimate cannot be worse than the previous one.
+#' This holds only when the window is not truncated by `0` or `max_sigma`. If the
 #' best value sits at a boundary, the window is asymmetric and the previous
 #' best may no longer be included.
 #'
 #' The returned optimum comes from the final round only. If `n_rounds = 0`, the
 #' best row of `sigma_iterate_obj` is returned unchanged.
 #'
-#' @param sigma_iterate_obj A data frame of initial sigma search results, as
-#'   returned by [eval_sigma_iterate()]. It must contain the columns `sigma`
-#'   (the sigma values evaluated) and `neg_log_lik` (the negative
-#'   log-likelihood at each value), and must have at least two rows so a grid
-#'   step can be calculated.
-#' @param max_sigma Numeric. Upper bound on sigma. Refined grids are never
-#'   extended beyond this value (the lower bound is fixed at 0).
-#' @param likelihood_array The likelihood array passed to
-#'   [eval_sigma_iterate()] for evaluating each candidate sigma.
-#' @param n_points Integer. Number of sigma values to evaluate in each
-#'   refinement round. Use an odd number so that the previous best value is
-#'   included in the new grid. Default is `17`.
-#' @param n_rounds Integer. Number of refinement rounds. Default is `2`.
-#' @param normalize Logical. Passed to [eval_sigma_iterate()]. Default is
-#'   `FALSE`.
-#' @param mask_likelihood Logical. Passed to [eval_sigma_iterate()]. Default
-#'   is `FALSE`.
-#' @param .progress Logical. Whether to show a progress bar during parallel
-#'   evaluation. Passed to [eval_sigma_iterate()]. Default is `FALSE`.
-#'
-#' @return A one-row data frame with columns:
-#' \describe{
-#'   \item{`optimal_sigma`}{The sigma value with the lowest negative
-#'     log-likelihood in the final refinement round.}
-#'   \item{`neg_log_lik`}{The negative log-likelihood at `optimal_sigma`.}
-#' }
+#' @return A `data.frame` with the following columns `optimal_sigma` which is
+#' the sigma value with the lowest negative log-likelihood in the final
+#' refinement round and the `neg_log_lik` which is the negative log-likelihood
+#' at `optimal_sigma`.
 #'
 #' @seealso [eval_sigma_iterate()] for the underlying likelihood evaluation.
 #'
@@ -64,7 +62,7 @@
 #'   sigma_iterate_obj = coarse,
 #'   max_sigma = 10,
 #'   likelihood_array = lik_array,
-#'   n_points = 17,
+#'   n_interval = 17,
 #'   n_rounds = 3
 #' )
 #' }
@@ -73,27 +71,29 @@
 
 refine_sigma <- function(
   sigma_iterate_obj,
-  max_sigma,
   likelihood_array,
-  n_points = 17, # odd, so the previous best is on the new grid
+  n_interval = 17, # odd, so the previous best is on the new grid
   n_rounds = 2,
   normalize = FALSE,
   mask_likelihood = FALSE,
   workers = NULL,
   parallel = TRUE,
-  .progress = FALSE
+  .progress = TRUE
 ) {
-  res <- sigma_iterate_obj
+  sigma <- sigma_iterate_obj$sigma
+  max_sigma <- attr(sigma_iterate_obj, 'max_sigma')
+  neg_log_lik <- sigma_iterate_obj$neg_log_lik
 
   for (i in seq_len(n_rounds)) {
-    best <- res$sigma[which.min(res$neg_log_lik)]
-    step <- (max(res$sigma) - min(res$sigma)) / (nrow(res) - 1)
+    best_sigma <- sigma[which.min(neg_log_lik)]
+
+    step <- (max_sigma - min(sigma) / (nrow(sigma_iterate_obj) - 1))
 
     res <- eval_sigma_iterate(
       sigma_vec = seq(
-        max(0, best - step),
-        min(max_sigma, best + step),
-        length.out = n_points
+        max(0, best_sigma - step),
+        min(max_sigma, best_sigma + step),
+        length.out = n_interval
       ),
       parallel = parallel,
       workers = workers,
@@ -106,8 +106,9 @@ refine_sigma <- function(
 
   top <- res[which.min(res$neg_log_lik), ]
 
-  data.frame(
+  out <- data.frame(
     optimal_sigma = top$sigma,
     neg_log_lik = top$neg_log_lik
   )
+  return(out)
 }
