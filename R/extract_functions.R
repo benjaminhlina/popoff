@@ -37,21 +37,32 @@
 #' }
 #'
 #' @export
-extract_locations <- function(obj, type = c("max", "min", "mean", "median")) {
+extract_locations <- function(
+  obj,
+  type = c("max", "min", "mean", "median"),
+  drop_empty = FALSE
+) {
   type <- match.arg(type)
 
-  lats <- as.numeric(dimnames(obj)$lat)
-  lons <- as.numeric(dimnames(obj)$lon)
-  dates <- as.Date(dimnames(obj)$date)
-
+  dn <- dimnames(obj)
+  lats <- as.numeric(dn$lat)
+  lons <- as.numeric(dn$lon)
+  dates <- as.Date(dn$date)
   n_row <- dim(obj)[1]
 
-  has_data <- which(!apply(obj, 3, function(x) all(is.na(x))))
-
-  result <- lapply(has_data, function(i) {
+  result <- lapply(seq_along(dates), function(i) {
     val <- obj[,, i]
+    val[!is.finite(val)] <- NA
 
-    # index of the cell that matches the requested statistic
+    if (all(is.na(val))) {
+      return(data.frame(
+        date = dates[i],
+        lon = NA,
+        lat = NA,
+        value = NA
+      ))
+    }
+
     idx <- switch(
       type,
       max = which.max(val),
@@ -74,5 +85,14 @@ extract_locations <- function(obj, type = c("max", "min", "mean", "median")) {
   out <- do.call(rbind, result)
   rownames(out) <- NULL
 
-  return(out)
+  n_empty <- sum(is.na(out$lon))
+  if (n_empty > 0) {
+    cli::cli_warn(
+      "{n_empty} of {nrow(out)} date{?s} had no finite values; first at {out$date[is.na(out$lon)][1]}."
+    )
+  }
+  if (drop_empty) {
+    out <- out[!is.na(out$lon), ]
+  }
+  out
 }
