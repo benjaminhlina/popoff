@@ -4,12 +4,7 @@
 \alias{hmm_backward_smooth}
 \title{HMM backward filter with handling for empty or missing likelihood updates}
 \usage{
-hmm_backward_smooth(
-  forward_filter_obj,
-  kernel,
-  likelihood_array,
-  progress = TRUE
-)
+hmm_backward_smooth(forward_filter_obj, kernel, progress = TRUE)
 }
 \arguments{
 \item{forward_filter_obj}{A \code{list} containing at least two elements,
@@ -63,28 +58,6 @@ Normalisation ignores \code{NA} cells (\code{na.rm = TRUE}), so \code{NA} cells,
 example land or cells outside the model domain, do not affect the sums.
 Cells where \code{pc_predicted} is exactly 0 produce \code{NaN} or \code{Inf} in the ratio.
 Make sure \code{pc_predicted} is strictly positive wherever \code{smooth} is non-zero.
-}
-\examples{
-\dontrun{
-n_x <- 10
-n_y <- 10
-n_t <- 5
-
-# helper to build a random surface that sums to 1 at each time step
-make_surface <- function() {
-  a <- array(runif(n_x * n_y * n_t), dim = c(n_x, n_y, n_t))
-  for (t in seq_len(n_t)) a[, , t] <- a[, , t] / sum(a[, , t])
-  a
-}
-
-f <- list(phi = make_surface(), pred = make_surface())
-L <- make_surface()
-K <- matrix(1 / 9, nrow = 3, ncol = 3)
-
-smooth <- hmm_backward_smooth(f, K, L)
-dim(smooth)
-}
-
 }
 \references{
 Pedersen, M. W., Righton, D., Thygesen, U. H., Andersen, K. H., and

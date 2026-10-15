@@ -54,7 +54,14 @@ hmm_forward_filter <- function(
     pred_list[[1]] <- likelihood_array[,, 1]
   }
 
+  # ----- grab land values ------
+  land <- is.na(likelihood_array[,, 1])
+
+  land_arr <- array(land, dim = dims, dimnames = dn)
+
   current_posterior <- likelihood_array[,, 1]
+  current_posterior[land] <- 0
+
   if (isTRUE(progress)) {
     msg_progress(
       n_time = n_time,
@@ -68,8 +75,17 @@ hmm_forward_filter <- function(
   # Iterative forward loop (Memory efficient)
   for (t in 2:n_time) {
     pred_t <- imagine::convolution2D(current_posterior, kernel)
-    lik_t <- likelihood_array[,, t]
+    pred_t[land] <- 0
 
+    lik_t <- likelihood_array[,, t]
+    lik_t[land] <- 0
+
+    # pred_mass <- sum(pred_t)
+    # if (!is.finite(pred_mass) || pred_mass <= 0) {
+    #   cli::cli_abort(
+    #     "Prediction has no mass at step {t}: the state is dead before the likelihood is applied."
+    #   )
+    # }
     # Only update with the likelihood if it has mass and does not zero out the
     # prediction (na.rm because the likelihood can still contain NAs).
     overlap <- sum(pred_t * lik_t, na.rm = TRUE)
@@ -126,8 +142,7 @@ hmm_forward_filter <- function(
   # Or compare only sigmas with the same n_updated, or use NLL per
   # updated step (neg_log_lik / n_updated).
   #
-  #
-  dn <- dimnames(likelihood_array)
+
   if (!is.null(dn[[3]])) {
     names(ncps_vec) <- dn[[3]][-1]
   }
@@ -166,6 +181,9 @@ hmm_forward_filter <- function(
       dim = dims,
       dimnames = dn
     )
+
+    results$normalised_posterior[land_arr] <- NA
+    results$pc_predicted[land_arr] <- NA
   }
 
   msg_end(chr = "HMM forward filter", t0 = t0)
