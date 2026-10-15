@@ -122,167 +122,79 @@ days <- unique(prepped_log$summary_table$date)
 xlim <- prepped_bathy$xlim
 ylim <- prepped_bathy$ylim
 
-
 # ---- we can convert them into spatrasters using load functions
-# likelihood_spr <- days |>
-#   set_names() |>
-#   map(
-#     ~ load_raster(
-#       likedepth_transmit[,, as.character(.x)],
-#       # crs = "EPSG:4326",
-#       extent = c(xlim, ylim),
-#       crs = "EPSG:32620"
-#     ),
-#     # .progress = TRUE
-#   )
+likelihood_spr <- days |>
+  set_names() |>
+  map(
+    ~ load_raster(
+      likedepth_transmit[,, as.character(.x)],
+      # crs = "EPSG:4326",
+      extent = c(xlim, ylim),
+      crs = "EPSG:32620"
+    ),
+    # .progress = TRUE
+  )
 
-# # ----- then polt them using ggplot and tidyterra -----
-# pl <- likelihood_spr[1:10] |>
-#   imap(
-#     ~ ggplot() +
-#       geom_spatraster(data = .x) +
-#       coord_sf() +
-#       scale_fill_viridis_c(option = "H") +
-#       theme_bw(
-#         base_size = 15
-#       ) +
-#       theme(
-#         panel.grid = element_blank(),
-#         plot.title = element_text(hjust = 0.5)
-#       ) +
-#       labs(title = .y)
-#   )
-# pl
-# # ---- Take idx values that equla 0.5 or greater and pull the depth of those
-# #idx vlaues -----
-# likelihood_spr[204]
-# r <- likelihood_spr$`2022-02-28`
+bbox_latlon <- st_polygon(list(matrix(
+  c(
+    -59.5,
+    44.1,
+    -58.5,
+    44.1,
+    -58.5,
+    44.9,
+    -59.5,
+    44.9,
+    -59.5,
+    44.1
+  ),
+  ncol = 2,
+  byrow = TRUE
+)))
 
-# terra::where.max(r) # cell number + value
-# cell <- terra::where.max(r)[, "cell"]
-# terra::xyFromCell(r, cell) # lon/lat of that cell
+bbox_sf <- st_sfc(bbox_latlon, crs = 4326)
 
-# Get the resolution of your bathy raster in degrees
-# res_deg <- terra::res(bathy)[1] # e.g., 1/60 of a degree if res = 1
+# 2. Transform to UTM Zone 20N (EPSG:32620)
+bbox_utm <- st_transform(bbox_sf, crs = 32620)
 
-# # Get the approximate latitude of your study area center (e.g., Gulf of St. Lawrence ~ 48°N)
-# # Or calculate it dynamically from your raster extent:
-# mean_lat <- mean(terra::ext(bathy)[3:4])
-
-# # Conversion factors:
-# # 1 degree of latitude is ~111.32 km everywhere
-# # 1 degree of longitude is ~111.32 * cos(latitude in radians) km
-# km_per_deg_lat <- 111.32
-# km_per_deg_lon <- 111.32 * cos(mean_lat * pi / 180)
-
-# # Real-world size of 1 pixel in kilometers
-# pixel_width_km <- res_deg * km_per_deg_lon
-# pixel_height_km <- res_deg * km_per_deg_lat
-
-# If 1 pixel ≈ 1.85 km:
-# A 5 km movement scale = 5 / 1.85 ≈ 2.7 pixels
-# A 50 km movement scale = 50 / 1.85 ≈ 27 pixels
-
-sigma_pixels <- seq(2, 27, by = 1)
-
-# # You can easily map them for your own reference:
-# sigma_df <- data.frame(
-#   sigma_pixels = sigma_pixels,
-#   approx_km = sigma_pixels * pixel_width_km
-# )
-# sigma_df
-# print(sigma_df)
-# ggplot() +
-#   geom_spatraster(data = bathy_utm) +
-#   geom_sf(data = grid_sf, alpha = 0.05) +
-#   coord_sf() +
-#   scale_fill_gradientn(
-#     colours = c(
-#       "#031E40",
-#       "#0B3C73",
-#       "#17A2FF",
-#       "#7FDBFF",
-#       "#EAF6FF",
-#       "#FFE8A3",
-#       "#E6F38F",
-#       "#9AD850"
-#     ),
-#     values = scales::rescale(c(-4000, -600, -150, -60, 0, 50, 150, 400)),
-#     limits = c(-4000, 400),
-#     oob = squish,
-#     name = "Elevation / Depth (m)"
-#   )
-
-# pts <- cbind(event_log_$lon, event_log$lat)
-
-# cell_id <- likelihood_spr |>
-#   map(
-#     ~ terra::cellFromXY(.x, pts)
-#   )
-
-# vals <- likelihood_spr |>
-#   map(
-#     \(x) {
-#       tibble(
-#         likelihood = terra::extract(x, pts)[[1]],
-#         event = event_log$event
-#       )
-#     }
-#   ) |>
-#   dplyr::bind_rows(.id = "date") |>
-#   mutate(
-#     date = as.Date(date),
-#     event = factor(event, levels = c("tag", "mrpat", "pop"))
-#   )
-# vals
-
-# p <- ggplot(data = vals, aes(x = date, y = likelihood, fill = event)) +
-#   geom_point(
-#     shape = 21,
-#     size = 3,
-#     alpha = 0.5,
-#     position = position_jitter(height = 0.03, seed = 4)
-#   ) +
-#   scale_fill_brewer(
-#     name = "Event",
-#     type = "div",
-#     palette = 8,
-#     labels = c("Tag", "Mrpat", "Pop")
-#   ) +
-#   scale_x_date(date_breaks = "2 weeks", date_labels = "%m-%d") +
-#   theme_bw(
-#     base_size = 15
-#   ) +
-#   theme(
-#     legend.position = "inside",
-#     legend.position.inside = c(0.95, 0.5),
-#     legend.background = element_rect(colour = "black", linewidth = 0.5)
-#   ) +
-#   labs(
-#     x = "Date",
-#     y = "Likelihood"
-#   )
-
-# p
-
-# p + ggview::canvas(14, 8.5)
+# 3. Extract the new bounding box coordinates (in meters)
+range <- st_bbox(bbox_utm)
+range[1]
+# ----- then polt them using ggplot and tidyterra -----
+pl <- likelihood_spr |>
+  imap(
+    ~ ggplot() +
+      geom_spatraster(data = .x) +
+      geom_sf(
+        data = event_log_sf |>
+          mutate(date = as.Date(date)),
+        aes(colour = event),
+      ) +
+      # coord_sf() +
+      scale_fill_viridis_c(option = "H") +
+      theme_bw(
+        base_size = 15
+      ) +
+      coord_sf(
+        xlim = c(range[1], range[3]),
+        ylim = c(range[2], range[4])
+      ) +
+      theme(
+        panel.grid = element_blank(),
+        plot.title = element_text(hjust = 0.5)
+      ) +
+      labs(title = .y)
+  )
+pl
 
 sigma_val <- seq(0.25, 0.35, 0.015)
-sigma_val <- seq(0.1, 1, 0.025)
+# sigma_val <- seq(0.1, 1, 0.025)
 
 length(sigma_val)
 sigma_val
 gc()
 
-# test <- eval_sigma(
-#   sigma = sigma_val[1],
-#   normalize = TRUE,
-#   likelihood_array = likedepth_transmit,
-#   mask_likelihood = TRUE,
-#   return_maps = TRUE
-# )
 
-# sigma_val
 # ?eval_sigma_iterate
 out <- eval_sigma_iterate(
   workers = 6,
@@ -312,7 +224,7 @@ optimiaized_sigma <- optimize_sigma(
 optimiaized_sigma
 optimiaized_sigma$optimal_sigma
 final <- eval_sigma(
-  sigma = optimiaized_sigma$optimal_sigma,
+  sigma = 0.3313,
   normalize = TRUE,
   likelihood_array = likedepth_transmit,
   mask_likelihood = TRUE,
@@ -328,65 +240,25 @@ final <- eval_sigma(
 # mass <- apply(final$normalised_posterior, 3, function(x) sum(x, na.rm = TRUE))
 # all(is.finite(mass) & mass > 0) # must be TRUE before smoothing
 
-kerns <- gaussian_kernel(
-  sigma = optimiaized_sigma$optimal_sigma,
-  normalize = TRUE,
-)
+# # 1. Does convolution2D spread NA?
+# m <- matrix(1, 15, 15)
+# m[8, 8] <- NA
+# sum(is.na(imagine::convolution2D(m, kerns))) # 1 = fine, >1 = NA dilates
 
-# 1. Does convolution2D spread NA?
-m <- matrix(1, 15, 15)
-m[8, 8] <- NA
-sum(is.na(imagine::convolution2D(m, kerns))) # 1 = fine, >1 = NA dilates
-
-# 2. Where does pred die? (needs return_maps = TRUE)
-pm <- apply(final$pc_predicted, 3, function(x) sum(x, na.rm = TRUE))
-nna <- apply(final$pc_predicted, 3, function(x) sum(is.na(x)))
-data.frame(step = 120:130, pred_mass = pm[120:130], n_na = nna[120:130])
-sum(is.na(likedepth_transmit[,, 1])) # land cells, for comparison
-
-
-kerns <- gaussian_kernel(
-  sigma = optimiaized_sigma$optimal_sigma,
-  normalize = TRUE,
-)
-
+# # 2. Where does pred die? (needs return_maps = TRUE)
+# pm <- apply(final$pc_predicted, 3, function(x) sum(x, na.rm = TRUE))
+# nna <- apply(final$pc_predicted, 3, function(x) sum(is.na(x)))
+# data.frame(step = 120:130, pred_mass = pm[120:130], n_na = nna[120:130])
+# sum(is.na(likedepth_transmit[,, 1])) # land cells, for comparison
 
 smoothed <- hmm_backward_smooth(
   forward_filter_obj = final,
-  kernel = kerns
+  kernel = final$kernel
 )
 smoothed
 
 
-smoothed_spr <- days |>
-  set_names() |>
-  map(
-    ~ load_raster(
-      smoothed[,, as.character(.x)],
-      # crs = "EPSG:4326",
-      extent = c(xlim, ylim),
-      crs = "EPSG:32620"
-    ),
-    # .progress = TRUE
-  )
-
-# ----- then polt them using ggplot and tidyterra -----
-pl <- smoothed_spr[1:10] |>
-  imap(
-    ~ ggplot() +
-      geom_spatraster(data = .x) +
-      coord_sf() +
-      scale_fill_viridis_c(option = "H") +
-      theme_bw(
-        base_size = 15
-      ) +
-      theme(
-        panel.grid = element_blank(),
-        plot.title = element_text(hjust = 0.5)
-      ) +
-      labs(title = .y)
-  )
-pl
+# ------ exxtract ------
 max_per_day <- extract_locations(obj = final$normalised_posterior)
 
 max_per_day_sf <- max_per_day |>
@@ -399,17 +271,47 @@ smoothed_per_day <- extract_locations(smoothed)
 smoothed_per_day_sf <- smoothed_per_day |>
   st_as_sf(coords = c("lon", "lat"), crs = 32620)
 
+
+extract_locations()
+track <- smoothed_per_day_sf |>
+  mutate(date = as.Date(date)) |> # Ensure proper date sorting
+  arrange(date) |> # Sort chronologically (June 18 -> 19 -> 20...)
+  st_combine() |>
+  st_cast("LINESTRING")
+
 p <- ggplot() +
   geom_sf(
     data = lennox::eastern_canada |>
       st_transform(4326)
   ) +
+  geom_spatraster(data = bathy_utm) +
+  scale_fill_gradientn(
+    colours = c(
+      "#031E40",
+      "#0B3C73",
+      "#17A2FF",
+      "#7FDBFF",
+      "#EAF6FF",
+      "#FFE8A3",
+      "#E6F38F",
+      "#9AD850"
+    ),
+    values = scales::rescale(c(-4000, -600, -150, -60, 0, 50, 150, 400)),
+    limits = c(-4000, 400),
+    oob = squish,
+    name = "Elevation / Depth (m)"
+  ) +
+  # geom_sf(
+  #   data = smoothed_per_day_sf_2 |>
+  #     st_transform(4326),
+  #   # filter(date %in% as.Date(event_log$date)),
+  #   aes(fill = value),
+  #   shape = 21
+  # ) +
   geom_sf(
-    data = smoothed_per_day_sf |>
+    data = track |>
       st_transform(4326),
     # filter(date %in% as.Date(event_log$date)),
-    aes(fill = value),
-    shape = 21
   ) +
   # geom_sf(
   #   data = m_sf |>
@@ -424,11 +326,11 @@ p <- ggplot() +
   ) +
 
   # facet_wrap(~date) +
-  scale_fill_viridis_c(option = "H", name = "Maximum\nlikelihood") +
-  coord_sf(
-    xlim = c(-62, -57),
-    ylim = c(44, 48)
-  ) +
+  # scale_fill_viridis_c(option = "H", name = "Maximum\nlikelihood") +
+  # coord_sf(
+  #   xlim = c(-62, -57),
+  #   ylim = c(44, 48)
+  # ) +
   ggspatial::annotation_north_arrow(location = "tr") +
   ggspatial::annotation_scale() +
   theme_bw(
@@ -443,14 +345,55 @@ p <- ggplot() +
 
 # p + ggview::canvas(8.5, 10)
 
-p +
+p1 <- p +
   coord_sf(
     xlim = c(-59.5, -58.5),
-    ylim = c(44.2, 44.9)
-  ) +
-  ggview::canvas(8.5, 10)
-event_log_sf
+    ylim = c(44.1, 44.9)
+  )
 
-extract_locations(likedepth_transmit)
-m_sf <- m |>
-  st_as_sf(coords = c("lon", "lat"), crs = 32620)
+p1
+p1 + ggview::canvas(8.5, 10)
+
+load(
+  "/Users/benhlina/Library/CloudStorage/Dropbox/Dal-Post Doc/data/Geolocation for Jena/trajectories/backfil.transmit.depth_TRUE.199637.RData"
+)
+
+load(
+  "/Users/benhlina/Library/CloudStorage/Dropbox/Dal-Post Doc/data/Geolocation for Jena/trajectories/backfil.transmit.AR1.depth_TRUE.199637.RData"
+)
+
+
+# Loop through each of the 256 slices along the third dimension
+max_results <- do.call(
+  rbind,
+  lapply(1:dim(s_right)[3], function(k) {
+    slice <- s_right[,, k]
+
+    # Check if the entire slice is NA to avoid errors
+    if (all(is.na(slice))) {
+      return(data.frame(slice = k, max_val = NA, row = NA, col = NA))
+    }
+
+    # Find the maximum value (ignoring NAs)
+    max_val <- max(slice, na.rm = TRUE)
+
+    # Find the row and column coordinates of the maximum value
+    # arr.ind = TRUE ensures it returns row and column indices instead of a flat vector index
+    indices <- which(slice == max_val, arr.ind = TRUE)
+
+    # If multiple cells share the exact same maximum value, this takes the first occurrence
+    data.frame(
+      slice = k,
+      max_val = max_val,
+      row = indices[1, 1],
+      col = indices[1, 2]
+    )
+  })
+)
+
+# View the first few slices of the resulting table
+head(max_results)
+
+max_results |>
+  print()
+summary(max_results)
