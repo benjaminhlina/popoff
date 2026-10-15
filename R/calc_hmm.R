@@ -17,7 +17,7 @@
 #' likelihood's max used to decide which cells count as a plausible location
 #' (e.g. 0.1 = 10% of peak).
 #' @param mask_likelihood Logical. Apply [mask_likelihood_array()] to the update
-#' step instead of a plain product.
+#' step instead of a plain product. Default is `TRUE`.
 #' @param progress a `logical` value that turns on and off the progress bar.
 #' Default is `TRUE`.
 #' @param return_maps a `logical` value that returns maps of posteriors and
@@ -33,17 +33,19 @@ hmm_forward_filter <- function(
   kernel,
   bound_threshold = 0.1,
   bound_min = 10,
-  mask_likelihood = FALSE,
+  mask_likelihood = TRUE,
   progress = TRUE,
   return_maps = FALSE
 ) {
   t0 <- msg_start("HMM forward filter")
-  n_time <- dim(likelihood_array)[3]
+  dims <- dim(likelihood_array)
+  n_time <- dims[3]
 
   # Preallocate vectors for performance and minimal memory overhead
   ncps_vec <- numeric(n_time - 1)
   updated_vec <- logical(n_time - 1)
 
+  dn <- dimnames(likelihood_array)
   # Optional storage lists only if maps are explicitly requested
   if (isTRUE(return_maps)) {
     post_list <- vector("list", n_time)
@@ -152,17 +154,16 @@ hmm_forward_filter <- function(
     n_bad_days = n_bad_days,
     n_updated = n_updated
   )
-
   # Conditionally attach heavy matrices only if requested
   if (isTRUE(return_maps)) {
     results$normalised_posterior <- array(
       unlist(post_list),
-      dim = dim(likelihood_array),
+      dim = dims,
       dimnames = dn
     )
     results$pc_predicted <- array(
       unlist(pred_list),
-      dim = dim(likelihood_array),
+      dim = dims,
       dimnames = dn
     )
   }
