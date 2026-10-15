@@ -182,6 +182,8 @@ hmm_forward_filter <- function(
       dimnames = dn
     )
 
+    results$kernel <- kernel
+
     results$normalised_posterior[land_arr] <- NA
     results$pc_predicted[land_arr] <- NA
   }
