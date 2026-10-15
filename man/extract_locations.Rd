@@ -4,7 +4,11 @@
 \alias{extract_locations}
 \title{Extract estimated locations from a normalised posterior array}
 \usage{
-extract_locations(obj, type = c("max", "min", "mean", "median"))
+extract_locations(
+  obj,
+  type = c("max", "min", "mean", "median"),
+  drop_empty = FALSE
+)
 }
 \arguments{
 \item{obj}{A \code{list} containing an element named \code{normalised_posterior}, a
