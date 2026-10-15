@@ -73,7 +73,7 @@ smooth_hmm <- function(
       sigma = sigma,
       log_lik = hmm_forward$log_lik,
       neg_log_lik = hmm_forward$neg_log_lik,
-      n_bad = hmm_forward$n_bad,
+      n_bad_days = hmm_forward$n_bad_days,
       n_updated = hmm_forward$n_updated,
       n_steps = length(hmm_forward$ncps)
     )

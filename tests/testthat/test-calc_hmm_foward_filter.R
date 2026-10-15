@@ -58,7 +58,7 @@ describe("hmm_forward_filter() output structure", {
         "ncps",
         "log_lik",
         "neg_log_lik",
-        "n_bad",
+        "n_bad_days",
         "n_updated"
       )
     )

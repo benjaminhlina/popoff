@@ -9,7 +9,7 @@ hmm_forward_filter(
   kernel,
   bound_threshold = 0.1,
   bound_min = 10,
-  mask_likelihood = FALSE,
+  mask_likelihood = TRUE,
   progress = TRUE,
   return_maps = FALSE
 )
@@ -27,7 +27,7 @@ likelihood's max used to decide which cells count as a plausible location
 (e.g. 0.1 = 10\% of peak).}
 
 \item{mask_likelihood}{Logical. Apply \code{\link[=mask_likelihood_array]{mask_likelihood_array()}} to the update
-step instead of a plain product.}
+step instead of a plain product. Default is \code{TRUE}.}
 
 \item{progress}{a \code{logical} value that turns on and off the progress bar.
 Default is \code{TRUE}.}

@@ -24,7 +24,7 @@ msg_load_raster(path)
 
 msg_load_rdata(obj, obj_name)
 
-msg_no_mass(n_bad)
+msg_no_mass(n_bad_days)
 
 msg_progress(
   n_time,
@@ -58,8 +58,6 @@ msg_window(window)
 
 \item{obj_name}{the name of an object}
 
-\item{n_bad}{an integer of the bad esimtates}
-
 \item{n_time}{a \code{numeric} value that is the number of time intervals}
 
 \item{name}{a \code{character} vector that contains the name of the progress bar}
@@ -73,6 +71,8 @@ msg_window(window)
 \item{linear_index}{Position of the known location within a daily slice}
 
 \item{window}{a numerical value}
+
+\item{n_bad}{an integer of the bad esimtates}
 }
 \description{
 These functions produce information to the user.

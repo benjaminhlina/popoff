@@ -86,7 +86,7 @@ msg_load_rdata <- function(obj, obj_name) {
 #' @param n_bad an integer of the bad esimtates
 #' @name msg_function
 #' @keywords internal
-msg_no_mass <- function(n_bad) {
+msg_no_mass <- function(n_bad_days) {
   if (n_bad > 0) {
     cli::cli_alert_warning(
       "The negative log likelihood has the follwoing nubmer of {.val {n_bad}}

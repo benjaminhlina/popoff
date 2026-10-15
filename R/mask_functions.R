@@ -26,7 +26,7 @@ mask_likelihood_array <- function(
 ) {
   if (!(identical(dim(predicted), dim(likelihood)))) {
     cli::cli_abort(
-      "The dimensions of predicted are {.val {dim(predicted}} and do not match {.val {dim(likelihood)}}"
+      "The dimensions of predicted are {.val {dim(predicted)}} and do not match {.val {dim(likelihood)}}"
     )
   }
 
@@ -82,5 +82,8 @@ mask_likelihood_array <- function(
   out <- matrix(0, nrow = n_row, ncol = n_col)
   # ----- return out masked predicted * likelihood-----
   out[rows, cols] <- predicted[rows, cols] * likelihood[rows, cols]
+
+  out[is.na(likelihood) | is.na(predicted)] <- NA
+
   return(out)
 }
