@@ -124,35 +124,35 @@ ylim <- prepped_bathy$ylim
 
 
 # ---- we can convert them into spatrasters using load functions
-likelihood_spr <- days |>
-  set_names() |>
-  map(
-    ~ load_raster(
-      likedepth_transmit[,, as.character(.x)],
-      # crs = "EPSG:4326",
-      extent = c(xlim, ylim),
-      crs = "EPSG:32620"
-    ),
-    # .progress = TRUE
-  )
+# likelihood_spr <- days |>
+#   set_names() |>
+#   map(
+#     ~ load_raster(
+#       likedepth_transmit[,, as.character(.x)],
+#       # crs = "EPSG:4326",
+#       extent = c(xlim, ylim),
+#       crs = "EPSG:32620"
+#     ),
+#     # .progress = TRUE
+#   )
 
-# ----- then polt them using ggplot and tidyterra -----
-pl <- likelihood_spr[1:10] |>
-  imap(
-    ~ ggplot() +
-      geom_spatraster(data = .x) +
-      coord_sf() +
-      scale_fill_viridis_c(option = "H") +
-      theme_bw(
-        base_size = 15
-      ) +
-      theme(
-        panel.grid = element_blank(),
-        plot.title = element_text(hjust = 0.5)
-      ) +
-      labs(title = .y)
-  )
-pl
+# # ----- then polt them using ggplot and tidyterra -----
+# pl <- likelihood_spr[1:10] |>
+#   imap(
+#     ~ ggplot() +
+#       geom_spatraster(data = .x) +
+#       coord_sf() +
+#       scale_fill_viridis_c(option = "H") +
+#       theme_bw(
+#         base_size = 15
+#       ) +
+#       theme(
+#         panel.grid = element_blank(),
+#         plot.title = element_text(hjust = 0.5)
+#       ) +
+#       labs(title = .y)
+#   )
+# pl
 # # ---- Take idx values that equla 0.5 or greater and pull the depth of those
 # #idx vlaues -----
 # likelihood_spr[204]
@@ -268,7 +268,7 @@ sigma_pixels <- seq(2, 27, by = 1)
 # p + ggview::canvas(14, 8.5)
 
 sigma_val <- seq(0.25, 0.35, 0.015)
-# sigma_val <- seq(0.1, 3, 0.1)
+sigma_val <- seq(0.1, 1, 0.025)
 
 length(sigma_val)
 sigma_val
@@ -292,7 +292,7 @@ out <- eval_sigma_iterate(
   likelihood_array = likedepth_transmit
 )
 
-out
+# out
 
 ggplot(data = out, aes(x = sigma, y = neg_log_lik)) +
   scale_y_log10() +
@@ -310,6 +310,7 @@ optimiaized_sigma <- optimize_sigma(
 )
 
 optimiaized_sigma
+optimiaized_sigma$optimal_sigma
 final <- eval_sigma(
   sigma = optimiaized_sigma$optimal_sigma,
   normalize = TRUE,
@@ -317,6 +318,32 @@ final <- eval_sigma(
   mask_likelihood = TRUE,
   return_maps = TRUE
 )
+# mass <- apply(final$normalised_posterior, 3, function(x) sum(x, na.rm = TRUE))
+# which(!is.finite(mass) | mass <= 0) # dead filtered posteriors
+# final$n_bad_days # should be > 0 if this is the cause
+# final$n_updated
+
+# final$n_bad_days # should now be small, not 79
+# which(final$ncps <= 0 | !is.finite(final$ncps)) + 1 # steps that genuinely collapsed
+# mass <- apply(final$normalised_posterior, 3, function(x) sum(x, na.rm = TRUE))
+# all(is.finite(mass) & mass > 0) # must be TRUE before smoothing
+
+kerns <- gaussian_kernel(
+  sigma = optimiaized_sigma$optimal_sigma,
+  normalize = TRUE,
+)
+
+# 1. Does convolution2D spread NA?
+m <- matrix(1, 15, 15)
+m[8, 8] <- NA
+sum(is.na(imagine::convolution2D(m, kerns))) # 1 = fine, >1 = NA dilates
+
+# 2. Where does pred die? (needs return_maps = TRUE)
+pm <- apply(final$pc_predicted, 3, function(x) sum(x, na.rm = TRUE))
+nna <- apply(final$pc_predicted, 3, function(x) sum(is.na(x)))
+data.frame(step = 120:130, pred_mass = pm[120:130], n_na = nna[120:130])
+sum(is.na(likedepth_transmit[,, 1])) # land cells, for comparison
+
 
 kerns <- gaussian_kernel(
   sigma = optimiaized_sigma$optimal_sigma,
@@ -324,9 +351,8 @@ kerns <- gaussian_kernel(
 )
 
 
-smoothed <- hmm_backward_smooth_old(
+smoothed <- hmm_backward_smooth(
   forward_filter_obj = final,
-  likelihood_array = likedepth_transmit,
   kernel = kerns
 )
 smoothed
@@ -361,14 +387,17 @@ pl <- smoothed_spr[1:10] |>
       labs(title = .y)
   )
 pl
+max_per_day <- extract_locations(obj = final$normalised_posterior)
 
 max_per_day_sf <- max_per_day |>
   st_as_sf(coords = c("lon", "lat"), crs = 32620)
 
 
-max_per_day_sf |>
-  mapgl::maplibre_view()
-
+smoothed_per_day <- extract_locations(smoothed)
+# max_per_day_sf |>
+#   mapgl::maplibre_view()
+smoothed_per_day_sf <- smoothed_per_day |>
+  st_as_sf(coords = c("lon", "lat"), crs = 32620)
 
 p <- ggplot() +
   geom_sf(
@@ -376,11 +405,25 @@ p <- ggplot() +
       st_transform(4326)
   ) +
   geom_sf(
-    data = max_per_day_sf |>
+    data = smoothed_per_day_sf |>
       st_transform(4326),
-    aes(fill = max_value),
+    # filter(date %in% as.Date(event_log$date)),
+    aes(fill = value),
     shape = 21
   ) +
+  # geom_sf(
+  #   data = m_sf |>
+  #     st_transform(4326) |>
+  #     filter(date %in% as.Date(event_log$date)),
+  #   aes(fill = value)
+  # ) +
+  geom_sf(
+    data = event_log_sf |>
+      mutate(date = as.Date(date)),
+    aes(colour = event),
+  ) +
+
+  # facet_wrap(~date) +
   scale_fill_viridis_c(option = "H", name = "Maximum\nlikelihood") +
   coord_sf(
     xlim = c(-62, -57),
@@ -392,9 +435,22 @@ p <- ggplot() +
     base_size = 15
   ) +
   theme(
-    legend.position = "inside",
-    legend.position.inside = c(0.92, 0.5),
+    # legend.position = "inside",
+    # legend.position.inside = c(0.92, 0.5),
     legend.background = element_rect(colour = "black")
   )
 
-p + ggview::canvas(8.5, 10)
+
+# p + ggview::canvas(8.5, 10)
+
+p +
+  coord_sf(
+    xlim = c(-59.5, -58.5),
+    ylim = c(44.2, 44.9)
+  ) +
+  ggview::canvas(8.5, 10)
+event_log_sf
+
+extract_locations(likedepth_transmit)
+m_sf <- m |>
+  st_as_sf(coords = c("lon", "lat"), crs = 32620)

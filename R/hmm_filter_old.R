@@ -1,4 +1,4 @@
-hmm_forward_filter <- function(
+hmm_forward_filter_old <- function(
   likelihood_array,
   kernel,
   bound_threshold = 0.1,

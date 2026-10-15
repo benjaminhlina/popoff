@@ -258,105 +258,64 @@ hmm_forward_filter <- function(
 hmm_backward_smooth <- function(
   forward_filter_obj,
   kernel,
-  likelihood_array,
   progress = TRUE
 ) {
   t0 <- msg_start("HMM backwards smoothing")
-
   error_forward_filter_obj(forward_filter_obj)
 
-  normalised_posterior <- forward_filter_obj$normalised_posterior
-  pc_predicted <- forward_filter_obj$pc_predicted
-  dims <- dim(forward_filter_obj$normalised_posterior)
-  dn <- dimnames(normalised_posterior)
-  time_step <- dims[3]
+  # Filtered posteriors (alpha_t) and one-step predictions from the forward pass
+  alpha <- forward_filter_obj$normalised_posterior
+  pred <- forward_filter_obj$pc_predicted
+  dims <- dim(alpha)
+  dn <- dimnames(alpha)
+  n_time <- dims[3]
+
+  # Land mask: NA in the first slice (the raw likelihood surface). Land is
+  # static, so one slice is enough.
+  land <- is.na(alpha[,, 1])
 
   smooth <- array(0, dim = dims, dimnames = dn)
 
-  smooth[,, time_step] <- normalised_posterior[,, time_step]
-  # premier pas de temps du smooth est le dernier du backward !!
-  time_seq <- time_step:2
+  # Last smoothed state equals the last filtered state
+  smooth[,, n_time] <- alpha[,, n_time]
+
+  n_fallback <- 0L
 
   if (isTRUE(progress)) {
     msg_progress(
-      n_time = time_step,
+      n_time = n_time,
       name = "HMM backwards smoothing",
       type = "Smoothing"
     )
   }
 
-  for (t in time_seq) {
-    rat <- smooth[,, t] / pc_predicted[,, t]
+  for (t in n_time:2) {
+    # Ratio of smoothed to predicted. Land (NA), 0/0 and x/0 become 0, so land
+    # contributes no mass to the convolution and NaN cannot spread.
+    rat <- smooth[,, t] / pred[,, t]
     rat[!is.finite(rat)] <- 0
 
-    post <- imagine::convolution2D(rat, kernel)
-
-    if (t == time_step) {
-      post <- likelihood_array[,, t]
-      smooth[,, t] <- post / sum(post, na.rm = TRUE)
-      post <- post * normalised_posterior[,, t - 1]
-    } else {
-      post <- post * normalised_posterior[,, t - 1]
-    }
-
-    smooth[,, t - 1] <- post / sum(post, na.rm = TRUE)
-
-    if (isTRUE(progress)) cli::cli_progress_update()
-  }
-
-  if (isTRUE(progress)) {
-    cli::cli_progress_done()
-  }
-  msg_end("HMM backwards smoothing", t0)
-  return(smooth)
-}
-
-
-hmm_backward_smooth_old <- function(
-  forward_filter_obj,
-  kernel,
-  likelihood_array,
-  progress = TRUE
-) {
-  # ------ messages and error-----
-  t0 <- msg_start("HMM backwards smoothing")
-  error_forward_filter_obj(forward_filter_obj)
-
-  # ----- get objects we need -----
-  normalised_posterior <- forward_filter_obj$normalised_posterior
-  pc_predicted <- forward_filter_obj$pc_predicted
-  dims <- dim(normalised_posterior)
-  dn <- dimnames(normalised_posterior)
-  time_step <- dims[3]
-  # row <- dims[1]
-  # col <- dims[2]
-  # ----- create smooth array ----
-  smooth <- array(0, dim = dims, dimnames = dn)
-
-  smooth[,, time_step] <- normalised_posterior[,, time_step]
-
-  time_seq <- time_step:2
-  if (isTRUE(progress)) {
-    msg_progress(
-      n_time = time_step,
-      name = "HMM backwards smoothing",
-      type = "Smoothing"
-    )
-  }
-  for (t in time_seq) {
-    rat <- smooth[,, t] / pc_predicted[,, t]
-    rat[!is.finite(rat)] <- 0 # 0/0 and x/0 -> 0 so NaN can't spread
-
-    post <- imagine::convolution2D(rat, kernel)
-    post <- post * normalised_posterior[,, t - 1]
-
-    post[!is.finite(post)] <- 0
+    # Propagate backwards (kernel assumed symmetric, so convolution is the
+    # transpose of the forward transition), then weight by the filtered
+    # posterior at t - 1
+    post <- imagine::convolution2D(rat, kernel) * alpha[,, t - 1]
+    post[!land & !is.finite(post)] <- 0
+    post[land] <- NA_real_
 
     fac <- sum(post, na.rm = TRUE)
+
     if (!is.finite(fac) || fac <= 0) {
-      cli::cli_abort(
-        "Smoothing collapsed at time step {t - 1}: posterior sums to {fac}."
-      )
+      # Collapsed step: fall back to the filtered posterior for this step
+      post <- alpha[,, t - 1]
+      post[!land & !is.finite(post)] <- 0
+      fac <- sum(post, na.rm = TRUE)
+      n_fallback <- n_fallback + 1L
+
+      if (!is.finite(fac) || fac <= 0) {
+        cli::cli_abort(
+          "Smoothing collapsed at time step {t - 1}: filtered posterior also sums to {fac}."
+        )
+      }
     }
 
     smooth[,, t - 1] <- post / fac
@@ -367,7 +326,16 @@ hmm_backward_smooth_old <- function(
   if (isTRUE(progress)) {
     cli::cli_progress_done()
   }
-  msg_end("HMM backwards smoothing", t0)
 
+  # Land stays NA in every slice
+  smooth[array(land, dim = dims)] <- NA
+
+  if (n_fallback > 0L) {
+    cli::cli_warn(
+      "{n_fallback} step{?s} collapsed during smoothing and used the filtered posterior instead."
+    )
+  }
+
+  msg_end("HMM backwards smoothing", t0)
   return(smooth)
 }
