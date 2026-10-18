@@ -3,7 +3,7 @@
 {
   library(dplyr)
   library(ggplot2)
-  library(poppr)
+  # library(poppr)
   library(purrr)
   library(scales)
   library(sf)
@@ -16,14 +16,14 @@
 bathy_matrix_download <- download_noaa_bathy(
   xlim = c(-72.41, -40.0),
   ylim = c(41.52, 55.0),
-  res = 1
+  res = 4
 )
 bathy_matrix_download
 # in this case Gulf of St. Lawrence
 
 # we can check that it is SpatRaster
 
-bathy <- load_raster(bathy_matrix_download, crs = "EPSG:4326")
+bathy <- load_raster(bathy_matrix, crs = "EPSG:4326")
 
 bathy
 
@@ -161,7 +161,7 @@ bbox_utm <- st_transform(bbox_sf, crs = 32620)
 range <- st_bbox(bbox_utm)
 range[1]
 # ----- then polt them using ggplot and tidyterra -----
-pl <- likelihood_spr |>
+pl <- likelihood_spr[1:10] |>
   imap(
     ~ ggplot() +
       geom_spatraster(data = .x) +
@@ -185,10 +185,10 @@ pl <- likelihood_spr |>
       ) +
       labs(title = .y)
   )
-pl
+# pl
 
-sigma_val <- seq(0.25, 0.35, 0.015)
-# sigma_val <- seq(0.1, 1, 0.025)
+# sigma_val <- seq(0.25, 0.35, 0.015)
+sigma_val <- seq(0.1, 2, 0.025)
 
 length(sigma_val)
 sigma_val
@@ -204,7 +204,7 @@ out <- eval_sigma_iterate(
   likelihood_array = likedepth_transmit
 )
 
-# out
+out
 
 ggplot(data = out, aes(x = sigma, y = neg_log_lik)) +
   scale_y_log10() +
@@ -223,9 +223,15 @@ optimiaized_sigma <- optimize_sigma(
 
 optimiaized_sigma
 optimiaized_sigma$optimal_sigma
-final <- eval_sigma(
-  sigma = 0.3313,
+
+kernel <- gaussian_kernel(
+  sigma = optimiaized_sigma$optimal_sigma,
   normalize = TRUE,
+)
+
+final <- hmm_forward_filter(
+  sigma = 0.33,
+  kernel = kernel,
   likelihood_array = likedepth_transmit,
   mask_likelihood = TRUE,
   return_maps = TRUE
@@ -255,15 +261,13 @@ smoothed <- hmm_backward_smooth(
   forward_filter_obj = final,
   kernel = final$kernel
 )
-smoothed
-
+# smoothed
 
 # ------ exxtract ------
-max_per_day <- extract_locations(obj = final$normalised_posterior)
+# max_per_day <- extract_locations(obj = final$normalised_posterior)
 
-max_per_day_sf <- max_per_day |>
-  st_as_sf(coords = c("lon", "lat"), crs = 32620)
-
+# max_per_day_sf <- max_per_day |>
+#   st_as_sf(coords = c("lon", "lat"), crs = 32620)
 
 smoothed_per_day <- extract_locations(smoothed)
 # max_per_day_sf |>
@@ -272,73 +276,75 @@ smoothed_per_day_sf <- smoothed_per_day |>
   st_as_sf(coords = c("lon", "lat"), crs = 32620)
 
 
-extract_locations()
 track <- smoothed_per_day_sf |>
   mutate(date = as.Date(date)) |> # Ensure proper date sorting
   arrange(date) |> # Sort chronologically (June 18 -> 19 -> 20...)
   st_combine() |>
   st_cast("LINESTRING")
 
+st_length(track)
+51206.16 / 1000
 p <- ggplot() +
   geom_sf(
     data = lennox::eastern_canada |>
       st_transform(4326)
   ) +
-  geom_spatraster(data = bathy_utm) +
-  scale_fill_gradientn(
-    colours = c(
-      "#031E40",
-      "#0B3C73",
-      "#17A2FF",
-      "#7FDBFF",
-      "#EAF6FF",
-      "#FFE8A3",
-      "#E6F38F",
-      "#9AD850"
-    ),
-    values = scales::rescale(c(-4000, -600, -150, -60, 0, 50, 150, 400)),
-    limits = c(-4000, 400),
-    oob = squish,
-    name = "Elevation / Depth (m)"
-  ) +
-  # geom_sf(
-  #   data = smoothed_per_day_sf_2 |>
-  #     st_transform(4326),
-  #   # filter(date %in% as.Date(event_log$date)),
-  #   aes(fill = value),
-  #   shape = 21
+  # geom_spatraster(data = bathy_utm) +
+  # scale_fill_gradientn(
+  #   colours = c(
+  #     "#031E40",
+  #     "#0B3C73",
+  #     "#17A2FF",
+  #     "#7FDBFF",
+  #     "#EAF6FF",
+  #     "#FFE8A3",
+  #     "#E6F38F",
+  #     "#9AD850"
+  #   ),
+  #   values = scales::rescale(c(-4000, -600, -150, -60, 0, 50, 150, 400)),
+  #   limits = c(-4000, 400),
+  #   oob = squish,
+  #   name = "Elevation / Depth (m)"
   # ) +
   geom_sf(
     data = track |>
       st_transform(4326),
     # filter(date %in% as.Date(event_log$date)),
   ) +
+  geom_sf(
+    data = smoothed_per_day_sf |>
+      st_transform(4326),
+    # filter(date %in% as.Date(event_log$date)),
+    aes(fill = value),
+    shape = 21
+  ) +
+
   # geom_sf(
   #   data = m_sf |>
   #     st_transform(4326) |>
   #     filter(date %in% as.Date(event_log$date)),
   #   aes(fill = value)
   # ) +
-  geom_sf(
-    data = event_log_sf |>
-      mutate(date = as.Date(date)),
-    aes(colour = event),
-  ) +
+  # geom_sf(
+  #   data = event_log_sf |>
+  #     mutate(date = as.Date(date)),
+  #   aes(colour = event),
+  # ) +
 
   # facet_wrap(~date) +
-  # scale_fill_viridis_c(option = "H", name = "Maximum\nlikelihood") +
-  # coord_sf(
-  #   xlim = c(-62, -57),
-  #   ylim = c(44, 48)
-  # ) +
+  scale_fill_viridis_c(option = "H", name = "Maximum\nlikelihood") +
+  coord_sf(
+    xlim = c(-62, -57),
+    ylim = c(44, 48)
+  ) +
   ggspatial::annotation_north_arrow(location = "tr") +
   ggspatial::annotation_scale() +
   theme_bw(
     base_size = 15
   ) +
   theme(
-    # legend.position = "inside",
-    # legend.position.inside = c(0.92, 0.5),
+    legend.position = "inside",
+    legend.position.inside = c(0.92, 0.5),
     legend.background = element_rect(colour = "black")
   )
 
@@ -351,8 +357,10 @@ p1 <- p +
     ylim = c(44.1, 44.9)
   )
 
+p
 p1
 p1 + ggview::canvas(8.5, 10)
+p + ggview::canvas(8.5, 10)
 
 load(
   "/Users/benhlina/Library/CloudStorage/Dropbox/Dal-Post Doc/data/Geolocation for Jena/trajectories/backfil.transmit.depth_TRUE.199637.RData"
