@@ -71,7 +71,6 @@
 
 optimize_sigma <- function(
   sigma_iterate_obj,
-  # max_sigma,
   likelihood_array,
   n_points = 17,
   n_interval = 2,
@@ -81,6 +80,13 @@ optimize_sigma <- function(
   parallel = TRUE,
   .progress = TRUE
 ) {
+  error_numeric(n_points)
+  error_numeric(n_interval)
+  error_logical(normalize)
+  error_logical(mask_likelihood)
+  error_logical(parallel)
+  error_load(.progress)
+
   result <- sigma_iterate_obj
   max_sigma <- max(sigma_iterate_obj$sigma)
 

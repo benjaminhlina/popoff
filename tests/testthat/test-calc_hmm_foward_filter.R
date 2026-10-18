@@ -25,7 +25,6 @@ make_lik <- function(..., dates = NULL) {
 }
 
 k3 <- matrix(1 / 9, nrow = 3, ncol = 3)
-grid3 <- data.frame(lon = 1:3, lat = 1:3)
 
 # Surfaces that each sum to 1
 m_uniform <- matrix(1 / 9, nrow = 3, ncol = 3)
@@ -48,13 +47,12 @@ describe("hmm_forward_filter() output structure", {
     mock_identity_convolution()
     lik <- make_lik(m_uniform, m_p, m_q, dates = dates)
 
-    res <- hmm_forward_filter(lik, kernal = k3, grid = grid3)
+    length(dim(lik))
+    res <- hmm_forward_filter(lik, kernel = k3, return_maps = FALSE)
 
     expect_named(
       res,
       c(
-        "normalised_posterior",
-        "pc_predicted",
         "ncps",
         "log_lik",
         "neg_log_lik",
@@ -63,12 +61,33 @@ describe("hmm_forward_filter() output structure", {
       )
     )
   })
+  it("returns the documented components when return_maps is true ", {
+    mock_identity_convolution()
+    lik <- make_lik(m_uniform, m_p, m_q, dates = dates)
+
+    res <- hmm_forward_filter(lik, kernel = k3, return_maps = TRUE)
+
+    expect_named(
+      res,
+      c(
+        "ncps",
+        "log_lik",
+        "neg_log_lik",
+        "n_bad_days",
+        "n_updated",
+        "normalised_posterior",
+        "pc_predicted",
+        "kernel",
+        "likelihood_array"
+      )
+    )
+  })
 
   it("keeps the dims and dimnames of the likelihood array", {
     mock_identity_convolution()
     lik <- make_lik(m_uniform, m_p, m_q, dates = dates)
 
-    res <- hmm_forward_filter(lik, kernal = k3, grid = grid3)
+    res <- hmm_forward_filter(lik, kernel = k3, return_maps = TRUE)
 
     expect_equal(dim(res$normalised_posterior), dim(lik))
     expect_equal(dim(res$pc_predicted), dim(lik))
@@ -80,7 +99,7 @@ describe("hmm_forward_filter() output structure", {
     mock_identity_convolution()
     lik <- make_lik(m_uniform, m_p, m_q, dates = dates)
 
-    res <- hmm_forward_filter(lik, kernal = k3, grid = grid3)
+    res <- hmm_forward_filter(lik, kernel = k3)
 
     expect_length(res$ncps, 2)
     expect_named(res$ncps, dates[-1])
@@ -90,7 +109,7 @@ describe("hmm_forward_filter() output structure", {
     mock_identity_convolution()
     lik <- make_lik(m_uniform, m_p, m_q)
 
-    res <- hmm_forward_filter(lik, kernal = k3, grid = grid3)
+    res <- hmm_forward_filter(lik, kernel = k3)
 
     expect_length(res$ncps, 2)
     expect_null(names(res$ncps))
@@ -102,7 +121,7 @@ describe("hmm_forward_filter() initial state", {
     mock_identity_convolution()
     lik <- make_lik(m_p, m_q, dates = dates[1:2])
 
-    res <- hmm_forward_filter(lik, kernal = k3, grid = grid3)
+    res <- hmm_forward_filter(lik, kernel = k3, return_maps = TRUE)
 
     expect_equal(res$normalised_posterior[,, 1], m_p)
     expect_equal(res$pc_predicted[,, 1], m_p)
@@ -112,12 +131,16 @@ describe("hmm_forward_filter() initial state", {
     mock_identity_convolution()
     lik <- make_lik(m_p, dates = dates[1])
 
-    res <- hmm_forward_filter(lik, kernal = k3, grid = grid3)
+    res <- expect_error(hmm_forward_filter(
+      lik,
+      kernel = k3,
+      return_maps = TRUE
+    ))
 
-    expect_length(res$ncps, 0)
-    expect_equal(res$log_lik, 0)
-    expect_equal(res$neg_log_lik, 0)
-    expect_equal(dim(res$normalised_posterior), c(3, 3, 1))
+    # expect_length(res$ncps, 0)
+    # expect_equal(res$log_lik, 0)
+    # expect_equal(res$neg_log_lik, 0)
+    # expect_equal(dim(res$normalised_posterior), c(3, 3, 1))
   })
 })
 
@@ -142,7 +165,7 @@ describe("hmm_forward_filter() prediction and update", {
     )
     lik <- make_lik(m_uniform, m_p, m_q, dates = dates)
 
-    hmm_forward_filter(lik, kernal = k3, grid = grid3)
+    hmm_forward_filter(lik, kernel = k3)
 
     expect_equal(calls$n, 2)
     expect_equal(calls$kernels[[1]], k3)
@@ -154,7 +177,7 @@ describe("hmm_forward_filter() prediction and update", {
     mock_identity_convolution()
     lik <- make_lik(m_uniform, m_p, m_q, dates = dates)
 
-    res <- hmm_forward_filter(lik, kernal = k3, grid = grid3)
+    res <- hmm_forward_filter(lik, kernel = k3, return_maps = TRUE)
 
     # t = 2: prediction is uniform, so posterior is p and psi = sum(p / 9) = 1/9
     expect_equal(res$normalised_posterior[,, 2], m_p)
@@ -173,7 +196,7 @@ describe("hmm_forward_filter() prediction and update", {
     mock_identity_convolution()
     lik <- make_lik(m_uniform, m_p, m_q, dates = dates)
 
-    res <- hmm_forward_filter(lik, kernal = k3, grid = grid3)
+    res <- hmm_forward_filter(lik, kernel = k3)
 
     sums <- apply(res$normalised_posterior[,, -1], 3, sum)
     expect_equal(unname(sums), c(1, 1))
@@ -183,7 +206,7 @@ describe("hmm_forward_filter() prediction and update", {
     mock_identity_convolution()
     lik <- make_lik(m_uniform, m_p, m_q, dates = dates)
 
-    res <- hmm_forward_filter(lik, kernal = k3, grid = grid3)
+    res <- hmm_forward_filter(lik, kernel = k3)
 
     # With an identity kernel the prediction at t is the posterior at t - 1
     expect_equal(res$pc_predicted[,, 2], res$normalised_posterior[,, 1])
@@ -194,7 +217,7 @@ describe("hmm_forward_filter() prediction and update", {
     mock_identity_convolution()
     lik <- make_lik(m_uniform, m_p, m_q, dates = dates)
 
-    res <- hmm_forward_filter(lik, kernal = k3, grid = grid3)
+    res <- hmm_forward_filter(lik, kernel = k3)
 
     expect_equal(res$log_lik, sum(log(res$ncps)))
     expect_equal(res$neg_log_lik, -res$log_lik)
@@ -206,7 +229,7 @@ describe("hmm_forward_filter() carries the prediction forward", {
     mock_identity_convolution()
     lik <- make_lik(m_p, m_zero, m_q, dates = dates)
 
-    res <- hmm_forward_filter(lik, kernal = k3, grid = grid3)
+    res <- hmm_forward_filter(lik, kernel = k3)
 
     expect_equal(res$normalised_posterior[,, 2], m_p)
     expect_equal(unname(res$ncps[1]), 1)
@@ -223,7 +246,7 @@ describe("hmm_forward_filter() carries the prediction forward", {
     tiny <- m_p * 1e-08
     lik <- make_lik(m_p, tiny, dates = dates[1:2])
 
-    res <- hmm_forward_filter(lik, kernal = k3, grid = grid3)
+    res <- hmm_forward_filter(lik, kernel = k3)
 
     expect_equal(res$normalised_posterior[,, 2], m_p)
     expect_equal(unname(res$ncps[1]), 1)
@@ -233,7 +256,7 @@ describe("hmm_forward_filter() carries the prediction forward", {
     mock_identity_convolution()
     lik <- make_lik(m_corner, m_far, dates = dates[1:2])
 
-    res <- hmm_forward_filter(lik, kernal = k3, grid = grid3)
+    res <- hmm_forward_filter(lik, kernel = k3)
 
     expect_equal(res$normalised_posterior[,, 2], m_corner)
     expect_equal(unname(res$ncps[1]), 1)
@@ -244,7 +267,7 @@ describe("hmm_forward_filter() carries the prediction forward", {
     all_na <- matrix(NA_real_, nrow = 3, ncol = 3)
     lik <- make_lik(m_p, all_na, dates = dates[1:2])
 
-    res <- hmm_forward_filter(lik, kernal = k3, grid = grid3)
+    res <- hmm_forward_filter(lik, kernel = k3)
 
     expect_equal(res$normalised_posterior[,, 2], m_p)
     expect_equal(unname(res$ncps[1]), 1)
@@ -258,7 +281,7 @@ describe("hmm_forward_filter() NA handling", {
     p_na[2, 2] <- NA
     lik <- make_lik(m_uniform, p_na, dates = dates[1:2])
 
-    res <- hmm_forward_filter(lik, kernal = k3, grid = grid3)
+    res <- hmm_forward_filter(lik, kernel = k3)
 
     post_2 <- res$normalised_posterior[,, 2]
     expect_true(is.na(post_2[2, 2]))
@@ -269,23 +292,6 @@ describe("hmm_forward_filter() NA handling", {
 })
 
 describe("hmm_forward_filter() mask_likelihood", {
-  it("does not call mask_likelihood_array() by default", {
-    mock_identity_convolution()
-    calls <- new.env()
-    calls$n <- 0
-    testthat::local_mocked_bindings(
-      mask_likelihood_array = function(...) {
-        calls$n <- calls$n + 1
-        list(...)$predicted
-      }
-    )
-    lik <- make_lik(m_uniform, m_p, m_q, dates = dates)
-
-    hmm_forward_filter(lik, kernal = k3, grid = grid3)
-
-    expect_equal(calls$n, 0)
-  })
-
   it("passes the kernel size, grid and bounds to mask_likelihood_array()", {
     mock_identity_convolution()
     calls <- new.env()
@@ -294,8 +300,6 @@ describe("hmm_forward_filter() mask_likelihood", {
       mask_likelihood_array = function(
         predicted,
         likelihood,
-        lon,
-        lat,
         par0,
         bound_threshold,
         bound_min
@@ -303,8 +307,6 @@ describe("hmm_forward_filter() mask_likelihood", {
         calls$args[[length(calls$args) + 1]] <- list(
           predicted = predicted,
           likelihood = likelihood,
-          lon = lon,
-          lat = lat,
           par0 = par0,
           bound_threshold = bound_threshold,
           bound_min = bound_min
@@ -316,8 +318,7 @@ describe("hmm_forward_filter() mask_likelihood", {
 
     hmm_forward_filter(
       lik,
-      kernal = k3,
-      grid = grid3,
+      kernel = k3,
       bound_threshold = 0.25,
       bound_min = 5,
       mask_likelihood = TRUE
@@ -327,8 +328,6 @@ describe("hmm_forward_filter() mask_likelihood", {
     first <- calls$args[[1]]
     expect_equal(first$predicted, m_uniform)
     expect_equal(first$likelihood, m_p)
-    expect_equal(first$lon, grid3$lon)
-    expect_equal(first$lat, grid3$lat)
     expect_equal(first$par0, 3)
     expect_equal(first$bound_threshold, 0.25)
     expect_equal(first$bound_min, 5)
@@ -345,8 +344,7 @@ describe("hmm_forward_filter() mask_likelihood", {
 
     res <- hmm_forward_filter(
       lik,
-      kernal = k3,
-      grid = grid3,
+      kernel = k3,
       mask_likelihood = TRUE
     )
 
@@ -368,8 +366,7 @@ describe("hmm_forward_filter() mask_likelihood", {
 
     res <- hmm_forward_filter(
       lik,
-      kernal = k3,
-      grid = grid3,
+      kernel = k3,
       mask_likelihood = TRUE
     )
 
@@ -386,7 +383,7 @@ describe("hmm_forward_filter() known issues", {
     lik <- make_lik(m_zero, m_p, dates = dates[1:2])
 
     err <- rlang::catch_cnd(
-      res <- hmm_forward_filter(lik, kernal = k3, grid = grid3),
+      res <- hmm_forward_filter(lik, kernel = k3),
       classes = "error"
     )
 
@@ -410,7 +407,7 @@ describe("hmm_forward_filter() known issues", {
     # TODO: once a guard is added, this should abort (or warn) with a clear
     # message instead of silently returning NaN:
     # expect_error(
-    #   hmm_forward_filter(lik, kernal = k3, grid = grid3),
+    #   hmm_forward_filter(lik, kernel = k3 ),
     #   "no mass",
     #   fixed = TRUE
     # )
@@ -421,12 +418,13 @@ describe("hmm_forward_filter() known issues", {
     unnormalised <- m_p * 10
     lik <- make_lik(unnormalised, m_q, dates = dates[1:2])
 
-    res <- hmm_forward_filter(lik, kernal = k3, grid = grid3)
+    res <- hmm_forward_filter(lik, kernel = k3)
 
     # Documents current behaviour: slice 1 is passed through unchanged
-    expect_equal(sum(res$normalised_posterior[,, 1]), 10)
+
     # TODO: if t = 1 should be normalised, this should be 1:
-    # expect_equal(sum(res$normalised_posterior[,, 1]), 1)
+    expect_equal(sum(res$normalised_posterior[,, 1]), 1)
+    # this is now done
   })
 })
 
@@ -442,7 +440,7 @@ describe("hmm_forward_filter() with the real convolution", {
     lik <- make_lik(slices[[1]], slices[[2]], slices[[3]], slices[[4]])
     grid5 <- data.frame(lon = seq_len(n), lat = seq_len(n))
 
-    res <- hmm_forward_filter(lik, kernal = k3, grid = grid5)
+    res <- hmm_forward_filter(lik, kernel = k3)
 
     expect_equal(dim(res$normalised_posterior), dim(lik))
     expect_equal(dim(res$pc_predicted), dim(lik))

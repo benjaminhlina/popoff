@@ -49,9 +49,15 @@ msg_bathy <- function(bathy) {
 #' @name msg_function
 #' @keywords internal
 msg_dates <- function(df, n_days) {
-  cli::cli_alert_info(
-    "Generating depth profile likelihood for {.val {min(df$date)}} through {.val {max(df$date)}} which is a total of {n_days} days."
-  )
+  d_min <- min(df$date)
+  d_max <- max(df$date)
+  d_span <- difftime(d_max, d_min)
+
+  cli::cli_alert_info(paste0(
+    "Generating depth profile likelihood for {.val {d_min}} through ",
+    "{.val {d_max}}, a total of {.val {d_span}} days, while only ",
+    "{.val {n_days}} days had observed depth values."
+  ))
 }
 
 #' @param t1 end time

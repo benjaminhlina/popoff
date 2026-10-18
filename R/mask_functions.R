@@ -24,11 +24,7 @@ mask_likelihood_array <- function(
   bound_threshold = 0.1,
   bound_min = 10
 ) {
-  if (!(identical(dim(predicted), dim(likelihood)))) {
-    cli::cli_abort(
-      "The dimensions of predicted are {.val {dim(predicted)}} and do not match {.val {dim(likelihood)}}"
-    )
-  }
+  error_pred(predicted = predicted, likelihood = likelihood)
 
   # ------ gab number of rows and columns
   n_row <- nrow(likelihood)

@@ -11,7 +11,7 @@ hmm_forward_filter(
   bound_min = 10,
   mask_likelihood = TRUE,
   progress = TRUE,
-  return_maps = FALSE
+  return_maps = TRUE
 )
 }
 \arguments{
@@ -33,7 +33,7 @@ step instead of a plain product. Default is \code{TRUE}.}
 Default is \code{TRUE}.}
 
 \item{return_maps}{a \code{logical} value that returns maps of posteriors and
-predictions which are large. Defaults to \code{FALSE}.}
+predictions which are large. Defaults to \code{TRUE}.}
 }
 \value{
 List with \code{normalised_posterior} (\verb{[n_col, n_row, n_time]}),

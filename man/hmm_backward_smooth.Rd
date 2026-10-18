@@ -4,7 +4,7 @@
 \alias{hmm_backward_smooth}
 \title{HMM backward filter with handling for empty or missing likelihood updates}
 \usage{
-hmm_backward_smooth(forward_filter_obj, kernel, progress = TRUE)
+hmm_backward_smooth(forward_filter_obj, progress = TRUE)
 }
 \arguments{
 \item{forward_filter_obj}{A \code{list} containing at least two elements,
@@ -14,12 +14,6 @@ probability surfaces derived from \code{\link[=hmm_forward_filter]{hmm_forward_f
 
 The second is \code{pc_predicted} whcih is one-step-ahead predicted surfaces
 the filtered surface after applying the movement kernel0.}
-
-\item{kernel}{A numeric \verb{matrix`` giving the movement (diffusion) kernel used for the 2D convolution created by [gaussian_kernel()]. This is the same kernel used in }hmm_forward_filter()`.}
-
-\item{likelihood_array}{A \code{numeric} array with dimensions \verb{[x, y, t_step]} holding the
-observation likelihood surfaces. It must have the same dimensions as both
-\code{normalised_posterior} and \code{pc_predicted}.}
 }
 \value{
 A numeric array with the same dimensions as \code{normalised_posterior},

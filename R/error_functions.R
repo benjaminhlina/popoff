@@ -75,7 +75,17 @@ error_df <- function(df, arg_name = NULL) {
   }
 }
 
+#' @param dot_names an argument supplied to `...`.`
+#' @name error_functions
+#' @keywords internal
 
+error_dots <- function(dot_names) {
+  if (is.null(dot_names) || any(dot_names == "")) {
+    cli::cli_abort(
+      "All arguments passed through `...` must be named.",
+    )
+  }
+}
 #' @param path The file path to a file.
 #' @name error_functions
 #' @keywords internal
@@ -161,7 +171,12 @@ error_focal_dim <- function(obj, arg_name = NULL) {
 #' @keywords internal
 error_forward_filter_obj <- function(forward_filter_obj) {
   error_list(forward_filter_obj)
-  required <- c("normalised_posterior", "pc_predicted")
+  required <- c(
+    "normalised_posterior",
+    "pc_predicted",
+    "kernel",
+    "likelihood_array"
+  )
   missing <- setdiff(required, names(forward_filter_obj))
 
   if (length(missing) > 0) {
@@ -208,21 +223,6 @@ error_input_data <- function(input_data, type) {
   }
 }
 
-#' @param mask a `logical`.
-#' @param sigma a `numeric`.
-#' @name error_functions
-#' @keywords internal
-
-error_kernel <- function(mask, sigma) {
-  if (isTRUE(mask) & sigma == 0) {
-    cli::cli_abort(
-      c(
-        "When mask is {.val {mask}} and sigma is {.val {sigma}} Gaussian Kernel produces {.val {NaN}}",
-        "x" = "If using a value of {.val {mask}} for mask then sigma has to be > {.val 0}"
-      )
-    )
-  }
-}
 
 #' @param list a `list`.
 #' @name error_functions
@@ -283,6 +283,40 @@ error_limits <- function(vec, arg_name = NULL) {
     ))
   }
 }
+
+#' @param array a array
+#' @name error_functions
+#' @keywords internal
+
+error_likelihood_array <- function(array, arg_name = NULL) {
+  if (is.null(arg_name)) {
+    arg_name <- rlang::as_label(rlang::enexpr(array))
+  }
+
+  if (!inherits(array, "array")) {
+    cli::cli_abort(
+      c(
+        "{arg. arg_name} requires a 3-dimensional array.",
+        "x" = "Please provide a 3-dimensional array."
+      )
+    )
+  }
+  dims <- dim(array)
+
+  if (!length(dims) %in% 3) {
+    cli::cli_abort(
+      c(
+        "{.arg arg_name} does not have the correct dimensions",
+        "x" = "Please provide a likelihood array that consists of 3-dmensions that are [lon, lat, time_interval]"
+      )
+    )
+  }
+
+  if (dims[3] < 2) {
+    cli::cli_abort("{.arg arg_name} must have at least 2 time slices.")
+  }
+}
+
 
 #' @param linear_index the linear index column of event_log `data.frame` to check
 #' @param event_date a `vector` containing event dates in event_log
@@ -466,6 +500,21 @@ error_matrix <- function(matrix, dim_check = NULL, arg_name = NULL) {
   return(matrix)
 }
 
+#' @param mask a `logical`.
+#' @param sigma a `numeric`.
+#' @name error_functions
+#' @keywords internal
+
+error_mask <- function(mask, sigma) {
+  if (isTRUE(mask) & sigma == 0) {
+    cli::cli_abort(
+      c(
+        "When mask is {.val {mask}} and sigma is {.val {sigma}} Gaussian Kernel produces {.val {NaN}}",
+        "x" = "If using a value of {.val {mask}} for mask then sigma has to be > {.val 0}"
+      )
+    )
+  }
+}
 #' @param event_log_dates a `vector` containing event dates
 #' @param summary_dates a `vector` containing sumamry dates
 #' @name error_functions
@@ -558,6 +607,20 @@ error_path <- function(path) {
   }
 }
 
+#' @param predicted a 3-dimensional array of predicted values
+#' @param likelihood a 3-dimensional array of likelihood values
+#' @name error_functions
+#' @keywords internal
+error_pred <- function(predicted, likelihood) {
+  pred_dims <- dim(predicted)
+  lik_dim <- dim(likelihood)
+
+  if (!(identical(pred_dims, lik_dim))) {
+    cli::cli_abort(
+      "The dimensions of predicted are {.val {pred_dims}} and do not match {.val {lik_dims}}"
+    )
+  }
+}
 
 #' @param out_dir a chracter string containing the out directory
 #' @name error_functions
@@ -621,6 +684,27 @@ error_transform <- function(back_transform, parameter_range) {
         "x" = "Please supply {.arg parameter_range} with a {.cls vector} 
         containing two numerical values (e.g., {.val c(1, 5)})"
       )
+    )
+  }
+}
+#' @param workers a `numeric` that contains the number of works
+#' @name error_functions
+#' @keywords internal
+error_workers <- function(workers) {
+  if (is.null(workers) || workers < 2) {
+    cli::cli_abort(
+      "Parallel execution requested, but no mirai daemons are set. Please provide {.arg workers} (> 1) or call {.fn mirai::daemons} first."
+    )
+  }
+}
+
+#' @param unknown a character that is an argument.
+#' @name error_functions
+#' @keywords internal
+error_wrong_arg <- function(unknown) {
+  if (length(unknown) > 0) {
+    cli::cli_abort(
+      "Unused argument(s) in `...`: {.arg unknown}. See `gaussian_kernel()` and `hmm_forward_filter()` for valid arguments.",
     )
   }
 }

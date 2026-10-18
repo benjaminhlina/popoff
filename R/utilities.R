@@ -271,3 +271,24 @@
   mask <- !is.na(bathy_array)
   return(mask)
 }
+
+#' Checks if the argument is used
+#' Provides logical is maks is valid
+#'
+#' @param fnc a function to test
+#' @name arg_functions
+#' @keywords internal
+
+.used_args <- function(fnc) {
+  fnc <- match.fun(fnc)
+
+  base_args <- if (identical(fnc, gaussian_kernel)) {
+    c("sigma", "normalize", "mask")
+  } else if (identical(fnc, hmm_forward_filter)) {
+    c("likelihood_array", "kernel", "return_maps")
+  }
+  other_args <- names(formals(fnc))
+
+  used_args <- setdiff(other_args, base_args)
+  return(used_args)
+}

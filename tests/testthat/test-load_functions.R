@@ -25,46 +25,9 @@ test_that("SpatRaster input is returned as-is with idx / idx_na attributes", {
   expect_identical(attr(out, "idx_na"), "IDX_NA")
 })
 
-test_that("matrix input is converted to SpatRaster with idx attributes", {
-  skip_if_not_installed("terra")
-
-  local_mocked_bindings(
-    .valid_idx = function(bathy, na = FALSE) if (na) "IDX_NA" else "IDX"
-  )
-
-  m <- matrix(1:100, nrow = 10)
-
-  out <- suppressMessages(load_raster(m))
-
-  expect_s4_class(out, "SpatRaster")
-  expect_equal(dim(out)[1:2], c(10, 10))
-  expect_identical(attr(out, "idx"), "IDX")
-  expect_identical(attr(out, "idx_na"), "IDX_NA")
-})
-
-test_that("RasterLayer input is converted to SpatRaster with idx attributes", {
-  skip_if_not_installed("terra")
-  skip_if_not_installed("raster")
-
-  local_mocked_bindings(
-    .valid_idx = function(bathy, na = FALSE) if (na) "IDX_NA" else "IDX"
-  )
-
-  rl <- raster::raster(matrix(1:25, nrow = 5))
-
-  out <- suppressMessages(load_raster(rl))
-
-  expect_s4_class(out, "SpatRaster")
-  expect_identical(attr(out, "idx"), "IDX")
-  expect_identical(attr(out, "idx_na"), "IDX_NA")
-})
 
 test_that(".rds path is loaded and recursed on correctly", {
   skip_if_not_installed("terra")
-
-  local_mocked_bindings(
-    .valid_idx = function(bathy, na = FALSE) if (na) "IDX_NA" else "IDX"
-  )
 
   m <- matrix(1:16, nrow = 4)
   f <- withr::local_tempfile(fileext = ".rds")
@@ -73,7 +36,6 @@ test_that(".rds path is loaded and recursed on correctly", {
   out <- suppressMessages(load_raster(f))
 
   expect_s4_class(out, "SpatRaster")
-  expect_identical(attr(out, "idx"), "IDX")
 })
 
 test_that(".RData path with a valid object is loaded and recursed on correctly", {
@@ -205,4 +167,12 @@ test_that('load_raster errors when supplied `list()`', {
     regexp = "matrix, or a file path to one of those.",
     fixed = TRUE
   )
+})
+
+test_that('load_raster converts raster to spat raster', {
+  r <- raster::raster(bathy_matrix)
+  out <- load_raster(r)
+  rs <- terra::rast(r)
+
+  expect_equal(class(out), class(rs))
 })

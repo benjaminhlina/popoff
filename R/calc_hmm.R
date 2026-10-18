@@ -21,7 +21,7 @@
 #' @param progress a `logical` value that turns on and off the progress bar.
 #' Default is `TRUE`.
 #' @param return_maps a `logical` value that returns maps of posteriors and
-#' predictions which are large. Defaults to `FALSE`.
+#' predictions which are large. Defaults to `TRUE`.
 #'
 #' @return List with `normalised_posterior` (`[n_col, n_row, n_time]`),
 #' `pc_predicted` (post-convolution prediction, same dims) and
@@ -35,8 +35,16 @@ hmm_forward_filter <- function(
   bound_min = 10,
   mask_likelihood = TRUE,
   progress = TRUE,
-  return_maps = FALSE
+  return_maps = TRUE
 ) {
+  error_likelihood_array(likelihood_array)
+  error_matrix(kernel)
+  error_numeric(bound_threshold)
+  error_numeric(bound_min)
+  error_logical(mask_likelihood)
+  error_logical(progress)
+  error_logical(return_maps)
+
   t0 <- msg_start("HMM forward filter")
   dims <- dim(likelihood_array)
   n_time <- dims[3]
@@ -47,12 +55,6 @@ hmm_forward_filter <- function(
 
   dn <- dimnames(likelihood_array)
   # Optional storage lists only if maps are explicitly requested
-  if (isTRUE(return_maps)) {
-    post_list <- vector("list", n_time)
-    pred_list <- vector("list", n_time)
-    post_list[[1]] <- likelihood_array[,, 1]
-    pred_list[[1]] <- likelihood_array[,, 1]
-  }
 
   # ----- grab land values ------
   land <- is.na(likelihood_array[,, 1])
@@ -62,6 +64,13 @@ hmm_forward_filter <- function(
   current_posterior <- likelihood_array[,, 1]
   current_posterior[land] <- 0
 
+  current_posterior <- current_posterior / sum(current_posterior, na.rm = TRUE)
+  if (isTRUE(return_maps)) {
+    post_list <- vector("list", n_time)
+    pred_list <- vector("list", n_time)
+    post_list[[1]] <- current_posterior # Uses the normalized version
+    pred_list[[1]] <- current_posterior # Uses the normalized version
+  }
   if (isTRUE(progress)) {
     msg_progress(
       n_time = n_time,
@@ -183,6 +192,7 @@ hmm_forward_filter <- function(
     )
 
     results$kernel <- kernel
+    results$likelihood_array <- likelihood_array
 
     results$normalised_posterior[land_arr] <- NA
     results$pc_predicted[land_arr] <- NA
@@ -209,12 +219,6 @@ hmm_forward_filter <- function(
 #'
 #' The second is `pc_predicted` whcih is one-step-ahead predicted surfaces
 #' the filtered surface after applying the movement kernel0.
-#' @param kernel A numeric `matrix`` giving the movement (diffusion) kernel used
-#' for the 2D convolution created by [gaussian_kernel()]. This is the same kernel
-#' used in `hmm_forward_filter()`.
-#' @param likelihood_array A `numeric` array with dimensions `[x, y, t_step]` holding the
-#' observation likelihood surfaces. It must have the same dimensions as both
-#' `normalised_posterior` and `pc_predicted`.
 #'
 #' @details
 #' All arrays use the layout `[x, y, t_step]`, with time as the last dimension.
@@ -259,15 +263,18 @@ hmm_forward_filter <- function(
 
 hmm_backward_smooth <- function(
   forward_filter_obj,
-  kernel,
   progress = TRUE
 ) {
-  t0 <- msg_start("HMM backwards smoothing")
   error_forward_filter_obj(forward_filter_obj)
+  error_logical(progress)
+  t0 <- msg_start("HMM backwards smoothing")
 
   # Filtered posteriors (alpha_t) and one-step predictions from the forward pass
   alpha <- forward_filter_obj$normalised_posterior
   pred <- forward_filter_obj$pc_predicted
+  likelihood_array <- forward_filter_obj$likelihood_array
+  kernel <- forward_filter_obj$kernel
+
   dims <- dim(alpha)
   dn <- dimnames(alpha)
   n_time <- dims[3]
@@ -278,9 +285,18 @@ hmm_backward_smooth <- function(
 
   smooth <- array(0, dim = dims, dimnames = dn)
 
-  # Last smoothed state equals the last filtered state
-  smooth[,, n_time] <- alpha[,, n_time]
+  # ----- Derive pop-off boundary condition from the last slice of likelihood_array -----
+  pop_off_slice <- likelihood_array[,, n_time + 1]
+  pop_off_slice[land] <- 0
+  pop_off_sum <- sum(pop_off_slice, na.rm = TRUE)
 
+  if (pop_off_sum > 0) {
+    # Normalize the final likelihood slice to use as the exact pop-off constraint
+    smooth[,, n_time] <- pop_off_slice / pop_off_sum
+  } else {
+    # Fallback to the forward filter's last state if the slice has no mass
+    smooth[,, n_time] <- alpha[,, n_time]
+  }
   n_fallback <- 0L
 
   if (isTRUE(progress)) {

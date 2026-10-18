@@ -30,12 +30,12 @@ gaussian_kernel <- function(
   back_transform = FALSE,
   sigma_range = NULL
 ) {
-  error_numeric_min(sigma)
+  error_numeric_min(sigma, col = "sigma")
   error_numeric(muadv)
   error_numeric(truncate)
   error_logical(normalize)
   error_logical(mask)
-  error_kernel(mask, sigma)
+  error_mask(mask, sigma)
   error_logical(back_transform)
   error_transform(
     back_transform = back_transform,
@@ -43,7 +43,7 @@ gaussian_kernel <- function(
   )
 
   if (!is.null(radius)) {
-    error_numeric_min(radius)
+    error_numeric_min(radius, col = "radius")
   }
 
   # the following blog post walks th

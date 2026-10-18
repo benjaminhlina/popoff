@@ -42,29 +42,14 @@ eval_sigma <- function(
   # route extra arguments by name ----
   if (length(dots) > 0) {
     dot_names <- names(dots)
+    error_dots(dot_names)
 
-    if (is.null(dot_names) || any(dot_names == "")) {
-      cli::cli_abort(
-        "All arguments passed through `...` must be named.",
-      )
-    }
-
-    kern_formals <- setdiff(
-      names(formals(gaussian_kernel)),
-      c("sigma", "normalize", "mask")
-    )
-    hmm_formals <- setdiff(
-      names(formals(hmm_forward_filter)),
-      c("likelihood_array", "kernel", "return_maps")
-    )
+    kern_formals <- .used_args(fnc = gaussian_kernel)
+    hmm_formals <- .used_args(fnc = hmm_forward_filter)
 
     unknown <- setdiff(dot_names, c(kern_formals, hmm_formals))
 
-    if (length(unknown) > 0) {
-      cli::cli_abort(
-        "Unused argument(s) in `...`: {.arg unknown}. See `gaussian_kernel()` and `hmm_forward_filter()` for valid arguments.",
-      )
-    }
+    error_wrong_arg(unknown = unknown)
 
     kern_args <- dots[dot_names %in% kern_formals]
     hmm_args <- dots[dot_names %in% hmm_formals]
@@ -119,6 +104,7 @@ eval_sigma <- function(
   return(out)
 }
 
+
 #' Evaluate the forward-filter negative log-likelihood over a vector of sigmas
 #'
 #' Evaluates `eval_sigma()` for each value in `sigma_vec` (in parallel if
@@ -143,6 +129,8 @@ eval_sigma_iterate <- function(
   ...,
   .progress = TRUE
 ) {
+  error_logical(parallel)
+  error_logical(.progress)
   t0 <- msg_start("sigma evaluation in parallel")
 
   extra_args <- list(...)
@@ -155,11 +143,7 @@ eval_sigma_iterate <- function(
         {.val {mirai::status()$connections}} workers"
       )
     } else {
-      if (is.null(workers) || workers < 2) {
-        cli::cli_abort(
-          "Parallel execution requested, but no mirai daemons are set. Please provide {.arg workers} (> 1) or call {.fn mirai::daemons} first."
-        )
-      }
+      error_workers(workers = workers)
       mirai::daemons(workers)
       on.exit(mirai::daemons(0), add = TRUE) # only reached if we started them
     }
