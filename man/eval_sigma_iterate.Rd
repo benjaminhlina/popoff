@@ -18,6 +18,10 @@ eval_sigma_iterate(
 
 \item{likelihood_array}{Likelihood array produced by \code{\link[=calc_likdepth_transmit]{calc_likdepth_transmit()}}}
 
+\item{parallel}{a \code{logical} that controls whether to use in parallel}
+
+\item{workers}{a \code{numeric} that determines the number of workers to use.}
+
 \item{...}{Further arguments passed to \code{eval_sigma()}. See \code{\link[=eval_sigma]{eval_sigma()}},
 \code{\link[=gaussian_kernel]{gaussian_kernel()}}, and \code{\link[=hmm_forward_filter]{hmm_forward_filter()}}.}
 

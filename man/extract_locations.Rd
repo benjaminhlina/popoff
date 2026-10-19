@@ -19,6 +19,8 @@ three-dimensional \code{array} with dimensions \verb{[lon, lat, date]}. The
 \item{type}{A \code{character} string giving the statistic used to select the
 estimated cell for each day. One of \code{"max"} (default), \code{"min"}, \code{"mean"},
 or \code{"median"}.}
+
+\item{drop_empty}{A \code{logical} value that controls whether to drop empty columns}
 }
 \value{
 A \code{data.frame} with one row per day that has data and the columns:

@@ -294,7 +294,7 @@ hmm_backward_smooth <- function(
   n_fallback <- 0L
 
   msg_progress(
-    progres = progress,
+    progress = progress,
     n_time = n_time,
     name = "HMM backwards smoothing",
     type = "Smoothing"

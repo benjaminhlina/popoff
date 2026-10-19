@@ -122,7 +122,7 @@ msg_load_rdata <- function(obj, obj_name) {
     "Loaded object {.val {obj_name[1]}} of class {.cls {class(obj)}} from file."
   )
 }
-#' @param n_bad an integer of the bad esimtates
+#' @param n_bad_days an integer of the bad esimtates
 #' @name msg_function
 #' @keywords internal
 msg_no_mass <- function(n_bad_days) {

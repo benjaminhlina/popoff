@@ -14,7 +14,7 @@
 #' search step can be calculated.
 #' @param likelihood_array The likelihood array passed to
 #' [eval_sigma_iterate()] for evaluating each candidate sigma.
-#' @param n_interval an `integer`. Number of sigma values to evaluate in each
+#' @param n_points an `integer`. Number of sigma values to evaluate in each
 #' refinement iteration. Use an odd number so that the previous best value is
 #' included in the new search Default is `17`.
 #' @param n_interval an `integer`. Number of refinement iteration. Default is `2`.
@@ -22,6 +22,8 @@
 #' `FALSE`.
 #' @param mask_likelihood a `logical`. Passed to [eval_sigma_iterate()].
 #' Default is `FALSE`.
+#' @param parallel a `logical` that controls whether to use in parallel
+#' @param workers a `numeric` that determines the number of workers to use.
 #' @param .progress a `logical`. Whether to show a progress bar during parallel
 #' evaluation. Passed to [eval_sigma_iterate()]. Default is `TRUE`.
 #'

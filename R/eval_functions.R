@@ -12,8 +12,7 @@
 #' kernel. See [gaussian_kernel()]. Defults to `TRUE`.
 #' @param likelihood_array the `likelihood_array` produced by
 #' [calc_likdepth_transmit()].
-#'
-#' @param return_map a `logical` that returns posterior and predicted layers
+#' @param return_maps a `logical` that returns posterior and predicted layers
 #' when `TRUE`. Defaults to `FALSE` as this is computationally expensive.
 #' @param ... additional named arguments passed to either
 #' [gaussian_kernel()] (`muadv`, `back_transform`, `sigma_range`) or
@@ -112,6 +111,8 @@ eval_sigma <- function(
 #'
 #' @param sigma_vec A numeric vector of sigma values.
 #' @param likelihood_array Likelihood array produced by [calc_likdepth_transmit()]
+#' @param parallel a `logical` that controls whether to use in parallel
+#' @param workers a `numeric` that determines the number of workers to use.
 #' @param ... Further arguments passed to `eval_sigma()`. See [eval_sigma()],
 #' [gaussian_kernel()], and [hmm_forward_filter()].
 #' @param .progress Logical value to show a progress bar.

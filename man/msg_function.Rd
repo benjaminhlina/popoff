@@ -82,6 +82,8 @@ msg_window(window)
 
 \item{obj_name}{the name of an object}
 
+\item{n_bad_days}{an integer of the bad esimtates}
+
 \item{progress}{a \code{logical} that controls whether the msg occurs.}
 
 \item{n_time}{a \code{numeric} value that is the number of time intervals}
@@ -97,8 +99,6 @@ msg_window(window)
 \item{linear_index}{Position of the known location within a daily slice}
 
 \item{window}{a numerical value}
-
-\item{n_bad}{an integer of the bad esimtates}
 }
 \description{
 These functions produce information to the user.
