@@ -4,53 +4,74 @@
 \alias{error_functions}
 \alias{error_chr}
 \alias{error_crs}
+\alias{error_smoothing_collapsed}
 \alias{error_date}
+\alias{error_depth_lik}
 \alias{error_df}
+\alias{error_dots}
 \alias{error_empty_file}
 \alias{error_extent}
+\alias{error_filter_array}
 \alias{error_focal_dim}
+\alias{error_forward_filter_obj}
 \alias{error_input_data}
-\alias{error_kernel}
 \alias{error_list}
 \alias{error_likelihood_matrix}
 \alias{error_limits}
+\alias{error_likelihood_array}
 \alias{error_linear_index}
 \alias{error_load}
 \alias{error_logical}
 \alias{error_matrix}
+\alias{error_mask}
 \alias{error_missing_dates}
 \alias{error_missing_names}
 \alias{error_numeric}
 \alias{error_numeric_min}
 \alias{error_path}
+\alias{error_pred}
+\alias{error_optimization}
 \alias{error_out_dir}
+\alias{error_sigma_iterate_obj}
 \alias{error_spatrast}
 \alias{error_transform}
+\alias{error_workers}
+\alias{error_wrong_arg}
 \title{Error functions}
 \usage{
 error_chr(chr, col = NULL)
 
 error_crs(crs, arg_name = NULL)
 
+error_smoothing_collapsed(fac, time_step)
+
 error_date(date, col, expected_cls)
 
+error_depth_lik(time, pulled_range, e)
+
 error_df(df, arg_name = NULL)
+
+error_dots(dot_names)
 
 error_empty_file(path)
 
 error_extent(vec, arg_name = NULL)
 
+error_filter_array(array, name)
+
 error_focal_dim(obj, arg_name = NULL)
 
-error_input_data(input_data, type)
+error_forward_filter_obj(forward_filter_obj)
 
-error_kernel(mask, sigma)
+error_input_data(input_data, type)
 
 error_list(list)
 
 error_likelihood_matrix(matrix, idx)
 
 error_limits(vec, arg_name = NULL)
+
+error_likelihood_array(array, arg_name = NULL)
 
 error_linear_index(event_date, linear_index)
 
@@ -59,6 +80,8 @@ error_load(obj, arg_name = NULL)
 error_logical(vec, arg_name = NULL)
 
 error_matrix(matrix, dim_check = NULL, arg_name = NULL)
+
+error_mask(mask, sigma)
 
 error_missing_dates(event_log_dates, summary_dates)
 
@@ -70,11 +93,21 @@ error_numeric_min(vec, col, min_val = 0)
 
 error_path(path)
 
+error_pred(predicted, likelihood)
+
+error_optimization(neg_log_lik, likelihood_array)
+
 error_out_dir(out_dir)
+
+error_sigma_iterate_obj(sigma_iterate_obj, n_points)
 
 error_spatrast(spatrast, arg_name = NULL)
 
 error_transform(back_transform, parameter_range)
+
+error_workers(workers)
+
+error_wrong_arg(unknown)
 }
 \arguments{
 \item{chr}{a character to check}
@@ -85,25 +118,39 @@ error_transform(back_transform, parameter_range)
 
 \item{arg_name}{The name of the argument}
 
+\item{fac}{a forward filter object that has been smoothed for a given timestep}
+
+\item{time_step}{a numeric containing the timestep}
+
 \item{date}{a date to check}
 
 \item{expected_cls}{a class to be expected e.g., \code{Date} or \code{POSIXct}}
 
+\item{time}{a character string that is the date or time.}
+
+\item{pulled_range}{a vector containing the range that has been pulled.}
+
+\item{e}{error environment}
+
 \item{df}{a \code{data.frame}}
+
+\item{dot_names}{an argument supplied to \code{...}.`}
 
 \item{path}{The file path to a file.}
 
 \item{vec}{a \code{vector} to check if numeric}
 
+\item{array}{a array}
+
+\item{name}{name of array}
+
 \item{obj}{an object to assess}
+
+\item{forward_filter_obj}{a \code{list} produced by \code{\link[=hmm_forward_filter]{hmm_forward_filter()}}}
 
 \item{input_data}{a \code{data.frame} to assess}
 
 \item{type}{the type of input data. A \code{character} usually \code{"raw_log"} or \code{"event_log"}.}
-
-\item{mask}{a \code{logical}.}
-
-\item{sigma}{a \code{numeric}.}
 
 \item{list}{a \code{list}.}
 
@@ -115,6 +162,10 @@ error_transform(back_transform, parameter_range)
 
 \item{linear_index}{the linear index column of event_log \code{data.frame} to check}
 
+\item{mask}{a \code{logical}.}
+
+\item{sigma}{a \code{numeric}.}
+
 \item{event_log_dates}{a \code{vector} containing event dates}
 
 \item{summary_dates}{a \code{vector} containing sumamry dates}
@@ -123,13 +174,29 @@ error_transform(back_transform, parameter_range)
 
 \item{min_val}{a numerical mimimum value allowed}
 
+\item{predicted}{a 3-dimensional array of predicted values}
+
+\item{likelihood}{a 3-dimensional array of likelihood values}
+
+\item{neg_log_lik}{negative log likelihood}
+
+\item{likelihood_array}{the likelihood array}
+
 \item{out_dir}{a chracter string containing the out directory}
+
+\item{sigma_iterate_obj}{sigma_iterate object}
+
+\item{n_points}{a numeric}
 
 \item{spatrast}{a raster object to assess}
 
 \item{back_transform}{a \code{logical} value}
 
 \item{parameter_range}{a \code{vector} containing two \code{numerical} values.}
+
+\item{workers}{a \code{numeric} that contains the number of works}
+
+\item{unknown}{a character that is an argument.}
 }
 \description{
 These functions produce error message displayed to the user.

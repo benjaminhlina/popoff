@@ -17,6 +17,7 @@ error_chr <- function(chr, col = NULL) {
   }
 }
 
+
 #' @param crs a character string of a crs
 #' @param arg_name The name of the argument
 #'
@@ -38,6 +39,19 @@ error_crs <- function(crs, arg_name = NULL) {
   }
 }
 
+#' @param fac a forward filter object that has been smoothed for a given timestep
+#' @param time_step a numeric containing the timestep
+#'
+#' @name error_functions
+#' @keywords internal
+
+error_smoothing_collapsed <- function(fac, time_step) {
+  if (!is.finite(fac) || fac <= 0) {
+    cli::cli_abort(
+      "Smoothing collapsed at time step {t - 1}: filtered posterior also sums to {fac} at time step {t - 1} which has to be > {.val 0}"
+    )
+  }
+}
 
 #' @param date a date to check
 #' @param expected_cls a class to be expected e.g., `Date` or `POSIXct`
@@ -56,6 +70,22 @@ error_date <- function(date, col, expected_cls) {
   }
 }
 
+#' @param time a character string that is the date or time.
+#' @param pulled_range a vector containing the range that has been pulled.
+#' @param e error environment
+#'
+#' @name error_functions
+#' @keywords internal
+
+error_depth_lik <- function(time, pulled_range, e) {
+  cli::cli_abort(
+    c(
+      "x" = "Depth-transmission likelihood failed for {.val {as.character(time)}}.",
+      "i" = "Depth_min/Depth_max: {.val {pulled_range[1]}} / {.val {pulled_range[2]}}"
+    ),
+    parent = e
+  )
+}
 
 #' @param df a `data.frame`
 #' @name error_functions
@@ -75,7 +105,17 @@ error_df <- function(df, arg_name = NULL) {
   }
 }
 
+#' @param dot_names an argument supplied to `...`.`
+#' @name error_functions
+#' @keywords internal
 
+error_dots <- function(dot_names) {
+  if (is.null(dot_names) || any(dot_names == "")) {
+    cli::cli_abort(
+      "All arguments passed through `...` must be named.",
+    )
+  }
+}
 #' @param path The file path to a file.
 #' @name error_functions
 #' @keywords internal
@@ -102,6 +142,35 @@ error_extent <- function(vec, arg_name = NULL) {
     ))
   }
 }
+
+#' @param array an array to check
+#' @param name name of array
+#' @name error_functions
+#' @keywords internal
+error_filter_array <- function(array, name) {
+  dims <- dim(array)
+
+  # if (length(dims) != 3 & (name %in% "kernel")) {
+  #   cli::cli_abort(
+  #     c(
+  #       "{.field {name}} must be a 3-dimensional array with dimensions {.code [x, y, t_steps]}.",
+  #       "x" = "It has {length(dims)} dimension{?s}."
+  #     )
+  #   )
+  # }
+
+  # if (dims[3] < 2) {
+  #   cli::cli_abort(
+  #     c(
+  #       "{.field {name}} must have at least 2 time steps.",
+  #       "x" = "The third dimension (time) has length {dims[3]}."
+  #     )
+  #   )
+  # }
+
+  invisible(dims)
+}
+
 #' @param obj an object either `vector` or `matrix`
 #' @name error_functions
 #' @keywords internal
@@ -125,6 +194,32 @@ error_focal_dim <- function(obj, arg_name = NULL) {
         )
       )
     }
+  }
+}
+#' @param forward_filter_obj a `list` produced by [hmm_forward_filter()]
+#' @name error_functions
+#' @keywords internal
+error_forward_filter_obj <- function(forward_filter_obj) {
+  error_list(forward_filter_obj)
+  required <- c(
+    "normalised_posterior",
+    "pc_predicted",
+    "kernel",
+    "likelihood_array"
+  )
+  missing <- setdiff(required, names(forward_filter_obj))
+
+  if (length(missing) > 0) {
+    cli::cli_abort(
+      c(
+        "{.arg forward_filter_obj} is missing required array{?s}: {.field {missing}}.",
+        "i" = "Did you run {.fn hmm_forward_filter} without {.code return_maps = TRUE}?",
+        "i" = "Re-run {.fn hmm_forward_filter} with {.code return_maps = TRUE}."
+      )
+    )
+  }
+  for (nm in required) {
+    error_filter_array(forward_filter_obj[[nm]], nm)
   }
 }
 
@@ -158,21 +253,6 @@ error_input_data <- function(input_data, type) {
   }
 }
 
-#' @param mask a `logical`.
-#' @param sigma a `numeric`.
-#' @name error_functions
-#' @keywords internal
-
-error_kernel <- function(mask, sigma) {
-  if (isTRUE(mask) & sigma == 0) {
-    cli::cli_abort(
-      c(
-        "When mask is {.val {mask}} and sigma is {.val {sigma}} Gaussian Kernel produces {.val {NaN}}",
-        "x" = "If using a value of {.val {mask}} for mask then sigma has to be > {.val 0}"
-      )
-    )
-  }
-}
 
 #' @param list a `list`.
 #' @name error_functions
@@ -233,6 +313,40 @@ error_limits <- function(vec, arg_name = NULL) {
     ))
   }
 }
+
+#' @param array a array
+#' @name error_functions
+#' @keywords internal
+
+error_likelihood_array <- function(array, arg_name = NULL) {
+  if (is.null(arg_name)) {
+    arg_name <- rlang::as_label(rlang::enexpr(array))
+  }
+
+  if (!inherits(array, "array")) {
+    cli::cli_abort(
+      c(
+        "{arg. arg_name} requires a 3-dimensional array.",
+        "x" = "Please provide a 3-dimensional array."
+      )
+    )
+  }
+  dims <- dim(array)
+
+  if (!length(dims) %in% 3) {
+    cli::cli_abort(
+      c(
+        "{.arg arg_name} does not have the correct dimensions",
+        "x" = "Please provide a likelihood array that consists of 3-dmensions that are [lon, lat, time_interval]"
+      )
+    )
+  }
+
+  if (dims[3] < 2) {
+    cli::cli_abort("{.arg arg_name} must have at least 2 time slices.")
+  }
+}
+
 
 #' @param linear_index the linear index column of event_log `data.frame` to check
 #' @param event_date a `vector` containing event dates in event_log
@@ -416,6 +530,21 @@ error_matrix <- function(matrix, dim_check = NULL, arg_name = NULL) {
   return(matrix)
 }
 
+#' @param mask a `logical`.
+#' @param sigma a `numeric`.
+#' @name error_functions
+#' @keywords internal
+
+error_mask <- function(mask, sigma) {
+  if (isTRUE(mask) & sigma == 0) {
+    cli::cli_abort(
+      c(
+        "When mask is {.val {mask}} and sigma is {.val {sigma}} Gaussian Kernel produces {.val {NaN}}",
+        "x" = "If using a value of {.val {mask}} for mask then sigma has to be > {.val 0}"
+      )
+    )
+  }
+}
 #' @param event_log_dates a `vector` containing event dates
 #' @param summary_dates a `vector` containing sumamry dates
 #' @name error_functions
@@ -474,6 +603,7 @@ error_numeric <- function(vec, arg_name = NULL) {
   }
 }
 
+
 #' @param min_val a numerical mimimum value allowed
 #' @name error_functions
 #' @keywords interna
@@ -507,7 +637,34 @@ error_path <- function(path) {
   }
 }
 
+#' @param predicted a 3-dimensional array of predicted values
+#' @param likelihood a 3-dimensional array of likelihood values
+#' @name error_functions
+#' @keywords internal
+error_pred <- function(predicted, likelihood) {
+  pred_dims <- dim(predicted)
+  lik_dim <- dim(likelihood)
 
+  if (!(identical(pred_dims, lik_dim))) {
+    cli::cli_abort(
+      "The dimensions of predicted are {.val {pred_dims}} and do not match {.val {lik_dims}}"
+    )
+  }
+}
+
+
+#' @param neg_log_lik negative log likelihood
+#' @param likelihood_array the likelihood array
+#' @name error_functions
+#' @keywords internal
+error_optimization <- function(neg_log_lik, likelihood_array) {
+  if (all(is.na(neg_log_lik))) {
+    cli::cli_abort(c(
+      "Refinement pass {i} returned no non-missing {.field neg_log_lik} values.",
+      "i" = "Check {.arg likelihood_array} and the sigma range."
+    ))
+  }
+}
 #' @param out_dir a chracter string containing the out directory
 #' @name error_functions
 #' @keywords internal
@@ -537,6 +694,37 @@ error_out_dir <- function(out_dir) {
   }
 }
 
+#' @param sigma_iterate_obj sigma_iterate object
+#' @param n_points a numeric
+#' @name error_functions
+#' @keywords internal
+
+error_sigma_iterate_obj <- function(sigma_iterate_obj, n_points) {
+  n_rows <- nrow(sigma_iterate_obj)
+  if (n_rows < 2L) {
+    cli::cli_abort(c(
+      "{.arg sigma_iterate_obj} must have at least two rows.",
+      "x" = "It has {n_rows} row{?s}.",
+      "i" = "Run {.fn eval_sigma_iterate} over a grid of at least two sigma values first."
+    ))
+  }
+
+  # which.min() returns integer(0) when every value is NA
+  if (all(is.na(sigma_iterate_obj$neg_log_lik))) {
+    cli::cli_abort(c(
+      "{.field neg_log_lik} must contain at least one non-missing value.",
+      "x" = "All {n_rows} values in {.arg sigma_iterate_obj} are {.code NA}."
+    ))
+  }
+
+  # the refinement grid has n_points rows, so step needs n_points >= 2
+  if (n_points < 2) {
+    cli::cli_abort(c(
+      "{.arg n_points} must be at least 2.",
+      "x" = "Got {n_points}."
+    ))
+  }
+}
 
 #' @param spatrast a raster object to assess
 #' @name error_functions
@@ -570,6 +758,27 @@ error_transform <- function(back_transform, parameter_range) {
         "x" = "Please supply {.arg parameter_range} with a {.cls vector} 
         containing two numerical values (e.g., {.val c(1, 5)})"
       )
+    )
+  }
+}
+#' @param workers a `numeric` that contains the number of works
+#' @name error_functions
+#' @keywords internal
+error_workers <- function(workers) {
+  if (is.null(workers) || workers < 2) {
+    cli::cli_abort(
+      "Parallel execution requested, but no mirai daemons are set. Please provide {.arg workers} (> 1) or call {.fn mirai::daemons} first."
+    )
+  }
+}
+
+#' @param unknown a character that is an argument.
+#' @name error_functions
+#' @keywords internal
+error_wrong_arg <- function(unknown) {
+  if (length(unknown) > 0) {
+    cli::cli_abort(
+      "Unused argument(s) in `...`: {.arg unknown}. See `gaussian_kernel()` and `hmm_forward_filter()` for valid arguments.",
     )
   }
 }

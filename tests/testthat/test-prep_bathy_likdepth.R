@@ -1,4 +1,4 @@
-bathy_spat <- load_raster(bathy_matrix)
+bathy_spat <- load_raster(bathy_matrix, crs = "EPSG:4326")
 
 set.seed(42)
 
@@ -49,7 +49,7 @@ test_that("prep_bathy_likdepth rejects even focal_dim", {
 })
 
 # ---- happy path (weighted = FALSE) --------------------------------------
-
+prep_bathy_likdepth(bathy_spat, focal_dim = 3)
 test_that("prep_bathy_likdepth returns expected structure", {
   result <- suppressMessages(
     prep_bathy_likdepth(bathy_spat, focal_dim = 3)
@@ -58,12 +58,14 @@ test_that("prep_bathy_likdepth returns expected structure", {
   expect_type(result, "list")
   expect_named(
     result,
-    c("bathy", "sdi", "idx", "idx_na", "focal_dim")
+    c("bathy", "sdi", "idx", "idx_na", "focal_dim", "xlim", "ylim")
   )
+  idx <- which(!is.na(bathy_matrix))
+  idx_na <- which(is.na(bathy_matrix))
   expect_s4_class(result$sdi, "SpatRaster")
   expect_identical(result$focal_dim, 3)
-  expect_identical(result$idx, attr(bathy_spat, "idx"))
-  expect_identical(result$idx_na, attr(bathy_spat, "idx_na"))
+  expect_identical(result$idx, idx)
+  expect_identical(result$idx_na, idx_na)
   expect_identical(dim(result$sdi)[1:2], dim(bathy_spat)[1:2])
 })
 
@@ -97,7 +99,6 @@ test_that("fill_sd0 falls back to 1e-3 when every focal sd is zero", {
 # ---- known bugs (documented so regressions/fixes are visible) -----------
 
 test_that("Check if sdi does not inherit bathy's CRS/extent", {
-  terra::crs(bathy_spat) <- "EPSG:4326"
   # terra::ext(bathy_spat) <- terra::ext(0, 10, 0, 10)
 
   result <- suppressMessages(

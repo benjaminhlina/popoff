@@ -41,8 +41,10 @@ prep_bathy_likdepth <- function(
   error_focal_dim(focal_dim)
   t0 <- msg_start("bathymetric standard deviation")
 
-  idx <- attr(bathy, 'idx')
-  idx_na <- attr(bathy, 'idx_na')
+  bathy_vec <- .convert_spr_to_vec(x = bathy)
+  idx <- which(!is.na(bathy_vec))
+  idx_na <- which(is.na(bathy_vec))
+  extent <- terra::ext(bathy)
 
   # ---- local bathymetric roughness (sd within a moving window) ----
   if (!is.null(ctd)) {
@@ -66,10 +68,10 @@ prep_bathy_likdepth <- function(
     }
     sdi[sdi == 0] <- fill_sd0
     sdi[is.na(sdi)] <- fill_sd0
-    extent <- terra::ext(bathy)
 
     sdi <- terra::rast(sdi, extent = extent)
   }
+  extent_vec <- as.vector(extent)
 
   # set crs and georeferecne
   terra::crs(sdi) <- terra::crs(bathy)
@@ -81,7 +83,9 @@ prep_bathy_likdepth <- function(
     sdi = sdi,
     idx = idx,
     idx_na = idx_na,
-    focal_dim = focal_dim
+    focal_dim = focal_dim,
+    xlim = extent_vec[c("xmin", "xmax")],
+    ylim = extent_vec[c("ymin", "ymax")]
   )
   return(out)
 }

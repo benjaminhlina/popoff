@@ -309,3 +309,6 @@ describe("valid, existing directory", {
   })
 })
 # })
+
+# ------ test error likelihood array -----
+# error_likelihood_array()

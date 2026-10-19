@@ -4,9 +4,16 @@
 \alias{msg_function}
 \alias{msg_bathy}
 \alias{msg_dates}
+\alias{msg_daemon}
 \alias{msg_end}
+\alias{msg_extract_no_val}
+\alias{msg_fallback}
 \alias{msg_load_raster}
 \alias{msg_load_rdata}
+\alias{msg_no_mass}
+\alias{msg_progress}
+\alias{msg_progress_update}
+\alias{msg_saved_plot}
 \alias{msg_slice}
 \alias{msg_start}
 \alias{msg_window}
@@ -16,11 +23,31 @@ msg_bathy(bathy)
 
 msg_dates(df, n_days)
 
+msg_daemon(workers)
+
 msg_end(chr, t0, t1 = round(Sys.time()))
+
+msg_extract_no_val(n_empty, out)
+
+msg_fallback(n_fallback)
 
 msg_load_raster(path)
 
 msg_load_rdata(obj, obj_name)
+
+msg_no_mass(n_bad_days)
+
+msg_progress(
+  progress,
+  n_time,
+  name = c("HMM forward filtering", "HMM backwards smoothing"),
+  type = c("Filtering", "Smoothing"),
+  .envir = parent.frame()
+)
+
+msg_progress_update(progress)
+
+msg_saved_plot(path)
 
 msg_slice(obj, date, linear_index)
 
@@ -35,17 +62,37 @@ msg_window(window)
 
 \item{n_days}{a \code{numerical} value}
 
+\item{workers}{a numerical value}
+
 \item{chr}{a \code{character} string that tells which likelihood such as e.g., \code{"Depth"}}
 
 \item{t0}{current time}
 
 \item{t1}{end time}
 
+\item{n_empty}{number of empty}
+
+\item{out}{the out object.}
+
+\item{n_fallback}{a numerical value}
+
 \item{path}{a file path.}
 
 \item{obj}{an object}
 
 \item{obj_name}{the name of an object}
+
+\item{n_bad_days}{an integer of the bad esimtates}
+
+\item{progress}{a \code{logical} that controls whether the msg occurs.}
+
+\item{n_time}{a \code{numeric} value that is the number of time intervals}
+
+\item{name}{a \code{character} vector that contains the name of the progress bar}
+
+\item{type}{a \code{character} vector that contains whether filtering or smoothing}
+
+\item{.envir}{the envirnoment}
 
 \item{date}{A date value}
 
