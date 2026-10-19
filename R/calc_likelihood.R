@@ -51,13 +51,7 @@ calc_daily_likdepth <- function(
       widx = idx
     ),
     error = function(e) {
-      cli::cli_abort(
-        c(
-          "x" = "Depth-transmission likelihood failed for {.val {as.character(time)}}.",
-          "i" = "Depth_min/Depth_max: {.val {pulled_range[1]}} / {.val {pulled_range[2]}}"
-        ),
-        parent = e
-      )
+      error_depth_lik(time = time, pulled_range = pulled_range, e = e)
     }
   )
 

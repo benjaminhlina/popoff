@@ -138,10 +138,7 @@ eval_sigma_iterate <- function(
   if (isTRUE(parallel)) {
     # ---- make sure daemons exist ----
     if (mirai::daemons_set()) {
-      cli::cli_inform(
-        "Daemons already running, ignoring {.arg workers} and using a total of
-        {.val {mirai::status()$connections}} workers"
-      )
+      msg_daemon(workers = workers)
     } else {
       error_workers(workers = workers)
       mirai::daemons(workers)

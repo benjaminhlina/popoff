@@ -85,7 +85,7 @@ optimize_sigma <- function(
   error_logical(normalize)
   error_logical(mask_likelihood)
   error_logical(parallel)
-  error_load(.progress)
+  error_logical(.progress)
 
   result <- sigma_iterate_obj
   max_sigma <- max(sigma_iterate_obj$sigma)

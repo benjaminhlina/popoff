@@ -59,9 +59,7 @@ make_summary_plot <- function(raw_log, out_dir = NULL) {
       height = 8.5,
     )
 
-    cli::cli_alert_success(
-      "Saved plot at the following location {.path {path}}"
-    )
+    msg_saved_plot(path = path)
   }
   invisible(depth_profile)
 }

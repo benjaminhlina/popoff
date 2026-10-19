@@ -4,7 +4,9 @@
 \alias{error_functions}
 \alias{error_chr}
 \alias{error_crs}
+\alias{error_smoothing_collapsed}
 \alias{error_date}
+\alias{error_depth_lik}
 \alias{error_df}
 \alias{error_dots}
 \alias{error_empty_file}
@@ -39,7 +41,11 @@ error_chr(chr, col = NULL)
 
 error_crs(crs, arg_name = NULL)
 
+error_smoothing_collapsed(fac, time_step)
+
 error_date(date, col, expected_cls)
+
+error_depth_lik(time, pulled_range, e)
 
 error_df(df, arg_name = NULL)
 
@@ -106,9 +112,19 @@ error_wrong_arg(unknown)
 
 \item{arg_name}{The name of the argument}
 
+\item{fac}{a forward filter object that has been smoothed for a given timestep}
+
+\item{time_step}{a numeric containing the timestep}
+
 \item{date}{a date to check}
 
 \item{expected_cls}{a class to be expected e.g., \code{Date} or \code{POSIXct}}
+
+\item{time}{a character string that is the date or time.}
+
+\item{pulled_range}{a vector containing the range that has been pulled.}
+
+\item{e}{error environment}
 
 \item{df}{a \code{data.frame}}
 

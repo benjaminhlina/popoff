@@ -17,6 +17,7 @@ error_chr <- function(chr, col = NULL) {
   }
 }
 
+
 #' @param crs a character string of a crs
 #' @param arg_name The name of the argument
 #'
@@ -38,6 +39,19 @@ error_crs <- function(crs, arg_name = NULL) {
   }
 }
 
+#' @param fac a forward filter object that has been smoothed for a given timestep
+#' @param time_step a numeric containing the timestep
+#'
+#' @name error_functions
+#' @keywords internal
+
+error_smoothing_collapsed <- function(fac, time_step) {
+  if (!is.finite(fac) || fac <= 0) {
+    cli::cli_abort(
+      "Smoothing collapsed at time step {t - 1}: filtered posterior also sums to {fac} at time step {t - 1} which has to be > {.val 0}"
+    )
+  }
+}
 
 #' @param date a date to check
 #' @param expected_cls a class to be expected e.g., `Date` or `POSIXct`
@@ -56,6 +70,22 @@ error_date <- function(date, col, expected_cls) {
   }
 }
 
+#' @param time a character string that is the date or time.
+#' @param pulled_range a vector containing the range that has been pulled.
+#' @param e error environment
+#'
+#' @name error_functions
+#' @keywords internal
+
+error_depth_lik <- function(time, pulled_range, e) {
+  cli::cli_abort(
+    c(
+      "x" = "Depth-transmission likelihood failed for {.val {as.character(time)}}.",
+      "i" = "Depth_min/Depth_max: {.val {pulled_range[1]}} / {.val {pulled_range[2]}}"
+    ),
+    parent = e
+  )
+}
 
 #' @param df a `data.frame`
 #' @name error_functions
@@ -120,23 +150,23 @@ error_extent <- function(vec, arg_name = NULL) {
 error_filter_array <- function(array, name) {
   dims <- dim(array)
 
-  if (length(dims) != 3) {
-    cli::cli_abort(
-      c(
-        "{.field {name}} must be a 3-dimensional array with dimensions {.code [x, y, t_steps]}.",
-        "x" = "It has {length(dims)} dimension{?s}."
-      )
-    )
-  }
+  # if (length(dims) != 3 & (name %in% "kernel")) {
+  #   cli::cli_abort(
+  #     c(
+  #       "{.field {name}} must be a 3-dimensional array with dimensions {.code [x, y, t_steps]}.",
+  #       "x" = "It has {length(dims)} dimension{?s}."
+  #     )
+  #   )
+  # }
 
-  if (dims[3] < 2) {
-    cli::cli_abort(
-      c(
-        "{.field {name}} must have at least 2 time steps.",
-        "x" = "The third dimension (time) has length {dims[3]}."
-      )
-    )
-  }
+  # if (dims[3] < 2) {
+  #   cli::cli_abort(
+  #     c(
+  #       "{.field {name}} must have at least 2 time steps.",
+  #       "x" = "The third dimension (time) has length {dims[3]}."
+  #     )
+  #   )
+  # }
 
   invisible(dims)
 }

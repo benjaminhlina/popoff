@@ -71,13 +71,13 @@ hmm_forward_filter <- function(
     post_list[[1]] <- current_posterior # Uses the normalized version
     pred_list[[1]] <- current_posterior # Uses the normalized version
   }
-  if (isTRUE(progress)) {
-    msg_progress(
-      n_time = n_time,
-      name = "HMM forward filtering",
-      type = "Filtering"
-    )
-  }
+
+  msg_progress(
+    progress = progress,
+    n_time = n_time,
+    name = "HMM forward filtering",
+    type = "Filtering"
+  )
   # One filter step: previous state to the next state. The state carries the
   # normalised posterior (`normalised_posterior`),
   # the prediction and the normaliser (`normalising constant per step`).
@@ -89,12 +89,6 @@ hmm_forward_filter <- function(
     lik_t <- likelihood_array[,, t]
     lik_t[land] <- 0
 
-    # pred_mass <- sum(pred_t)
-    # if (!is.finite(pred_mass) || pred_mass <= 0) {
-    #   cli::cli_abort(
-    #     "Prediction has no mass at step {t}: the state is dead before the likelihood is applied."
-    #   )
-    # }
     # Only update with the likelihood if it has mass and does not zero out the
     # prediction (na.rm because the likelihood can still contain NAs).
     overlap <- sum(pred_t * lik_t, na.rm = TRUE)
@@ -286,7 +280,7 @@ hmm_backward_smooth <- function(
   smooth <- array(0, dim = dims, dimnames = dn)
 
   # ----- Derive pop-off boundary condition from the last slice of likelihood_array -----
-  pop_off_slice <- likelihood_array[,, n_time + 1]
+  pop_off_slice <- likelihood_array[,, n_time]
   pop_off_slice[land] <- 0
   pop_off_sum <- sum(pop_off_slice, na.rm = TRUE)
 
@@ -299,13 +293,12 @@ hmm_backward_smooth <- function(
   }
   n_fallback <- 0L
 
-  if (isTRUE(progress)) {
-    msg_progress(
-      n_time = n_time,
-      name = "HMM backwards smoothing",
-      type = "Smoothing"
-    )
-  }
+  msg_progress(
+    progres = progress,
+    n_time = n_time,
+    name = "HMM backwards smoothing",
+    type = "Smoothing"
+  )
 
   for (t in n_time:2) {
     # Ratio of smoothed to predicted. Land (NA), 0/0 and x/0 become 0, so land
@@ -329,16 +322,14 @@ hmm_backward_smooth <- function(
       fac <- sum(post, na.rm = TRUE)
       n_fallback <- n_fallback + 1L
 
-      if (!is.finite(fac) || fac <= 0) {
-        cli::cli_abort(
-          "Smoothing collapsed at time step {t - 1}: filtered posterior also sums to {fac}."
-        )
-      }
+      error_smoothing_collapsed(fac = fac, time_step = t)
     }
 
     smooth[,, t - 1] <- post / fac
 
-    if (isTRUE(progress)) cli::cli_progress_update()
+    if (isTRUE(progress)) {
+      cli::cli_progress_update()
+    }
   }
 
   if (isTRUE(progress)) {
@@ -348,11 +339,7 @@ hmm_backward_smooth <- function(
   # Land stays NA in every slice
   smooth[array(land, dim = dims)] <- NA
 
-  if (n_fallback > 0L) {
-    cli::cli_warn(
-      "{n_fallback} step{?s} collapsed during smoothing and used the filtered posterior instead."
-    )
-  }
+  msg_fallback(n_fallback = n_fallback)
 
   msg_end("HMM backwards smoothing", t0)
   return(smooth)
