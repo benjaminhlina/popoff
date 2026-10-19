@@ -63,12 +63,15 @@ extract_locations <- function(
       ))
     }
 
+    valid <- which(!is.na(val))
+    v <- val[valid]
+
     idx <- switch(
       type,
-      max = which.max(val),
-      min = which.min(val),
-      mean = which.min(abs(val - mean(val, na.rm = TRUE))),
-      median = which.min(abs(val - stats::median(val, na.rm = TRUE)))
+      max = valid[which.max(v)],
+      min = valid[which.min(v)],
+      mean = valid[which.min(abs(v - mean(v)))],
+      median = valid[which.min(abs(v - stats::median(v)))]
     )
 
     row <- (idx - 1) %% n_row + 1
@@ -87,9 +90,7 @@ extract_locations <- function(
 
   n_empty <- sum(is.na(out$lon))
   if (n_empty > 0) {
-    cli::cli_warn(
-      "{n_empty} of {nrow(out)} date{?s} had no finite values; first at {out$date[is.na(out$lon)][1]}."
-    )
+    msg_extract_no_val(n_empty = n_empty, out = out)
   }
   if (drop_empty) {
     out <- out[!is.na(out$lon), ]
