@@ -1,13 +1,20 @@
 # Tests for hmm_backward_smooth()
 #
 # Strategy
-# - Helpers (validators, msg_*) are mocked with local_mocked_bindings() so each
-#   test isolates one branch of the smoother.
+# - Helpers (validators, msg_*, error_smoothing_collapsed) are mocked with
+#   local_mocked_bindings() so each test isolates one branch of the smoother.
+#   The warning about collapsed steps now lives in msg_fallback() and the abort
+#   for an unrecoverable collapse lives in error_smoothing_collapsed(); here we
+#   only check that the smoother calls them with the right arguments. Their
+#   messages belong in the helpers' own tests.
 # - imagine::convolution2D() is mocked to the identity for the algebra tests
 #   (so expected values can be computed by hand), and left real for one
 #   integration test that checks invariants only.
 # - Fixtures are small random arrays; edge cases are built by overwriting
 #   specific cells with point masses.
+# - The pop-off boundary condition is the LAST slice of likelihood_array, i.e.
+#   slice n_time (the likelihood array has the same number of slices as the
+#   filtered posterior).
 
 # ---- fixtures and helpers ---------------------------------------------------
 
@@ -35,12 +42,13 @@ make_fwd <- function(nx = 4, ny = 5, n_time = 3, land = NULL, seed = 42) {
   pred <- norm_array(n_time)
   dimnames(pred) <- dimnames(alpha)
 
-  # likelihood_array has n_time + 1 slices; the last is the pop-off slice
+  # likelihood_array has n_time slices; the last (slice n_time) is the
+  # pop-off slice
   lik <- array(
-    stats::runif(nx * ny * (n_time + 1), 0.1, 1),
-    dim = c(nx, ny, n_time + 1)
+    stats::runif(nx * ny * n_time, 0.1, 1),
+    dim = c(nx, ny, n_time)
   )
-  lik[rep(as.vector(land), n_time + 1)] <- NA_real_
+  lik[rep(as.vector(land), n_time)] <- NA_real_
 
   k <- matrix(c(1, 2, 1, 2, 4, 2, 1, 2, 1), 3, 3)
 
@@ -68,13 +76,21 @@ backward_step <- function(smooth_t, pred_t, alpha_prev) {
 }
 
 # Mock the helpers hmm_backward_smooth() calls. Returns an environment that
-# records how they were called.
+# records how they were called:
+#   fwd_obj, logical  first argument of the two validators
+#   start, end        msg_start() / msg_end() arguments
+#   progress          list of everything passed to msg_progress()
+#   fallback          list of everything passed to msg_fallback()
+#   collapsed         one list(fac, time_step) per error_smoothing_collapsed()
+#                     call, in call order
 stub_helpers <- function(
   env = parent.frame(),
   mock_error_fwd = TRUE,
-  mock_error_logical = TRUE
+  mock_error_logical = TRUE,
+  mock_error_collapsed = TRUE
 ) {
   spy <- new.env(parent = emptyenv())
+  spy$collapsed <- list()
 
   if (mock_error_fwd) {
     testthat::local_mocked_bindings(
@@ -94,6 +110,15 @@ stub_helpers <- function(
       .env = env
     )
   }
+  if (mock_error_collapsed) {
+    testthat::local_mocked_bindings(
+      error_smoothing_collapsed = function(...) {
+        spy$collapsed[[length(spy$collapsed) + 1L]] <- list(...)
+        invisible(NULL)
+      },
+      .env = env
+    )
+  }
 
   testthat::local_mocked_bindings(
     msg_start = function(...) {
@@ -105,13 +130,23 @@ stub_helpers <- function(
       invisible(NULL)
     },
     msg_progress = function(...) {
-      spy$progress <- list(...)
-      # cli_progress_update()/_done() need a live bar in the caller's frame
-      cli::cli_progress_bar(
-        name = "test",
-        total = spy$progress$n_time,
-        .envir = parent.frame()
-      )
+      args <- list(...)
+      spy$progress <- args
+      # msg_progress() is now always called; the first argument is the
+      # progress flag. cli_progress_update()/_done() need a live bar in the
+      # caller's frame, so only start one when progress is on.
+      if (isTRUE(args[[1]])) {
+        cli::cli_progress_bar(
+          name = "test",
+          total = args$n_time,
+          .envir = parent.frame()
+        )
+      }
+      invisible(NULL)
+    },
+    msg_fallback = function(...) {
+      spy$fallback <- list(...)
+      invisible(NULL)
     },
     .env = env
   )
@@ -216,6 +251,22 @@ describe("hmm_backward_smooth() output structure", {
     expect_true(all(is.na(out[2, 3, ])))
     expect_equal(sum(out[,, 1], na.rm = TRUE), 1)
   })
+
+  it("forces land to NA even where later filtered slices carry mass on it", {
+    land <- matrix(FALSE, 4, 5)
+    land[1, 1] <- TRUE
+    fwd <- make_fwd(n_time = 3, land = land)
+    fwd$normalised_posterior[1, 1, 2:3] <- 0.3 # land is NA only in slice 1
+    stub_helpers()
+    stub_convolution()
+
+    out <- hmm_backward_smooth(fwd, progress = FALSE)
+
+    expect_true(all(is.na(out[1, 1, ])))
+    for (t in seq_len(dim(out)[3])) {
+      expect_equal(sum(out[,, t], na.rm = TRUE), 1)
+    }
+  })
 })
 
 describe("hmm_backward_smooth() pop-off boundary condition", {
@@ -223,13 +274,13 @@ describe("hmm_backward_smooth() pop-off boundary condition", {
     land <- matrix(FALSE, 4, 5)
     land[1, 1] <- TRUE
     fwd <- make_fwd(n_time = 3, land = land)
-    fwd$likelihood_array[1, 1, 4] <- 1e6 # land mass must not count
+    fwd$likelihood_array[1, 1, 3] <- 1e6 # land mass must not count
     stub_helpers()
     stub_convolution()
 
     out <- hmm_backward_smooth(fwd, progress = FALSE)
 
-    pop <- fwd$likelihood_array[,, 4]
+    pop <- fwd$likelihood_array[,, 3]
     pop[land] <- 0
     expected <- pop / sum(pop)
 
@@ -242,8 +293,8 @@ describe("hmm_backward_smooth() pop-off boundary condition", {
 
     for (empty in list(0, NA_real_)) {
       fwd <- make_fwd(n_time = 3, land = land)
-      fwd$likelihood_array[,, 4] <- empty
-      stub_helpers()
+      fwd$likelihood_array[,, 3] <- empty
+      spy <- stub_helpers()
       stub_convolution()
 
       expect_no_warning(out <- hmm_backward_smooth(fwd, progress = FALSE))
@@ -252,6 +303,9 @@ describe("hmm_backward_smooth() pop-off boundary condition", {
         out[,, 3][!land],
         fwd$normalised_posterior[,, 3][!land]
       )
+      # the pop-off fallback is not a collapsed step
+      expect_identical(spy$fallback$n_fallback, 0L)
+      expect_length(spy$collapsed, 0)
     }
   })
 })
@@ -267,7 +321,7 @@ describe("hmm_backward_smooth() backward recursion", {
 
     out <- hmm_backward_smooth(fwd, progress = FALSE)
 
-    pop <- fwd$likelihood_array[,, 3]
+    pop <- fwd$likelihood_array[,, 2]
     pop[land] <- 0
     s2 <- pop / sum(pop)
     s1 <- backward_step(
@@ -289,7 +343,7 @@ describe("hmm_backward_smooth() backward recursion", {
 
     out <- hmm_backward_smooth(fwd, progress = FALSE)
 
-    pop <- fwd$likelihood_array[,, 5]
+    pop <- fwd$likelihood_array[,, 4]
     pop[land] <- 0
     expected <- array(NA_real_, dim = dim(out))
     expected[,, 4] <- pop / sum(pop)
@@ -328,7 +382,7 @@ describe("hmm_backward_smooth() non-finite handling", {
   it("turns x/0 and 0/0 in the smoothed/predicted ratio into zero mass", {
     fwd <- make_fwd(n_time = 2)
     fwd$pc_predicted[2, 2, 2] <- 0 # smooth > 0, pred = 0  -> Inf
-    fwd$likelihood_array[3, 3, 3] <- 0 # smooth = 0 ...
+    fwd$likelihood_array[3, 3, 2] <- 0 # smooth = 0 ...
     fwd$pc_predicted[3, 3, 2] <- 0 # ... and pred = 0     -> NaN
     stub_helpers()
     stub_convolution()
@@ -360,55 +414,86 @@ describe("hmm_backward_smooth() non-finite handling", {
 })
 
 describe("hmm_backward_smooth() collapsed steps", {
-  it("uses the filtered posterior and warns (singular) when one step collapses", {
+  it("uses the filtered posterior and reports one collapsed step", {
     fwd <- make_fwd(nx = 3, ny = 3, n_time = 2)
-    fwd$likelihood_array[,, 3] <- point_mass(3, 3, 1, 1)
+    fwd$likelihood_array[,, 2] <- point_mass(3, 3, 1, 1)
     fwd$normalised_posterior[,, 1] <- point_mass(3, 3, 3, 3)
-    stub_helpers()
+    spy <- stub_helpers()
     stub_convolution()
 
-    expect_warning(
-      out <- hmm_backward_smooth(fwd, progress = FALSE),
-      "1 step collapsed during smoothing",
-      fixed = TRUE
-    )
+    expect_no_warning(out <- hmm_backward_smooth(fwd, progress = FALSE))
 
     expect_equal(out[,, 1], point_mass(3, 3, 3, 3))
+    expect_identical(spy$fallback$n_fallback, 1L)
+    expect_length(spy$collapsed, 1)
+    expect_equal(spy$collapsed[[1]]$fac, 1)
+    expect_equal(spy$collapsed[[1]]$time_step, 2)
   })
 
-  it("counts every collapsed step and pluralises the warning", {
+  it("counts every collapsed step and passes each one to the helper", {
     fwd <- make_fwd(nx = 3, ny = 3, n_time = 3)
-    fwd$likelihood_array[,, 4] <- point_mass(3, 3, 1, 1)
+    fwd$likelihood_array[,, 3] <- point_mass(3, 3, 1, 1)
     fwd$normalised_posterior[,, 2] <- point_mass(3, 3, 3, 3)
     fwd$normalised_posterior[,, 1] <- point_mass(3, 3, 2, 2)
-    stub_helpers()
+    spy <- stub_helpers()
     stub_convolution()
 
-    expect_warning(
-      out <- hmm_backward_smooth(fwd, progress = FALSE),
-      "2 steps collapsed during smoothing",
-      fixed = TRUE
-    )
+    out <- hmm_backward_smooth(fwd, progress = FALSE)
 
     expect_equal(out[,, 2], point_mass(3, 3, 3, 3))
     expect_equal(out[,, 1], point_mass(3, 3, 2, 2))
+    expect_identical(spy$fallback$n_fallback, 2L)
+    expect_length(spy$collapsed, 2)
+    expect_equal(
+      vapply(spy$collapsed, function(x) x$time_step, numeric(1)),
+      c(3, 2)
+    )
+    expect_equal(
+      vapply(spy$collapsed, function(x) x$fac, numeric(1)),
+      c(1, 1)
+    )
   })
 
-  it("aborts, naming the offending time step, when the fallback also has no mass", {
+  it("reports zero collapsed steps when nothing collapses", {
+    fwd <- make_fwd(n_time = 3)
+    spy <- stub_helpers()
+    stub_convolution()
+
+    hmm_backward_smooth(fwd, progress = FALSE)
+
+    expect_identical(spy$fallback$n_fallback, 0L)
+    expect_length(spy$collapsed, 0)
+  })
+
+  it("stops when error_smoothing_collapsed() aborts because the fallback also has no mass", {
     fwd <- make_fwd(n_time = 3)
     fwd$normalised_posterior[,, 2] <- 0
-    stub_helpers()
+    spy <- stub_helpers(mock_error_collapsed = FALSE)
+    seen <- NULL
+    testthat::local_mocked_bindings(
+      error_smoothing_collapsed = function(fac, time_step) {
+        seen <<- list(fac = fac, time_step = time_step)
+        cli::cli_abort("smoothing collapsed")
+      }
+    )
     stub_convolution()
 
     err <- rlang::catch_cnd(
       hmm_backward_smooth(fwd, progress = FALSE),
       classes = "error"
     )
-    msg <- conditionMessage(err)
 
     expect_false(is.null(err))
-    expect_true(grepl("Smoothing collapsed at time step 2", msg, fixed = TRUE))
-    expect_true(grepl("filtered posterior also sums to 0", msg, fixed = TRUE))
+    expect_true(grepl(
+      "smoothing collapsed",
+      conditionMessage(err),
+      fixed = TRUE
+    ))
+    expect_equal(seen$fac, 0)
+    expect_equal(seen$time_step, 3)
+    # aborted before the closing messages
+    expect_null(spy$fallback)
+    expect_null(spy$end)
   })
 })
 
@@ -425,26 +510,30 @@ describe("hmm_backward_smooth() messaging and progress", {
     expect_identical(spy$end[[2]], "t0-token")
   })
 
-  it("starts a progress bar sized to n_time only when progress = TRUE", {
+  it("passes progress = TRUE and a bar sized to n_time to msg_progress()", {
     fwd <- make_fwd(n_time = 3)
     spy <- stub_helpers()
     stub_convolution()
 
     hmm_backward_smooth(fwd, progress = TRUE)
 
+    # first argument is the progress flag
+    expect_true(spy$progress[[1]])
     expect_identical(spy$progress$n_time, 3L)
     expect_identical(spy$progress$name, "HMM backwards smoothing")
     expect_identical(spy$progress$type, "Smoothing")
   })
 
-  it("does not touch the progress machinery when progress = FALSE", {
+  it("passes progress = FALSE to msg_progress() and still runs", {
     fwd <- make_fwd(n_time = 3)
     spy <- stub_helpers()
     stub_convolution()
 
-    hmm_backward_smooth(fwd, progress = FALSE)
+    expect_no_error(out <- hmm_backward_smooth(fwd, progress = FALSE))
 
-    expect_null(spy$progress)
+    # msg_progress() is always called; it decides whether to draw a bar
+    expect_false(spy$progress[[1]])
+    expect_identical(dim(out), dim(fwd$normalised_posterior))
   })
 })
 
@@ -455,7 +544,7 @@ describe("hmm_backward_smooth() with the real convolution", {
     land[6, 7] <- TRUE
     land[3, 4] <- TRUE
     fwd <- make_fwd(nx = 6, ny = 7, n_time = 5, land = land)
-    stub_helpers()
+    spy <- stub_helpers()
 
     expect_no_warning(out <- hmm_backward_smooth(fwd, progress = FALSE))
 
@@ -466,5 +555,6 @@ describe("hmm_backward_smooth() with the real convolution", {
       expect_true(all(s[!land] >= 0))
       expect_equal(sum(s, na.rm = TRUE), 1)
     }
+    expect_identical(spy$fallback$n_fallback, 0L)
   })
 })
