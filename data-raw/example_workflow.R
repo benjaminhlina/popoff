@@ -3,7 +3,7 @@
 {
   library(dplyr)
   library(ggplot2)
-  # library(poppr)
+  library(poppr)
   library(purrr)
   library(scales)
   library(sf)
@@ -16,14 +16,14 @@
 bathy_matrix_download <- download_noaa_bathy(
   xlim = c(-72.41, -40.0),
   ylim = c(41.52, 55.0),
-  res = 4
+  res = 1
 )
 bathy_matrix_download
 # in this case Gulf of St. Lawrence
 
 # we can check that it is SpatRaster
 
-bathy <- load_raster(bathy_matrix, crs = "EPSG:4326")
+bathy <- load_raster(bathy_matrix_download, crs = "EPSG:4326")
 
 bathy
 
@@ -57,25 +57,25 @@ ggplot() +
 
 # ----- next prepare bathy for likelihood calculations -----
 prepped_bathy <- prep_bathy_likdepth(bathy = bathy_utm, focal_dim = 3)
-ggplot() +
-  geom_spatraster(data = prepped_bathy$sdi) +
-  coord_sf() +
-  scale_fill_gradientn(
-    colours = c(
-      "#031E40",
-      "#0B3C73",
-      "#17A2FF",
-      "#7FDBFF",
-      "#EAF6FF",
-      "#FFE8A3",
-      "#E6F38F",
-      "#9AD850"
-    ),
-    values = scales::rescale(c(-4000, -600, -150, -60, 0, 50, 150, 400)),
-    limits = c(-4000, 400),
-    oob = squish,
-    name = "Elevation / Depth (m)"
-  )
+# ggplot() +
+#   geom_spatraster(data = prepped_bathy$sdi) +
+#   coord_sf() +
+#   scale_fill_gradientn(
+#     colours = c(
+#       "#031E40",
+#       "#0B3C73",
+#       "#17A2FF",
+#       "#7FDBFF",
+#       "#EAF6FF",
+#       "#FFE8A3",
+#       "#E6F38F",
+#       "#9AD850"
+#     ),
+#     values = scales::rescale(c(-4000, -600, -150, -60, 0, 50, 150, 400)),
+#     limits = c(-4000, 400),
+#     oob = squish,
+#     name = "Elevation / Depth (m)"
+#   )
 # we can view the output which is a list containing 1) bathy 2) sd of bathy
 # 3) idx locations 4) idx_na locations, 4) focal dimensions, 5) if weighted
 prepped_bathy
@@ -110,85 +110,85 @@ likedepth_transmit <- calc_likdepth_transmit(
   event_log = event_log_utms,
   daily_sd_depth = 0.57
 )
-dim(likedepth_transmit)
-str(likedepth_transmit)
-# likedepth_transmit is a matrix with dims of bathymetry by the number
-# of days observed in this case 203, each day is a new likelihood est.
+# dim(likedepth_transmit)
+# str(likedepth_transmit)
+# # likedepth_transmit is a matrix with dims of bathymetry by the number
+# # of days observed in this case 203, each day is a new likelihood est.
 
-# ----- we can plot the first couple of days -----
+# # ----- we can plot the first couple of days -----
 
-days <- unique(prepped_log$summary_table$date)
+# days <- unique(prepped_log$summary_table$date)
 
-xlim <- prepped_bathy$xlim
-ylim <- prepped_bathy$ylim
+# xlim <- prepped_bathy$xlim
+# ylim <- prepped_bathy$ylim
 
-# ---- we can convert them into spatrasters using load functions
-likelihood_spr <- days |>
-  set_names() |>
-  map(
-    ~ load_raster(
-      likedepth_transmit[,, as.character(.x)],
-      # crs = "EPSG:4326",
-      extent = c(xlim, ylim),
-      crs = "EPSG:32620"
-    ),
-    # .progress = TRUE
-  )
+# # ---- we can convert them into spatrasters using load functions
+# likelihood_spr <- days |>
+#   set_names() |>
+#   map(
+#     ~ load_raster(
+#       likedepth_transmit[,, as.character(.x)],
+#       # crs = "EPSG:4326",
+#       extent = c(xlim, ylim),
+#       crs = "EPSG:32620"
+#     ),
+#     # .progress = TRUE
+#   )
 
-bbox_latlon <- st_polygon(list(matrix(
-  c(
-    -59.5,
-    44.1,
-    -58.5,
-    44.1,
-    -58.5,
-    44.9,
-    -59.5,
-    44.9,
-    -59.5,
-    44.1
-  ),
-  ncol = 2,
-  byrow = TRUE
-)))
+# bbox_latlon <- st_polygon(list(matrix(
+#   c(
+#     -59.5,
+#     44.1,
+#     -58.5,
+#     44.1,
+#     -58.5,
+#     44.9,
+#     -59.5,
+#     44.9,
+#     -59.5,
+#     44.1
+#   ),
+#   ncol = 2,
+#   byrow = TRUE
+# )))
 
-bbox_sf <- st_sfc(bbox_latlon, crs = 4326)
+# bbox_sf <- st_sfc(bbox_latlon, crs = 4326)
 
-# 2. Transform to UTM Zone 20N (EPSG:32620)
-bbox_utm <- st_transform(bbox_sf, crs = 32620)
+# # 2. Transform to UTM Zone 20N (EPSG:32620)
+# bbox_utm <- st_transform(bbox_sf, crs = 32620)
 
-# 3. Extract the new bounding box coordinates (in meters)
-range <- st_bbox(bbox_utm)
-range[1]
-# ----- then polt them using ggplot and tidyterra -----
-pl <- likelihood_spr[1:10] |>
-  imap(
-    ~ ggplot() +
-      geom_spatraster(data = .x) +
-      geom_sf(
-        data = event_log_sf |>
-          mutate(date = as.Date(date)),
-        aes(colour = event),
-      ) +
-      # coord_sf() +
-      scale_fill_viridis_c(option = "H") +
-      theme_bw(
-        base_size = 15
-      ) +
-      coord_sf(
-        xlim = c(range[1], range[3]),
-        ylim = c(range[2], range[4])
-      ) +
-      theme(
-        panel.grid = element_blank(),
-        plot.title = element_text(hjust = 0.5)
-      ) +
-      labs(title = .y)
-  )
-# pl
+# # 3. Extract the new bounding box coordinates (in meters)
+# range <- st_bbox(bbox_utm)
+# range[1]
+# # ----- then polt them using ggplot and tidyterra -----
+# pl <- likelihood_spr[1:10] |>
+#   imap(
+#     ~ ggplot() +
+#       geom_spatraster(data = .x) +
+#       geom_sf(
+#         data = event_log_sf |>
+#           mutate(date = as.Date(date)),
+#         aes(colour = event),
+#       ) +
+#       # coord_sf() +
+#       scale_fill_viridis_c(option = "H") +
+#       theme_bw(
+#         base_size = 15
+#       ) +
+#       coord_sf(
+#         xlim = c(range[1], range[3]),
+#         ylim = c(range[2], range[4])
+#       ) +
+#       theme(
+#         panel.grid = element_blank(),
+#         plot.title = element_text(hjust = 0.5)
+#       ) +
+#       labs(title = .y)
+#   )
+# # pl
 
 # sigma_val <- seq(0.25, 0.35, 0.015)
-sigma_val <- seq(0.1, 2, 0.025)
+sigma_val <- seq(0.2, 0.3, 0.01)
 
 length(sigma_val)
 sigma_val
@@ -225,12 +225,11 @@ optimiaized_sigma
 optimiaized_sigma$optimal_sigma
 
 kernel <- gaussian_kernel(
-  sigma = optimiaized_sigma$optimal_sigma,
+  sigma = 0.3,
   normalize = TRUE,
 )
 
 final <- hmm_forward_filter(
-  sigma = 0.33,
   kernel = kernel,
   likelihood_array = likedepth_transmit,
   mask_likelihood = TRUE,
@@ -258,8 +257,7 @@ final <- hmm_forward_filter(
 # sum(is.na(likedepth_transmit[,, 1])) # land cells, for comparison
 
 smoothed <- hmm_backward_smooth(
-  forward_filter_obj = final,
-  kernel = final$kernel
+  forward_filter_obj = final
 )
 # smoothed
 
@@ -270,9 +268,12 @@ smoothed <- hmm_backward_smooth(
 #   st_as_sf(coords = c("lon", "lat"), crs = 32620)
 
 smoothed_per_day <- extract_locations(smoothed)
+
+smoothed_per_day
 # max_per_day_sf |>
 #   mapgl::maplibre_view()
 smoothed_per_day_sf <- smoothed_per_day |>
+  # filter(!is.na(lon)) |>
   st_as_sf(coords = c("lon", "lat"), crs = 32620)
 
 
@@ -325,18 +326,18 @@ p <- ggplot() +
   #     filter(date %in% as.Date(event_log$date)),
   #   aes(fill = value)
   # ) +
-  # geom_sf(
-  #   data = event_log_sf |>
-  #     mutate(date = as.Date(date)),
-  #   aes(colour = event),
-  # ) +
+  geom_sf(
+    data = event_log_sf |>
+      mutate(date = as.Date(date)),
+    aes(colour = event),
+  ) +
 
   # facet_wrap(~date) +
   scale_fill_viridis_c(option = "H", name = "Maximum\nlikelihood") +
-  coord_sf(
-    xlim = c(-62, -57),
-    ylim = c(44, 48)
-  ) +
+  # coord_sf(
+  #   xlim = c(-62, -57),
+  #   ylim = c(44, 48)
+  # ) +
   ggspatial::annotation_north_arrow(location = "tr") +
   ggspatial::annotation_scale() +
   theme_bw(
