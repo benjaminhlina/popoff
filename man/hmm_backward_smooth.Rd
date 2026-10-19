@@ -14,6 +14,8 @@ probability surfaces derived from \code{\link[=hmm_forward_filter]{hmm_forward_f
 
 The second is \code{pc_predicted} whcih is one-step-ahead predicted surfaces
 the filtered surface after applying the movement kernel0.}
+
+\item{progress}{a \code{logical} that controls progress bar.}
 }
 \value{
 A numeric array with the same dimensions as \code{normalised_posterior},

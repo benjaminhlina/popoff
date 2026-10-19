@@ -213,7 +213,7 @@ hmm_forward_filter <- function(
 #'
 #' The second is `pc_predicted` whcih is one-step-ahead predicted surfaces
 #' the filtered surface after applying the movement kernel0.
-#'
+#' @param progress a `logical` that controls progress bar.
 #' @details
 #' All arrays use the layout `[x, y, t_step]`, with time as the last dimension.
 #' `n_t_steps` is the number of time steps.
