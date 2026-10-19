@@ -30,7 +30,9 @@
 \alias{error_numeric_min}
 \alias{error_path}
 \alias{error_pred}
+\alias{error_optimization}
 \alias{error_out_dir}
+\alias{error_sigma_iterate_obj}
 \alias{error_spatrast}
 \alias{error_transform}
 \alias{error_workers}
@@ -93,7 +95,11 @@ error_path(path)
 
 error_pred(predicted, likelihood)
 
+error_optimization(neg_log_lik, likelihood_array)
+
 error_out_dir(out_dir)
+
+error_sigma_iterate_obj(sigma_iterate_obj, n_points)
 
 error_spatrast(spatrast, arg_name = NULL)
 
@@ -172,7 +178,15 @@ error_wrong_arg(unknown)
 
 \item{likelihood}{a 3-dimensional array of likelihood values}
 
+\item{neg_log_lik}{negative log likelihood}
+
+\item{likelihood_array}{the likelihood array}
+
 \item{out_dir}{a chracter string containing the out directory}
+
+\item{sigma_iterate_obj}{sigma_iterate object}
+
+\item{n_points}{a numeric}
 
 \item{spatrast}{a raster object to assess}
 

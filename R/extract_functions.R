@@ -4,12 +4,13 @@
 #' location from the posterior surface using the requested statistic.
 #'
 #' @param obj A `list` containing an element named `normalised_posterior`, a
-#' three-dimensional `array` with dimensions `[lat, lon, date]`. The
-#' `dimnames` must be set: `lat` and `lon` as numeric-coercible coordinates
+#' three-dimensional `array` with dimensions `[lon, lat, date]`. The
+#' `dimnames` must be set: `lon` and `lat` as numeric-coercible coordinates
 #' (e.g., projected metres) and `date` as `Date`-coercible strings.
 #' @param type A `character` string giving the statistic used to select the
 #' estimated cell for each day. One of `"max"` (default), `"min"`, `"mean"`,
 #' or `"median"`.
+#' @param drop_empty A `logical` value that controls whether to drop empty columns
 #'
 #' @details
 #' Days where every cell is `NA` are dropped from the output.
@@ -43,6 +44,9 @@ extract_locations <- function(
   drop_empty = FALSE
 ) {
   type <- match.arg(type)
+  error_likelihood_array(obj)
+  error_chr(type)
+  error_logical(drop_empty)
 
   dn <- dimnames(obj)
   lats <- as.numeric(dn$lat)

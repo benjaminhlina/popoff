@@ -652,6 +652,19 @@ error_pred <- function(predicted, likelihood) {
   }
 }
 
+
+#' @param neg_log_lik negative log likelihood
+#' @param likelihood_array the likelihood array
+#' @name error_functions
+#' @keywords internal
+error_optimization <- function(neg_log_lik, likelihood_array) {
+  if (all(is.na(neg_log_lik))) {
+    cli::cli_abort(c(
+      "Refinement pass {i} returned no non-missing {.field neg_log_lik} values.",
+      "i" = "Check {.arg likelihood_array} and the sigma range."
+    ))
+  }
+}
 #' @param out_dir a chracter string containing the out directory
 #' @name error_functions
 #' @keywords internal
@@ -681,6 +694,37 @@ error_out_dir <- function(out_dir) {
   }
 }
 
+#' @param sigma_iterate_obj sigma_iterate object
+#' @param n_points a numeric
+#' @name error_functions
+#' @keywords internal
+
+error_sigma_iterate_obj <- function(sigma_iterate_obj, n_points) {
+  n_rows <- nrow(sigma_iterate_obj)
+  if (n_rows < 2L) {
+    cli::cli_abort(c(
+      "{.arg sigma_iterate_obj} must have at least two rows.",
+      "x" = "It has {n_rows} row{?s}.",
+      "i" = "Run {.fn eval_sigma_iterate} over a grid of at least two sigma values first."
+    ))
+  }
+
+  # which.min() returns integer(0) when every value is NA
+  if (all(is.na(sigma_iterate_obj$neg_log_lik))) {
+    cli::cli_abort(c(
+      "{.field neg_log_lik} must contain at least one non-missing value.",
+      "x" = "All {n_rows} values in {.arg sigma_iterate_obj} are {.code NA}."
+    ))
+  }
+
+  # the refinement grid has n_points rows, so step needs n_points >= 2
+  if (n_points < 2) {
+    cli::cli_abort(c(
+      "{.arg n_points} must be at least 2.",
+      "x" = "Got {n_points}."
+    ))
+  }
+}
 
 #' @param spatrast a raster object to assess
 #' @name error_functions

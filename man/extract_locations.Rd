@@ -12,8 +12,8 @@ extract_locations(
 }
 \arguments{
 \item{obj}{A \code{list} containing an element named \code{normalised_posterior}, a
-three-dimensional \code{array} with dimensions \verb{[lat, lon, date]}. The
-\code{dimnames} must be set: \code{lat} and \code{lon} as numeric-coercible coordinates
+three-dimensional \code{array} with dimensions \verb{[lon, lat, date]}. The
+\code{dimnames} must be set: \code{lon} and \code{lat} as numeric-coercible coordinates
 (e.g., projected metres) and \code{date} as \code{Date}-coercible strings.}
 
 \item{type}{A \code{character} string giving the statistic used to select the

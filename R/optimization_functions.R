@@ -86,6 +86,7 @@ optimize_sigma <- function(
   error_logical(mask_likelihood)
   error_logical(parallel)
   error_logical(.progress)
+  error_sigma_iterate_obj(sigma_iterate_obj, n_points)
 
   result <- sigma_iterate_obj
   max_sigma <- max(sigma_iterate_obj$sigma)
@@ -109,6 +110,10 @@ optimize_sigma <- function(
     )
   }
 
+  error_optimization(
+    neg_log_lik = result$neg_log_lik,
+    likelihood_array = likelihood_array
+  )
   top <- result[which.min(result$neg_log_lik), ]
 
   out <- data.frame(

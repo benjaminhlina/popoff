@@ -126,9 +126,9 @@ msg_load_rdata <- function(obj, obj_name) {
 #' @name msg_function
 #' @keywords internal
 msg_no_mass <- function(n_bad_days) {
-  if (n_bad > 0) {
+  if (n_bad_days > 0) {
     cli::cli_alert_warning(
-      "The negative log likelihood has the follwoing nubmer of {.val {n_bad}}
+      "The negative log likelihood has the follwoing nubmer of {.val {n_bad_days}}
       days that produced no estimate. Proceed with using this estimate and 
       value of sigma with caution."
     )
@@ -165,8 +165,6 @@ msg_progress <- function(
       clear = FALSE,
       .envir = .envir
     )
-  } else {
-    NULL
   }
 }
 
@@ -175,8 +173,6 @@ msg_progress <- function(
 msg_progress_update <- function(progress) {
   if (isTRUE(progress)) {
     cli::cli_progress_update()
-  } else {
-    NULL
   }
 }
 
