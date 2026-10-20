@@ -7,6 +7,7 @@
 eval_sigma_iterate(
   sigma_vec,
   likelihood_array,
+  event_log,
   parallel = TRUE,
   workers = NULL,
   ...,
@@ -17,6 +18,9 @@ eval_sigma_iterate(
 \item{sigma_vec}{A numeric vector of sigma values.}
 
 \item{likelihood_array}{Likelihood array produced by \code{\link[=calc_likdepth_transmit]{calc_likdepth_transmit()}}}
+
+\item{event_log}{a \code{data.frame} containing the event log data such as
+tagging, mrpat, and and pop-off date and time.}
 
 \item{parallel}{a \code{logical} that controls whether to use in parallel}
 

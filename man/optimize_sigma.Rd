@@ -7,6 +7,7 @@
 optimize_sigma(
   sigma_iterate_obj,
   likelihood_array,
+  event_log,
   n_points = 17,
   n_interval = 2,
   normalize = FALSE,
@@ -23,6 +24,9 @@ search step can be calculated.}
 
 \item{likelihood_array}{The likelihood array passed to
 \code{\link[=eval_sigma_iterate]{eval_sigma_iterate()}} for evaluating each candidate sigma.}
+
+\item{event_log}{a \code{data.frame} containing the event log data such as
+tagging, mrpat, and and pop-off date and time.}
 
 \item{n_points}{an \code{integer}. Number of sigma values to evaluate in each
 refinement iteration. Use an odd number so that the previous best value is

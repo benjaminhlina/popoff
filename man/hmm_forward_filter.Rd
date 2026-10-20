@@ -7,6 +7,7 @@
 hmm_forward_filter(
   likelihood_array,
   kernel,
+  event_log,
   bound_threshold = 0.1,
   bound_min = 10,
   mask_likelihood = TRUE,
@@ -20,6 +21,9 @@ hmm_forward_filter(
 \verb{[n_col, n_row, n_time]}.}
 
 \item{kernel}{Movement kernel (matrix) created by \code{\link[=gaussian_kernel]{gaussian_kernel()}}}
+
+\item{event_log}{a \code{data.frame} containing the event log data such as
+tagging, mrpat, and and pop-off date and time.}
 
 \item{bound_threshold, bound_min}{Passed to \code{\link[=mask_likelihood_array]{mask_likelihood_array()}} when
 \code{mask_likelihood = TRUE}. \code{bound_threshold} is fraction of

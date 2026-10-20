@@ -12,6 +12,8 @@
 #' [calc_likdepth_transmit()] with the following dimensions
 #' `[n_col, n_row, n_time]`.
 #' @param kernel Movement kernel (matrix) created by [gaussian_kernel()]
+#' @param event_log a `data.frame` containing the event log data such as
+#' tagging, mrpat, and and pop-off date and time.
 #' @param bound_threshold,bound_min Passed to [mask_likelihood_array()] when
 #' `mask_likelihood = TRUE`. `bound_threshold` is fraction of
 #' likelihood's max used to decide which cells count as a plausible location
@@ -31,6 +33,7 @@
 hmm_forward_filter <- function(
   likelihood_array,
   kernel,
+  event_log,
   bound_threshold = 0.1,
   bound_min = 10,
   mask_likelihood = TRUE,
@@ -44,6 +47,7 @@ hmm_forward_filter <- function(
   error_logical(mask_likelihood)
   error_logical(progress)
   error_logical(return_maps)
+  error_input_data(input_data = event_log, type = "event_log")
 
   t0 <- msg_start("HMM forward filter")
   dims <- dim(likelihood_array)
@@ -72,6 +76,26 @@ hmm_forward_filter <- function(
     pred_list[[1]] <- current_posterior # Uses the normalized version
   }
 
+  # Drop NA dates (nothing to pin), keep everything else for matching
+  known_dates <- event_log$date
+  known_dates <- known_dates[!is.na(known_dates)]
+
+  known_time_bin <- match(
+    as.character(as.Date(known_dates)),
+    as.character(as.Date(dn[[3]]))
+  )
+
+  # Non-NA dates that don't exist in the array are a real mismatch
+  error_missing_dates_hmm(
+    dn,
+    known_dates = known_dates,
+    known_time_bin = known_time_bin
+  )
+
+  known_time_bin <- unique(known_time_bin)
+
+  hard_time <- sort(unique(c(known_time_bin, n_time)))
+
   msg_progress(
     progress = progress,
     n_time = n_time,
@@ -91,23 +115,38 @@ hmm_forward_filter <- function(
 
     # Only update with the likelihood if it has mass and does not zero out the
     # prediction (na.rm because the likelihood can still contain NAs).
+    lik_mass <- sum(lik_t, na.rm = TRUE)
     overlap <- sum(pred_t * lik_t, na.rm = TRUE)
-    use_likelihood <- sum(lik_t, na.rm = TRUE) > 1e-06 &&
-      is.finite(overlap) &&
-      overlap != 0
 
-    post <- if (!use_likelihood) {
-      pred_t
-    } else if (isTRUE(mask_likelihood)) {
-      mask_likelihood_array(
-        predicted = pred_t,
-        likelihood = lik_t,
-        par0 = dim(kernel)[1],
-        bound_threshold = bound_threshold,
-        bound_min = bound_min
-      )
+    set_loc <- (t %in% hard_time) && lik_mass > 1e-06
+    reset <- FALSE
+
+    if (set_loc) {
+      # Hard constraint: no bounding mask, no skip guard
+      if (is.finite(overlap) && overlap > 0) {
+        post <- pred_t * lik_t
+      } else {
+        # Kernel cannot reach the known location: re-anchor on the
+        # likelihood so the chain continues, but penalise the step
+        post <- lik_t
+        reset <- TRUE
+      }
+      use_likelihood <- TRUE
     } else {
-      pred_t * lik_t
+      use_likelihood <- lik_mass > 1e-06 && is.finite(overlap) && overlap != 0
+      post <- if (!use_likelihood) {
+        pred_t
+      } else if (isTRUE(mask_likelihood)) {
+        mask_likelihood_array(
+          predicted = pred_t,
+          likelihood = lik_t,
+          par0 = dim(kernel)[1],
+          bound_threshold = bound_threshold,
+          bound_min = bound_min
+        )
+      } else {
+        pred_t * lik_t
+      }
     }
 
     psi_t <- sum(post, na.rm = TRUE)
@@ -292,7 +331,8 @@ hmm_backward_smooth <- function(
     smooth[,, n_time] <- alpha[,, n_time]
   }
   n_fallback <- 0L
-
+  collapsed_dates <- character(0)
+  time_labels <- dn[[3]]
   msg_progress(
     progress = progress,
     n_time = n_time,
@@ -321,6 +361,7 @@ hmm_backward_smooth <- function(
       post[!land & !is.finite(post)] <- 0
       fac <- sum(post, na.rm = TRUE)
       n_fallback <- n_fallback + 1L
+      collapsed_dates <- c(collapsed_dates, time_labels[t - 1])
 
       error_smoothing_collapsed(fac = fac, time_step = t)
     }
@@ -339,7 +380,7 @@ hmm_backward_smooth <- function(
   # Land stays NA in every slice
   smooth[array(land, dim = dims)] <- NA
 
-  msg_fallback(n_fallback = n_fallback)
+  msg_fallback(n_fallback = n_fallback, dates = rev(collapsed_dates))
 
   msg_end("HMM backwards smoothing", t0)
   return(smooth)

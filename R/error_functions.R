@@ -559,6 +559,27 @@ error_missing_dates <- function(event_log_dates, summary_dates) {
   }
 }
 
+#' @param dn a dimension names
+#' @param known_dates a `vector` containing known dates
+#' @param known_time_bin a `vector` containing known time bins
+#' @name error_functions
+#' @keywords internal
+error_missing_dates_hmm <- function(dn, known_dates, known_time_bin) {
+  lik_dates <- dn[[3]][1]
+  date_range <- dn[[3]][length(dn[[3]])]
+
+  if (anyNA(known_time_bin)) {
+    missing_dates <- unique(as.character(known_dates[is.na(known_time_bin)]))
+    first_unmatched <- head(missing_dates, 5)
+    total_missing <- length(missing_dates)
+
+    cli::cli_abort(c(
+      "{total_missing} `event_log` date{?s} not found in the likelihood array.",
+      "x" = "Unmatched: {.val {first_unmatched}}{if (total_missing > 5) ' ...' else ''}",
+      "i" = "Array covers {.val lik_dates} to {.val date_range}."
+    ))
+  }
+}
 
 #' @param required_val a `vector` containing `characters` of the columns to check.
 #' @name error_functions

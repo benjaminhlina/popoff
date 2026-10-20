@@ -17,6 +17,8 @@
 #' @param n_points an `integer`. Number of sigma values to evaluate in each
 #' refinement iteration. Use an odd number so that the previous best value is
 #' included in the new search Default is `17`.
+#' @param event_log a `data.frame` containing the event log data such as
+#' tagging, mrpat, and and pop-off date and time.
 #' @param n_interval an `integer`. Number of refinement iteration. Default is `2`.
 #' @param normalize a `logical`. Passed to [eval_sigma_iterate()]. Default is
 #' `FALSE`.
@@ -74,6 +76,7 @@
 optimize_sigma <- function(
   sigma_iterate_obj,
   likelihood_array,
+  event_log,
   n_points = 17,
   n_interval = 2,
   normalize = FALSE,
@@ -89,6 +92,7 @@ optimize_sigma <- function(
   error_logical(parallel)
   error_logical(.progress)
   error_sigma_iterate_obj(sigma_iterate_obj, n_points)
+  error_input_data(input_data = event_log, type = "event_log")
 
   result <- sigma_iterate_obj
   max_sigma <- max(sigma_iterate_obj$sigma)
@@ -103,6 +107,7 @@ optimize_sigma <- function(
         min(max_sigma, best + step),
         length.out = n_points
       ),
+      event_log = event_log,
       parallel = parallel,
       workers = workers,
       likelihood_array = likelihood_array,

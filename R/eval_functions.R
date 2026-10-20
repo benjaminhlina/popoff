@@ -12,6 +12,8 @@
 #' kernel. See [gaussian_kernel()]. Defults to `TRUE`.
 #' @param likelihood_array the `likelihood_array` produced by
 #' [calc_likdepth_transmit()].
+#' @param event_log a `data.frame` containing the event log data such as
+#' tagging, mrpat, and and pop-off date and time.
 #' @param return_maps a `logical` that returns posterior and predicted layers
 #' when `TRUE`. Defaults to `FALSE` as this is computationally expensive.
 #' @param ... additional named arguments passed to either
@@ -33,6 +35,7 @@ eval_sigma <- function(
   normalize = FALSE,
   mask = TRUE,
   likelihood_array,
+  event_log,
   return_maps = FALSE,
   ...
 ) {
@@ -77,6 +80,7 @@ eval_sigma <- function(
       list(
         likelihood_array = likelihood_array,
         kernel = kern,
+        event_log = event_log,
         return_maps = return_maps
       ),
       hmm_args
@@ -111,6 +115,8 @@ eval_sigma <- function(
 #'
 #' @param sigma_vec A numeric vector of sigma values.
 #' @param likelihood_array Likelihood array produced by [calc_likdepth_transmit()]
+#' @param event_log a `data.frame` containing the event log data such as
+#' tagging, mrpat, and and pop-off date and time.
 #' @param parallel a `logical` that controls whether to use in parallel
 #' @param workers a `numeric` that determines the number of workers to use.
 #' @param ... Further arguments passed to `eval_sigma()`. See [eval_sigma()],
@@ -125,16 +131,16 @@ eval_sigma <- function(
 eval_sigma_iterate <- function(
   sigma_vec,
   likelihood_array,
+  event_log,
   parallel = TRUE,
   workers = NULL,
   ...,
   .progress = TRUE
 ) {
+  error_numeric(sigma_vec)
   error_logical(parallel)
   error_logical(.progress)
-  t0 <- msg_start("sigma evaluation in parallel")
-
-  extra_args <- list(...)
+  error_input_data(input_data = event_log, type = "event_log")
 
   if (isTRUE(parallel)) {
     # ---- make sure daemons exist ----
@@ -145,13 +151,19 @@ eval_sigma_iterate <- function(
       mirai::daemons(workers)
       on.exit(mirai::daemons(0), add = TRUE) # only reached if we started them
     }
+
+    t0 <- msg_start("sigma evaluation in parallel")
+
+    extra_args <- list(...)
     # ----- share across daemons using mori -----
     likelihoods_shared <- mori::share(likelihood_array)
+    event_log_shared <- mori::share(event_log)
 
     # ----- args list -----
     args_list <- c(
       list(
         likelihood_array = likelihoods_shared,
+        event_log = event_log_shared,
         progress = FALSE
       ),
       extra_args
@@ -174,6 +186,7 @@ eval_sigma_iterate <- function(
       sigma_vec,
       eval_sigma,
       likelihood_array = likelihood_array,
+      event_log = event_log,
       ...,
       progress = FALSE,
       .progress = if (isTRUE(.progress)) "Evaluating sigma" else FALSE

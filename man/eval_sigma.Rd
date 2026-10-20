@@ -9,6 +9,7 @@ eval_sigma(
   normalize = FALSE,
   mask = TRUE,
   likelihood_array,
+  event_log,
   return_maps = FALSE,
   ...
 )
@@ -24,6 +25,9 @@ kernel. See \code{\link[=gaussian_kernel]{gaussian_kernel()}}. Defults to \code{
 
 \item{likelihood_array}{the \code{likelihood_array} produced by
 \code{\link[=calc_likdepth_transmit]{calc_likdepth_transmit()}}.}
+
+\item{event_log}{a \code{data.frame} containing the event log data such as
+tagging, mrpat, and and pop-off date and time.}
 
 \item{return_maps}{a \code{logical} that returns posterior and predicted layers
 when \code{TRUE}. Defaults to \code{FALSE} as this is computationally expensive.}

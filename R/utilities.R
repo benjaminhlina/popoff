@@ -285,7 +285,7 @@
   base_args <- if (identical(fnc, gaussian_kernel)) {
     c("sigma", "normalize", "mask")
   } else if (identical(fnc, hmm_forward_filter)) {
-    c("likelihood_array", "kernel", "return_maps")
+    c("likelihood_array", "kernel", "event_log", "return_maps")
   }
   other_args <- names(formals(fnc))
 

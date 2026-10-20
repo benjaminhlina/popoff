@@ -94,12 +94,17 @@ msg_extract_no_val <- function(n_empty, out) {
 }
 
 #' @param n_fallback a numerical value
+#' @param dates the dates for n_time
 #' @name msg_function
 #' @keywords internal
-msg_fallback <- function(n_fallback) {
+msg_fallback <- function(n_fallback, dates = NULL) {
   if (n_fallback > 0L) {
-    cli::cli_warn(
-      "{n_fallback} step{?s} collapsed during smoothing and used the filtered posterior instead. Proceed interpretation with caution."
+    dates <- cli::cli_vec(
+      dates,
+      style = list("vec-trunc" = 10, "vec-sep2" = " and ")
+    )
+    cli::cli_alert_info(
+      "{n_fallback} step{?s} collapsed during smoothing and used the filtered posterior instead for the following: {.val {dates}}."
     )
   }
 }

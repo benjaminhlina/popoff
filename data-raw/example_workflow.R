@@ -187,8 +187,8 @@ likedepth_transmit <- calc_likdepth_transmit(
 #   )
 # # pl
 
-# sigma_val <- seq(0.25, 0.35, 0.015)
-sigma_val <- seq(0.2, 0.3, 0.01)
+# sigma_val <- seq(0.1, 0.375, 0.015)
+sigma_val <- seq(0.1, 2.0, 0.025)
 
 length(sigma_val)
 sigma_val
@@ -201,21 +201,23 @@ out <- eval_sigma_iterate(
   normalize = TRUE,
   sigma_vec = sigma_val,
   mask_likelihood = TRUE,
-  likelihood_array = likedepth_transmit
+  likelihood_array = likedepth_transmit,
+  event_log = event_log_utms
 )
 
-out
+# out
 
 ggplot(data = out, aes(x = sigma, y = neg_log_lik)) +
   scale_y_log10() +
   geom_line(linewidth = 1.1) +
   geom_point()
 
-
+out
 optimiaized_sigma <- optimize_sigma(
   sigma_iterate_obj = out,
   workers = 6,
   likelihood_array = likedepth_transmit,
+  event_log = event_log_utms,
   normalize = TRUE,
   mask_likelihood = TRUE,
   .progress = TRUE
@@ -225,13 +227,14 @@ optimiaized_sigma
 optimiaized_sigma$optimal_sigma
 
 kernel <- gaussian_kernel(
-  sigma = 0.3,
+  sigma = optimiaized_sigma$optimal_sigma,
   normalize = TRUE,
 )
 
 final <- hmm_forward_filter(
   kernel = kernel,
   likelihood_array = likedepth_transmit,
+  event_log = event_log_utms,
   mask_likelihood = TRUE,
   return_maps = TRUE
 )
@@ -283,8 +286,8 @@ track <- smoothed_per_day_sf |>
   st_combine() |>
   st_cast("LINESTRING")
 
-st_length(track)
-51206.16 / 1000
+# st_length(track)
+# 51206.16 / 1000
 p <- ggplot() +
   geom_sf(
     data = lennox::eastern_canada |>
@@ -355,7 +358,7 @@ p <- ggplot() +
 p1 <- p +
   coord_sf(
     xlim = c(-59.5, -58.5),
-    ylim = c(44.1, 44.9)
+    ylim = c(43.8, 44.9)
   )
 
 p

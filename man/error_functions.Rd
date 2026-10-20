@@ -25,6 +25,7 @@
 \alias{error_matrix}
 \alias{error_mask}
 \alias{error_missing_dates}
+\alias{error_missing_dates_hmm}
 \alias{error_missing_names}
 \alias{error_numeric}
 \alias{error_numeric_min}
@@ -84,6 +85,8 @@ error_matrix(matrix, dim_check = NULL, arg_name = NULL)
 error_mask(mask, sigma)
 
 error_missing_dates(event_log_dates, summary_dates)
+
+error_missing_dates_hmm(dn, known_dates, known_time_bin)
 
 error_missing_names(obj, required_val)
 
@@ -169,6 +172,12 @@ error_wrong_arg(unknown)
 \item{event_log_dates}{a \code{vector} containing event dates}
 
 \item{summary_dates}{a \code{vector} containing sumamry dates}
+
+\item{dn}{a dimension names}
+
+\item{known_dates}{a \code{vector} containing known dates}
+
+\item{known_time_bin}{a \code{vector} containing known time bins}
 
 \item{required_val}{a \code{vector} containing \code{characters} of the columns to check.}
 
