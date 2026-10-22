@@ -189,6 +189,7 @@ likedepth_transmit <- calc_likdepth_transmit(
 
 # sigma_val <- seq(0.1, 0.375, 0.015)
 sigma_val <- seq(0.1, 2.0, 0.025)
+sigma_val <- seq(0.1, 2.0, 0.05)
 
 length(sigma_val)
 sigma_val
@@ -217,7 +218,6 @@ optimiaized_sigma <- optimize_sigma(
   sigma_iterate_obj = out,
   workers = 6,
   likelihood_array = likedepth_transmit,
-  event_log = event_log_utms,
   normalize = TRUE,
   mask_likelihood = TRUE,
   .progress = TRUE
@@ -227,17 +227,26 @@ optimiaized_sigma
 optimiaized_sigma$optimal_sigma
 
 kernel <- gaussian_kernel(
-  sigma = optimiaized_sigma$optimal_sigma,
+  sigma = 0.33,
+  # optimiaized_sigma$optimal_sigma,
   normalize = TRUE,
 )
 
 final <- hmm_forward_filter(
   kernel = kernel,
   likelihood_array = likedepth_transmit,
-  event_log = event_log_utms,
   mask_likelihood = TRUE,
   return_maps = TRUE
 )
+rm(final_tewt, smoothed_new)
+final_tewt <- hmm_forward_filter_new_2(
+  likelihood_array = likedepth_transmit,
+  kernel = kernel,
+  mask_likelihood = TRUE,
+  return_maps = TRUE,
+  known_events = event_log_utms,
+)
+final_tewt$log_lik
 # mass <- apply(final$normalised_posterior, 3, function(x) sum(x, na.rm = TRUE))
 # which(!is.finite(mass) | mass <= 0) # dead filtered posteriors
 # final$n_bad_days # should be > 0 if this is the cause
@@ -262,8 +271,12 @@ final <- hmm_forward_filter(
 smoothed <- hmm_backward_smooth(
   forward_filter_obj = final
 )
+smoothed_new <- hmm_backward_smooth_new_2(
+  forward_filter_obj = final_tewt,
+  known_events = event_log_utms,
+)
 # smoothed
-
+smoothed_new
 # ------ exxtract ------
 # max_per_day <- extract_locations(obj = final$normalised_posterior)
 
@@ -271,6 +284,7 @@ smoothed <- hmm_backward_smooth(
 #   st_as_sf(coords = c("lon", "lat"), crs = 32620)
 
 smoothed_per_day <- extract_locations(smoothed)
+smoothed_per_day_new <- extract_locations(smoothed_new)
 
 smoothed_per_day
 # max_per_day_sf |>
@@ -281,6 +295,19 @@ smoothed_per_day_sf <- smoothed_per_day |>
 
 
 track <- smoothed_per_day_sf |>
+  mutate(date = as.Date(date)) |> # Ensure proper date sorting
+  arrange(date) |> # Sort chronologically (June 18 -> 19 -> 20...)
+  st_combine() |>
+  st_cast("LINESTRING")
+smoothed_per_day
+# max_per_day_sf |>
+#   mapgl::maplibre_view()
+smoothed_per_day_new_sf <- smoothed_per_day_new |>
+  # filter(!is.na(lon)) |>
+  st_as_sf(coords = c("lon", "lat"), crs = 32620)
+
+
+track_new <- smoothed_per_day_new_sf |>
   mutate(date = as.Date(date)) |> # Ensure proper date sorting
   arrange(date) |> # Sort chronologically (June 18 -> 19 -> 20...)
   st_combine() |>
@@ -311,12 +338,12 @@ p <- ggplot() +
   #   name = "Elevation / Depth (m)"
   # ) +
   geom_sf(
-    data = track |>
+    data = track_new |>
       st_transform(4326),
     # filter(date %in% as.Date(event_log$date)),
   ) +
   geom_sf(
-    data = smoothed_per_day_sf |>
+    data = smoothed_per_day_new_sf |>
       st_transform(4326),
     # filter(date %in% as.Date(event_log$date)),
     aes(fill = value),
@@ -329,18 +356,18 @@ p <- ggplot() +
   #     filter(date %in% as.Date(event_log$date)),
   #   aes(fill = value)
   # ) +
-  geom_sf(
-    data = event_log_sf |>
-      mutate(date = as.Date(date)),
-    aes(colour = event),
-  ) +
+  # geom_sf(
+  #   data = event_log_sf |>
+  #     mutate(date = as.Date(date)),
+  #   aes(colour = event),
+  # ) +
 
   # facet_wrap(~date) +
   scale_fill_viridis_c(option = "H", name = "Maximum\nlikelihood") +
-  # coord_sf(
-  #   xlim = c(-62, -57),
-  #   ylim = c(44, 48)
-  # ) +
+  coord_sf(
+    xlim = c(-62, -57),
+    ylim = c(43.8, 48)
+  ) +
   ggspatial::annotation_north_arrow(location = "tr") +
   ggspatial::annotation_scale() +
   theme_bw(

@@ -75,7 +75,7 @@ eval_sigma <- function(
 
   # ----- run hmmm filter -----
   hmm_forward <- do.call(
-    hmm_forward_filter,
+    hmm_forward_filter_new_2,
     c(
       list(
         likelihood_array = likelihood_array,

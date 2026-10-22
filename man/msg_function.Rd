@@ -29,7 +29,7 @@ msg_end(chr, t0, t1 = round(Sys.time()))
 
 msg_extract_no_val(n_empty, out)
 
-msg_fallback(n_fallback)
+msg_fallback(n_fallback, dates = NULL)
 
 msg_load_raster(path)
 
@@ -75,6 +75,8 @@ msg_window(window)
 \item{out}{the out object.}
 
 \item{n_fallback}{a numerical value}
+
+\item{dates}{the dates for n_time}
 
 \item{path}{a file path.}
 
