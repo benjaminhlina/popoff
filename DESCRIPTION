@@ -1,4 +1,4 @@
-Package: poppr
+Package: popoff
 Title: Provides hidden Markoven models pop-off satlitte transmitter (PSAT) data
 Version: 0.1.0
 Authors@R: 
