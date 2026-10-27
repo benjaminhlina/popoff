@@ -18,7 +18,8 @@ bathy_matrix_download <- download_noaa_bathy(
   ylim = c(41.52, 55.0),
   res = 1
 )
-bathy_matrix_download
+usethis::use_data(bathy_matrix_download)
+# bathy_matrix_download
 # in this case Gulf of St. Lawrence
 
 # we can check that it is SpatRaster
@@ -117,10 +118,10 @@ likedepth_transmit <- calc_likdepth_transmit(
 
 # # ----- we can plot the first couple of days -----
 
-# days <- unique(prepped_log$summary_table$date)
+days <- unique(prepped_log$summary_table$date)
 
-# xlim <- prepped_bathy$xlim
-# ylim <- prepped_bathy$ylim
+xlim <- prepped_bathy$xlim
+ylim <- prepped_bathy$ylim
 
 # # ---- we can convert them into spatrasters using load functions
 # likelihood_spr <- days |>
@@ -303,7 +304,7 @@ smoothed_per_day
 # max_per_day_sf |>
 #   mapgl::maplibre_view()
 smoothed_per_day_new_sf <- smoothed_per_day_new |>
-  # filter(!is.na(lon)) |>
+  filter(!is.na(lon)) |>
   st_as_sf(coords = c("lon", "lat"), crs = 32620)
 
 
@@ -312,6 +313,20 @@ track_new <- smoothed_per_day_new_sf |>
   arrange(date) |> # Sort chronologically (June 18 -> 19 -> 20...)
   st_combine() |>
   st_cast("LINESTRING")
+
+
+likelihood_spr <- days |>
+  set_names() |>
+  map(
+    ~ load_raster(
+      likedepth_transmit[,, as.character(.x)],
+      # crs = "EPSG:4326",
+      extent = c(xlim, ylim),
+      crs = "EPSG:32620"
+    ),
+    # .progress = TRUE
+  )
+
 
 # st_length(track)
 # 51206.16 / 1000
