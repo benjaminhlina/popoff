@@ -48,7 +48,7 @@ error_crs <- function(crs, arg_name = NULL) {
 error_smoothing_collapsed <- function(fac, time_step) {
   if (!is.finite(fac) || fac <= 0) {
     cli::cli_abort(
-      "Smoothing collapsed at time step {t - 1}: filtered posterior also sums to {fac} at time step {t - 1} which has to be > {.val 0}"
+      "Smoothing collapsed at time step {time_step - 1}: filtered posterior also sums to {fac} at time step {time_step - 1} which has to be > {.val 0}"
     )
   }
 }
