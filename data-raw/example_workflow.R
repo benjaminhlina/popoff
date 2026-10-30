@@ -18,7 +18,7 @@ bathy_matrix_download <- download_noaa_bathy(
   ylim = c(41.52, 55.0),
   res = 1
 )
-usethis::use_data(bathy_matrix_download)
+
 # bathy_matrix_download
 # in this case Gulf of St. Lawrence
 
