@@ -488,7 +488,7 @@ hmm_backward_smooth_new_2 <- function(
       fac <- sum(post, na.rm = TRUE)
       n_fallback <- n_fallback + 1L
       collapsed_dates <- c(collapsed_dates, time_labels[t - 1])
-      error_smoothing_collapsed(fac = fac, time_step = t)
+      # error_smoothing_collapsed(facs = fac, time_step = t)
     }
 
     smooth[,, t - 1] <- post / fac
