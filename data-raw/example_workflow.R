@@ -3,7 +3,7 @@
 {
   library(dplyr)
   library(ggplot2)
-  library(poppr)
+  # library(poppr)
   library(purrr)
   library(scales)
   library(sf)
@@ -13,18 +13,18 @@
 
 # ----- load bathymetry for the area of interest ----
 
-bathy_matrix_download <- download_noaa_bathy(
-  xlim = c(-72.41, -40.0),
-  ylim = c(41.52, 55.0),
-  res = 1
-)
-usethis::use_data(bathy_matrix_download)
+# bathy_matrix_download <- download_noaa_bathy(
+#   xlim = c(-72.41, -40.0),
+#   ylim = c(41.52, 55.0),
+#   res = 1
+# )
+# usethis::use_data(bathy_matrix_download)
 # bathy_matrix_download
 # in this case Gulf of St. Lawrence
 
 # we can check that it is SpatRaster
 
-bathy <- load_raster(bathy_matrix_download, crs = "EPSG:4326")
+bathy <- load_raster(bathy_matrix, crs = "EPSG:4326")
 
 bathy
 
@@ -162,31 +162,31 @@ ylim <- prepped_bathy$ylim
 # range <- st_bbox(bbox_utm)
 # range[1]
 # # ----- then polt them using ggplot and tidyterra -----
-# pl <- likelihood_spr[1:10] |>
-#   imap(
-#     ~ ggplot() +
-#       geom_spatraster(data = .x) +
-#       geom_sf(
-#         data = event_log_sf |>
-#           mutate(date = as.Date(date)),
-#         aes(colour = event),
-#       ) +
-#       # coord_sf() +
-#       scale_fill_viridis_c(option = "H") +
-#       theme_bw(
-#         base_size = 15
-#       ) +
-#       coord_sf(
-#         xlim = c(range[1], range[3]),
-#         ylim = c(range[2], range[4])
-#       ) +
-#       theme(
-#         panel.grid = element_blank(),
-#         plot.title = element_text(hjust = 0.5)
-#       ) +
-#       labs(title = .y)
-#   )
-# # pl
+pl <- smoothed_rast |>
+  imap(
+    ~ ggplot() +
+      geom_spatraster(data = .x) +
+      # geom_sf(
+      #   data = event_log_sf |>
+      #     mutate(date = as.Date(date)),
+      #   aes(colour = event),
+      # ) +
+      # coord_sf() +
+      scale_fill_viridis_c(option = "H") +
+      theme_bw(
+        base_size = 15
+      ) +
+      # coord_sf(
+      #   xlim = c(range[1], range[3]),
+      #   ylim = c(range[2], range[4])
+      # ) +
+      theme(
+        panel.grid = element_blank(),
+        plot.title = element_text(hjust = 0.5)
+      ) +
+      labs(title = .y)
+  )
+pl
 
 # sigma_val <- seq(0.1, 0.375, 0.015)
 sigma_val <- seq(0.1, 2.0, 0.025)
@@ -228,17 +228,17 @@ optimiaized_sigma
 optimiaized_sigma$optimal_sigma
 
 kernel <- gaussian_kernel(
-  sigma = 0.33,
+  sigma = 0.6,
   # optimiaized_sigma$optimal_sigma,
   normalize = TRUE,
 )
 
-final <- hmm_forward_filter(
-  kernel = kernel,
-  likelihood_array = likedepth_transmit,
-  mask_likelihood = TRUE,
-  return_maps = TRUE
-)
+# final <- hmm_forward_filter(
+#   kernel = kernel,
+#   likelihood_array = likedepth_transmit,
+#   mask_likelihood = TRUE,
+#   return_maps = TRUE
+# )
 rm(final_tewt, smoothed_new)
 final_tewt <- hmm_forward_filter_new_2(
   likelihood_array = likedepth_transmit,
@@ -248,6 +248,8 @@ final_tewt <- hmm_forward_filter_new_2(
   known_events = event_log_utms,
 )
 final_tewt$log_lik
+100532.5
+92294.65
 # mass <- apply(final$normalised_posterior, 3, function(x) sum(x, na.rm = TRUE))
 # which(!is.finite(mass) | mass <= 0) # dead filtered posteriors
 # final$n_bad_days # should be > 0 if this is the cause
@@ -284,23 +286,22 @@ smoothed_new
 # max_per_day_sf <- max_per_day |>
 #   st_as_sf(coords = c("lon", "lat"), crs = 32620)
 
-smoothed_per_day <- extract_locations(smoothed)
+# smoothed_per_day <- extract_locations(smoothed)
 smoothed_per_day_new <- extract_locations(smoothed_new)
 
-smoothed_per_day
-# max_per_day_sf |>
-#   mapgl::maplibre_view()
-smoothed_per_day_sf <- smoothed_per_day |>
-  # filter(!is.na(lon)) |>
-  st_as_sf(coords = c("lon", "lat"), crs = 32620)
+# smoothed_per_day
+# # max_per_day_sf |>
+# #   mapgl::maplibre_view()
+# smoothed_per_day_sf <- smoothed_per_day |>
+#   # filter(!is.na(lon)) |>
+#   st_as_sf(coords = c("lon", "lat"), crs = 32620)
 
-
-track <- smoothed_per_day_sf |>
-  mutate(date = as.Date(date)) |> # Ensure proper date sorting
-  arrange(date) |> # Sort chronologically (June 18 -> 19 -> 20...)
-  st_combine() |>
-  st_cast("LINESTRING")
-smoothed_per_day
+# track <- smoothed_per_day_sf |>
+#   mutate(date = as.Date(date)) |> # Ensure proper date sorting
+#   arrange(date) |> # Sort chronologically (June 18 -> 19 -> 20...)
+#   st_combine() |>
+#   st_cast("LINESTRING")
+# smoothed_per_day
 # max_per_day_sf |>
 #   mapgl::maplibre_view()
 smoothed_per_day_new_sf <- smoothed_per_day_new |>
@@ -315,18 +316,42 @@ track_new <- smoothed_per_day_new_sf |>
   st_cast("LINESTRING")
 
 
-likelihood_spr <- days |>
-  set_names() |>
-  map(
-    ~ load_raster(
-      likedepth_transmit[,, as.character(.x)],
-      # crs = "EPSG:4326",
-      extent = c(xlim, ylim),
-      crs = "EPSG:32620"
-    ),
-    # .progress = TRUE
-  )
+# smoothed_rast <- days |>
+#   set_names() |>
+#   map(
+#     ~ load_raster(
+#       smoothed_new[,, as.character(.x)],
+#       # crs = "EPSG:4326",
+#       extent = c(xlim, ylim),
+#       crs = "EPSG:32620"
+#     ),
+#     # .progress = TRUE
+#   )
 
+max_locs <- imap_dfr(smoothed_rast, function(r, date) {
+  wm <- where.max(r, value = TRUE)
+  xy <- xyFromCell(r, wm[, "cell"])
+
+  pts <- vect(xy, type = "points")
+
+  ll <- crds(pts)
+  tibble(
+    date = date,
+    lon = ll[, 1],
+    lat = ll[, 2],
+    value = wm[, "value"]
+  )
+})
+max_locs
+# smoothed_per_day_new_sf <- max_locs |>
+#   filter(!is.na(lon)) |>
+#   st_as_sf(coords = c("lon", "lat"), crs = 4326)
+
+# track_new <- smoothed_per_day_new_sf |>
+#   mutate(date = as.Date(date)) |> # Ensure proper date sorting
+#   arrange(date) |> # Sort chronologically (June 18 -> 19 -> 20...)
+#   st_combine() |>
+#   st_cast("LINESTRING")
 
 # st_length(track)
 # 51206.16 / 1000
@@ -353,13 +378,11 @@ p <- ggplot() +
   #   name = "Elevation / Depth (m)"
   # ) +
   geom_sf(
-    data = track_new |>
-      st_transform(4326),
+    data = track_new,
     # filter(date %in% as.Date(event_log$date)),
   ) +
   geom_sf(
-    data = smoothed_per_day_new_sf |>
-      st_transform(4326),
+    data = smoothed_per_day_new_sf,
     # filter(date %in% as.Date(event_log$date)),
     aes(fill = value),
     shape = 21
@@ -415,6 +438,24 @@ load(
 load(
   "/Users/benhlina/Library/CloudStorage/Dropbox/Dal-Post Doc/data/Geolocation for Jena/trajectories/backfil.transmit.AR1.depth_TRUE.199637.RData"
 )
+s |>
+  str()
+s_right <- s
+
+days <- 1:256
+smoothed_rast <- days |>
+  set_names() |>
+  map(
+    ~ load_raster(
+      s_right[.x, , ],
+      # crs = "EPSG:4326",
+      # extent = c(xlim, ylim),
+      # crs = "EPSG:32620"
+    ),
+    # .progress = TRUE
+  )
+
+smoothed_rast
 
 
 # Loop through each of the 256 slices along the third dimension
@@ -451,3 +492,22 @@ head(max_results)
 max_results |>
   print()
 summary(max_results)
+
+
+smoothed_per_day_new_sf <- max_locs |>
+  filter(!is.na(lon)) |>
+  st_as_sf(coords = c("lon", "lat"))
+
+track_new <- smoothed_per_day_new_sf |>
+  mutate(date = as.Date(date)) |> # Ensure proper date sorting
+  arrange(date) |> # Sort chronologically (June 18 -> 19 -> 20...)
+  st_combine() |>
+  st_cast("LINESTRING")
+ggplot() +
+  geom_point(
+    data = max_locs,
+    aes(x = lon, y = lat, fill = value),
+    shape = 21,
+    size = 3
+  ) +
+  scale_fill_viridis_c()
