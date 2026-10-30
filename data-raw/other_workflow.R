@@ -1,4 +1,3 @@
-  
 # ----- load packages ----
 
 {
@@ -17,9 +16,9 @@
 bathy_matrix_download <- download_noaa_bathy(
   xlim = c(-72.41, -40.0),
   ylim = c(41.52, 55.0),
-  res = 1
+  res = 4
 )
-usethis::use_data(bathy_matrix_download)
+
 # bathy_matrix_download
 # in this case Gulf of St. Lawrence
 
@@ -123,91 +122,254 @@ days <- unique(prepped_log$summary_table$date)
 
 xlim <- prepped_bathy$xlim
 ylim <- prepped_bathy$ylim
-  
 
+likelihood_array <- likedepth_transmit
 
-T <- dim(L)[1]
-  row <- dim(g$lon)[1]
-  col <- dim(g$lon)[2]
-  # m <- 2 # 2 behaviour
-  # pred <- array(0, dim = c(m, T, col, row))
-  # phi <- array(0, dim = c(m, T, col, row))
-  # phi[2, 1, , ] <- L[1, , ]
-  # pred[2, 1, , ] <- L[1, , ]
+likelihood_array <- aperm(likelihood_array)
+mask_likelihood <- FALSE
+progress <- TRUE
+# ----- get dims and dimnames --------
+dims <- dim(likelihood_array)
+dims
 
-  pred <- array(0, dim = c(T, col, row))
-  phi <- array(0, dim = c(T, col, row))
+dn <- dimnames(likelihood_array)
+dn
 
-  phi[1, , ] <- L[1, , ]
-  pred[1, , ] <- L[1, , ]
+kernel <- gaussian_kernel(
+  sigma = 0.3,
+  normalize = TRUE,
+)
+# ---- create timesteps and rows and columns -----
+time_step <- dims[3]
 
-  psi <- rep(0, T - 1)
-  #K <- imager::as.cimg(K)
-  # K1 <- imager::as.cimg(K1)
-  # K2 <- imager::as.cimg(K2)
-  for (t in 2:T) {
-    # p1 = imager::as.cimg(t(phi[1, t - 1, , ]))
-    # p2 = imager::as.cimg(t(phi[2, t - 1, , ]))
-    # q1 = imager::convolve(p1, K1)
-    # q2 = imager::convolve(p2, K2)
-    # q1 = t(as.matrix(q1))
-    # q2 = t(as.matrix(q2))
-    # pred[1, t, , ] <- P[1, 1] * q1 + P[2, 1] * q2
-    # pred[2, t, , ] <- P[1, 2] * q1 + P[2, 2] * q2
+row <- dims[2]
+col <- dims[1]
+# m <- 2 # 2 behaviour
+# pred <- array(0, dim = c(m, T, col, row))
+# phi <- array(0, dim = c(m, T, col, row))
+# phi[2, 1, , ] <- L[1, , ]
+# pred[2, 1, , ] <- L[1, , ]
 
-    #p = imager::as.cimg(t(phi[ t - 1, , ]))
-    #q = imager::convolve(p, K)
-    #q = t(as.matrix(q))
+# ----- create arrays and starting location ------
+pred <- array(0, dim = c(col, row, time_step), dimnames = dn)
+phi <- pred
 
-    pred[t, , ] <- imagine::convolution2D(phi[t - 1, , ], K) #q
+phi[,, 1] <- likelihood_array[,, 1]
+pred[,, 1] <- likelihood_array[,, 1]
 
-    # in case of data update led to an empty matrix
-    check.data.update <- sum(pred[t, , ] * L[t, , ], na.rm = T)
-    # sumL = sum(L[t, , ])
-    # na.rm=T has been added as there is still some na in the data # 170718
-    sumL <- sum(L[t, , ], na.rm = T)
-    if (sumL > 1e-06 & !check.data.update %in% c(0, NA, Inf, -Inf)) {
-      if (maskL) {
-        print("code for mask.L not available yet")
-        stop()
-        # post1 <- mask.L(pred.t = pred[1, t, , ], L.t = L[t,
-        #                                                  , ], lon = g$lon[1, ], lat = g$lat[, 1], par0 = dim(K1)[1],
-        #                 bound.thr = bound.thr, minBounds = minBounds)
-        # post2 <- mask.L(pred.t = pred[2, t, , ], L.t = L[t,
-        #                                                  , ], lon = g$lon[1, ], lat = g$lat[, 1], par0 = dim(K1)[1],
-        #                 bound.thr = bound.thr, minBounds = minBounds)
+psi <- rep(0, time_step - 1)
+#K <- imager::as.cimg(K)
+# K1 <- imager::as.cimg(K1)
+# K2 <- imager::as.cimg(K2)
+popoff:::msg_progress(
+  progress = TRUE,
+  n_time = time_step,
+  name = "HMM forward filtering",
+  type = "Filtering"
+)
 
-        post <- mask.L(
-          pred.t = pred[t, , ],
-          L.t = L[t, , ],
-          lon = g$lon[1, ],
-          lat = g$lat[, 1],
-          par0 = dim(K)[1],
-          bound.thr = bound.thr,
-          minBounds = minBounds
-        )
-      } else {
-        # post1 <- pred[1, t, , ] * L[t, , ]
-        # post2 <- pred[2, t, , ] * L[t, , ]
-        post <- pred[t, , ] * L[t, , ]
-      }
+for (t in 2:time_step) {
+  # p1 = imager::as.cimg(t(phi[1, t - 1, , ]))
+  # p2 = imager::as.cimg(t(phi[2, t - 1, , ]))
+  # q1 = imager::convolve(p1, K1)
+  # q2 = imager::convolve(p2, K2)
+  # q1 = t(as.matrix(q1))
+  # q2 = t(as.matrix(q2))
+  # pred[1, t, , ] <- P[1, 1] * q1 + P[2, 1] * q2
+  # pred[2, t, , ] <- P[1, 2] * q1 + P[2, 2] * q2
+
+  #p = imager::as.cimg(t(phi[ t - 1, , ]))
+  #q = imager::convolve(p, K)
+  #q = t(as.matrix(q))
+
+  pred[,, t] <- imagine::convolution2D(phi[,, t - 1], kernel) #q
+
+  # in case of data update led to an empty matrix
+  check.data.update <- sum(pred[,, t] * likelihood_array[,, t], na.rm = TRUE)
+  # sumL = sum(L[t, , ])
+  # na.rm=T has been added as there is still some na in the data # 170718
+  sumL <- sum(likelihood_array[,, t], na.rm = TRUE)
+  if (sumL > 1e-06 & !check.data.update %in% c(0, NA, Inf, -Inf)) {
+    if (mask_likelihood) {
+      print("code for mask.L not available yet")
+      stop()
+      # post1 <- mask.L(pred.t = pred[1, t, , ], L.t = L[t,
+      #                                                  , ], lon = g$lon[1, ], lat = g$lat[, 1], par0 = dim(K1)[1],
+      #                 bound.thr = bound.thr, minBounds = minBounds)
+      # post2 <- mask.L(pred.t = pred[2, t, , ], L.t = L[t,
+      #                                                  , ], lon = g$lon[1, ], lat = g$lat[, 1], par0 = dim(K1)[1],
+      #                 bound.thr = bound.thr, minBounds = minBounds)
+
+      post <- mask_likelihood_array(
+        pred.t = pred[t, , ],
+        L.t = L[t, , ],
+        lon = g$lon[1, ],
+        lat = g$lat[, 1],
+        par0 = dim(K)[1],
+        bound.thr = bound.thr,
+        minBounds = minBounds
+      )
     } else {
-      # post1 <- pred[1, t, , ]
-      # post2 <- pred[2, t, , ]
-      post <- pred[t, , ]
+      # post1 <- pred[1, t, , ] * L[t, , ]
+      # post2 <- pred[2, t, , ] * L[t, , ]
+      post <- pred[,, t] * likelihood_array[,, t]
     }
-    # psi[t - 1] <- sum(as.vector(post1), na.rm = T) + sum(as.vector(post2), na.rm = T)
-    psi[t - 1] <- sum(as.vector(post), na.rm = T)
-
-    # phi[1, t, , ] <- post1/(psi[t - 1] + 1e-15)
-    #  phi[2, t, , ] <- post2/(psi[t - 1] + 1e-15)
-    phi[t, , ] <- post / (psi[t - 1]) # removed +1e-15 post/(psi[t - 1] + 1e-15)
+  } else {
+    # post1 <- pred[1, t, , ]
+    # post2 <- pred[2, t, , ]
+    post <- pred[,, t]
   }
+  # psi[t - 1] <- sum(as.vector(post1), na.rm = T) + sum(as.vector(post2), na.rm = T)
+  psi[t - 1] <- sum(as.vector(post), na.rm = TRUE)
 
-  # enforce recapture position
-  # ajout pg 31.05.18
-  # phi[ T, , ] <- L[T, , ]
-  #pred[ T, , ] <- L[T, , ]
+  # phi[1, t, , ] <- post1/(psi[t - 1] + 1e-15)
+  #  phi[2, t, , ] <- post2/(psi[t - 1] + 1e-15)
+  phi[,, t] <- post / (psi[t - 1]) # removed +1e-15 post/(psi[t - 1] + 1e-15)
 
-  list(phi = phi, pred = pred, psi = psi)
+  if (isTRUE(progress)) {
+    cli::cli_progress_update()
+  }
 }
+
+# enforce recapture position
+# ajout pg 31.05.18
+# phi[ T, , ] <- L[T, , ]
+#pred[ T, , ] <- L[T, , ]
+
+list(phi = phi, pred = pred, psi = psi)
+
+str(phi)
+
+nllf. <- -sum(log(psi))
+
+nllf.
+
+nllf_2 <- -sum(log(psi[psi > 0]))
+nllf_2
+
+# library(terra)
+# library(dplyr)
+# library(purrr)
+# library(tibble)
+
+foward_obj <- days |>
+  set_names() |>
+  map(
+    ~ load_raster(
+      phi[,, as.character(.x)],
+      # crs = "EPSG:4326",
+      extent = c(xlim, ylim),
+      crs = "EPSG:32620"
+    ),
+    # .progress = TRUE
+  )
+
+
+max_locs <- imap_dfr(foward_obj, function(r, date) {
+  # cell index of max value (first one if ties)
+  wm <- where.max(r, value = TRUE) # cols: layer, cell, value
+  xy <- xyFromCell(r, wm[, "cell"])
+
+  # reproject UTM 20N (EPSG:32620) -> WGS84 lon/lat
+  pts <- vect(xy, type = "points", crs = crs(r))
+  ll <- crds(project(pts, "EPSG:4326"))
+
+  tibble(
+    date = as.Date(date),
+    lon = ll[, 1],
+    lat = ll[, 2],
+    value = wm[, "value"]
+  )
+})
+
+
+max_locs
+smoothed_per_day_new_sf <- max_locs |>
+  # filter(!is.na(lon)) |>
+  st_as_sf(coords = c("lon", "lat"), crs = 4326)
+
+
+track_new <- smoothed_per_day_new_sf |>
+  mutate(date = as.Date(date)) |> # Ensure proper date sorting
+  arrange(date) |> # Sort chronologically (June 18 -> 19 -> 20...)
+  st_combine() |>
+  st_cast("LINESTRING")
+
+
+p <- ggplot() +
+  geom_sf(
+    data = lennox::eastern_canada |>
+      st_transform(4326)
+  ) +
+  # geom_spatraster(data = bathy_utm) +
+  # scale_fill_gradientn(
+  #   colours = c(
+  #     "#031E40",
+  #     "#0B3C73",
+  #     "#17A2FF",
+  #     "#7FDBFF",
+  #     "#EAF6FF",
+  #     "#FFE8A3",
+  #     "#E6F38F",
+  #     "#9AD850"
+  #   ),
+  #   values = scales::rescale(c(-4000, -600, -150, -60, 0, 50, 150, 400)),
+  #   limits = c(-4000, 400),
+  #   oob = squish,
+  #   name = "Elevation / Depth (m)"
+  # ) +
+  geom_sf(
+    data = track_new |>
+      st_transform(4326),
+    # filter(date %in% as.Date(event_log$date)),
+  ) +
+  geom_sf(
+    data = smoothed_per_day_new_sf |>
+      st_transform(4326),
+    # filter(date %in% as.Date(event_log$date)),
+    aes(fill = value),
+    shape = 21
+  ) +
+
+  # geom_sf(
+  #   data = m_sf |>
+  #     st_transform(4326) |>
+  #     filter(date %in% as.Date(event_log$date)),
+  #   aes(fill = value)
+  # ) +
+  geom_sf(
+    data = event_log_sf |>
+      mutate(date = as.Date(date)),
+    aes(colour = event),
+  ) +
+
+  # facet_wrap(~date) +
+  scale_fill_viridis_c(option = "H", name = "Maximum\nlikelihood") +
+  # coord_sf(
+  #   xlim = c(-62, -57),
+  #   ylim = c(44, 48)
+  # ) +
+  ggspatial::annotation_north_arrow(location = "tr") +
+  ggspatial::annotation_scale() +
+  theme_bw(
+    base_size = 15
+  ) +
+  theme(
+    legend.position = "inside",
+    legend.position.inside = c(0.92, 0.5),
+    legend.background = element_rect(colour = "black")
+  )
+
+
+# p + ggview::canvas(8.5, 10)
+
+p1 <- p +
+  coord_sf(
+    xlim = c(-59.5, -58.5),
+    ylim = c(44.1, 44.9)
+  )
+
+p
+p1
+p1 + ggview::canvas(8.5, 10)
+p + ggview::canvas(8.5, 10)
