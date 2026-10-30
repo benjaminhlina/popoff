@@ -1,8 +1,8 @@
-^poppr\.Rproj$
+^popoff\.Rproj$
 ^\.Rproj\.user$
 ^[.]?air[.]toml$
 ^\.vscode$
 ^LICENSE\.md$
 ^\.github$
-^poppr/data-raw$
+^popoff/data-raw$
 ^data-raw$
