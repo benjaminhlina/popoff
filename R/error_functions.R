@@ -7,7 +7,7 @@
 #' @name error_functions
 #' @keywords internal
 error_chr <- function(chr, col = NULL) {
-  if (!is.character(chr) || (!is.numeric(chr))) {
+  if (!is.character(chr)) {
     cli::cli_abort(
       c(
         "Invalid column type in {.field {col}}.",
